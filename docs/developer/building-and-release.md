@@ -176,7 +176,7 @@ Differences from the Docker flow: CI does not run `npm run check`, does not buil
 
 ## Version bump locations
 
-The version is duplicated; keep all of these identical (currently `0.1.0`):
+The version is duplicated; keep all of these identical (currently `0.1.1`):
 
 | File | Field |
 | --- | --- |
