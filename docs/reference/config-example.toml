@@ -1,0 +1,344 @@
+# Terminux: comprehensive example configuration.
+#
+# Every key below is a real Terminux setting. Copy the parts you need into
+# ~/.config/terminux/config.toml (Windows: %APPDATA%\terminux\config.toml).
+# Saved changes apply live. Reference: docs/reference/configuration.md and
+# docs/reference/profile-settings.md.
+#
+# TOML rule: global keys must come BEFORE the first [table] header.
+
+# ---------------------------------------------------------------------------
+# Core
+# ---------------------------------------------------------------------------
+default_profile = "python"            # profile id (or name) used by new tabs
+font_size = 14                        # px; [defaults].font.size wins
+font_family = "'JetBrains Mono', 'Symbols Nerd Font Mono', 'Twemoji Mozilla', 'Noto Sans Symbols 2', 'Noto Sans Math', monospace"
+scrollback = 100000                   # lines; history_size per profile wins
+notifications = true                  # desktop notifications (OSC 9 / OSC 777 / bell) when unfocused
+renderer = "canvas"                   # "webgl" | "canvas" | "dom"; unset = canvas on Linux, webgl elsewhere
+disabled_profile_sources = ["powershell"]   # skip generated profiles: "wsl" | "ssh" | "powershell" | "windows"
+screen_reader = false                 # accessible text buffer for screen readers
+
+# ---------------------------------------------------------------------------
+# Appearance
+# ---------------------------------------------------------------------------
+app_theme = "midnight"                # "dark" | "light" | "system" | "legacyDark" | "legacyLight" | "legacySystem" | a [[ui_theme]] name
+tab_width_mode = "equal"              # "equal" | "title_length" | "compact"
+tab_position = "top"                  # "top" | "left" | "right" (vertical tabs)
+vertical_tab_width = 200              # px, 120-480 (vertical tab panel)
+vertical_tabs_collapsed = false       # start the vertical panel collapsed to icons
+new_tab_position = "after_last_tab"   # "after_last_tab" | "after_current_tab"
+tab_switcher_mode = "mru"             # "mru" | "in_order" | "disabled"
+show_tabs_fullscreen = false          # keep the tab bar in fullscreen
+show_zoom_badge = true                # ZOOM badge on a zoomed pane
+show_terminal_title_in_titlebar = true
+always_on_top = false
+disable_animations = false
+confirm_close_all_tabs = true         # confirm closing a window with several tabs
+use_background_image_for_window = false   # stretch the active pane's background image under all panes
+
+# Title-bar buttons: command names, [[action]] ids or "separator".
+# Edits made in the UI (right-click the toolbar) are written here.
+toolbar = [
+  "new_tab",
+  "duplicate_pane_right",
+  "duplicate_pane_down",
+  "toggle_pane_zoom",
+  "find",
+  "separator",
+  "agent_layout",                     # the id of an [[action]] below
+  "open_settings",
+]
+
+# ---------------------------------------------------------------------------
+# Startup
+# ---------------------------------------------------------------------------
+launch_mode = "default"               # "default" | "maximized" | "fullscreen" | "focus" | "maximized_focus"
+initial_cols = 140                    # first window size in cells
+initial_rows = 40
+initial_position = "100,80"           # "x,y", "x," or ",y"
+center_on_launch = false              # ignored when both x and y are set
+first_window_preference = "persisted_window_layout"   # restore the last session; "default_profile" starts fresh
+windowing_behavior = "use_existing"   # "use_new" | "use_existing" | "use_any_existing" (a second `terminux` call)
+startup_actions = "new-tab -p python ; split-pane -V -s .3 -p shell"   # used when nothing is restored
+start_on_user_login = false
+allow_headless = false                # keep running (tray, quake mode) after the last window closes
+
+# ---------------------------------------------------------------------------
+# Interaction
+# ---------------------------------------------------------------------------
+copy_on_select = false
+osc52_clipboard = false               # let programs set the clipboard (write only). Security: keep off unless needed
+middle_click_paste = true
+right_click_paste = true              # copy the selection, else paste
+word_separators = " ()[]{}',\"`"      # alias: word_delimiters
+copy_formatting = false               # true | false | "html" | "all" | "none"
+trim_block_selection = true
+trim_paste = true
+right_click_context_menu = false      # right click opens the pane menu instead (also per profile)
+focus_follow_mouse = false
+scroll_to_zoom = true                 # Ctrl+wheel changes the font size
+scroll_to_change_opacity = true       # Ctrl+Shift+wheel changes the opacity
+detect_urls = true
+large_paste_warning = true            # true | false | "always" | "never"
+multi_line_paste_warning = true       # true | false | "always" | "never"
+search_web_url = "https://duckduckgo.com/?q=%s"   # %s = the selection
+minimize_to_tray = false
+always_show_tray_icon = false
+auto_hide_window = false
+
+# ---------------------------------------------------------------------------
+# [defaults]: applied to every profile; any [[profile]] can override a key
+# ---------------------------------------------------------------------------
+[defaults]
+color_scheme = { light = "One Half Light", dark = "One Half Dark" }   # or a single name
+font = { face = "JetBrains Mono", size = 13, weight = "normal", cell_height = 1.0, cell_width = 0, ligatures = false, features = { ss01 = 1 }, axes = { wght = 450 } }
+cursor_shape = "bar"                  # "bar" | "vintage" | "underscore" | "filled_box" | "empty_box" | "double_underscore"
+cursor_color = "#34d399"
+cursor_height = 25                    # accepted for compatibility, not applied yet
+foreground = "#d6d9e0"
+background = "#14161b"
+selection_background = "#3a4256"
+intense_text_style = "bold"           # "none" | "bold" | "bright" | "all"
+adjust_indistinguishable_colors = "never"   # "never" | "indexed" | "always"
+padding = "8, 6"                      # "all" | "horizontal, vertical" | "left, top, right, bottom"
+scrollbar_state = "visible"           # "visible" | "hidden" | "always"
+opacity = 100                         # 0-100; below 100 needs a restart the first time
+use_acrylic = false                   # Windows / macOS only
+background_image = "~/Pictures/bg.png"
+background_image_stretch_mode = "uniform_to_fill"   # "none" | "fill" | "uniform" | "uniform_to_fill"
+background_image_alignment = "center"   # center, left, top, right, bottom, top_left, top_right, bottom_left, bottom_right
+background_image_opacity = 0.4
+retro_terminal_effect = false
+unfocused_appearance = { opacity = 90 }   # appearance keys only
+history_size = 100000
+snap_on_input = true
+close_on_exit = "automatic"           # "automatic" | "graceful" | "always" | "never"
+startup_timeout = 15                  # restart a new process silent for this many seconds (0 = off)
+startup_retries = 2
+bell_style = ["audible", "taskbar"]   # "audible" | "window" | "taskbar" | "all" | "none", or a list
+bell_sound = ["~/sounds/bell-a.wav", "~/sounds/bell-b.wav"]   # a list picks one at random
+auto_mark_prompts = false             # for shells without shell integration
+show_marks_on_scrollbar = true
+reposition_cursor_with_mouse = false  # click on the command line moves the cursor (needs OSC 133 B)
+path_translation_style = "none"       # dropped files: "none" | "wsl" | "cygwin" | "msys2" | "mingw"
+tab_title = "Terminal"
+suppress_application_title = false
+tab_color = "#34d399"
+icon = "terminal"                     # built-in name, emoji or image path
+cwd = "~"                             # alias: starting_directory
+login_shell = true                    # Unix: run commands through the login shell
+env = { EDITOR = "vim" }              # merged into every profile
+
+# ---------------------------------------------------------------------------
+# Profiles
+# ---------------------------------------------------------------------------
+[[profile]]
+id = "shell"                          # always present; "$SHELL" is the user's default shell
+name = "Shell"
+cmd = "$SHELL"
+
+[[profile]]
+id = "python"
+name = "Python"
+cmd = "python3"
+args = []
+cwd = "~/src"
+icon = "🐍"
+tab_title = "Python"
+tab_color = "#d97757"
+color_scheme = "One Half Dark"
+env = { PYTHONDONTWRITEBYTECODE = "1" }
+bell_style = "all"
+close_on_exit = "always"
+
+[[profile]]
+id = "build"
+name = "Build (commandline form)"
+commandline = "bash -lc 'make -j8; exec bash'"   # alternative to cmd + args
+os = "linux"                          # only on this OS: "linux" | "windows" | "macos"
+hidden = false                        # true hides it from menus (still usable with -p)
+suppress_application_title = true
+font = { size = 12, ligatures = true }
+padding = "4"
+opacity = 90
+unfocused_appearance = { opacity = 60, color_scheme = "Solarized Dark" }
+history_size = 20000
+snap_on_input = false
+scrollbar_state = "hidden"
+right_click_context_menu = true
+login_shell = false
+
+[[profile]]
+id = "prod"
+name = "Prod"
+cmd = "ssh"
+args = ["-t", "prod.example.com"]
+starting_directory = "~"              # alias of cwd
+tab_color = "#c50f1f"
+color_scheme = "Campbell Powershell"
+background_image = "~/Pictures/warning.png"
+background_image_stretch_mode = "fill"
+background_image_alignment = "top_right"
+background_image_opacity = 0.15
+retro_terminal_effect = false
+auto_mark_prompts = true
+
+# A generated profile (e.g. an SSH host from ~/.ssh/config) can be customized
+# by redefining its id; unset fields are inherited from the generated profile.
+[[profile]]
+id = "ssh-staging"
+tab_color = "#ffb900"
+
+# ---------------------------------------------------------------------------
+# Color schemes: referenced by color_scheme. Built in: Terminux, Campbell,
+# Campbell Powershell, Vintage, One Half Dark, One Half Light, Solarized Dark,
+# Solarized Light, Tango Dark, Tango Light, Dark+, VSCode Dark Modern,
+# VSCode Light Modern, CGA, IBM 5153, Ottosson, Dimidium.
+# ---------------------------------------------------------------------------
+[[scheme]]
+name = "Midnight"
+background = "#0b0f19"
+foreground = "#c9d1d9"
+cursor_color = "#58a6ff"
+selection_background = "#1f2a44"
+black = "#0b0f19"
+red = "#ff7b72"
+green = "#3fb950"
+yellow = "#d29922"
+blue = "#58a6ff"
+purple = "#bc8cff"
+cyan = "#39c5cf"
+white = "#b1bac4"
+bright_black = "#6e7681"
+bright_red = "#ffa198"
+bright_green = "#56d364"
+bright_yellow = "#e3b341"
+bright_blue = "#79c0ff"
+bright_purple = "#d2a8ff"
+bright_cyan = "#56d4dd"
+bright_white = "#f0f6fc"
+
+# Color overrides applied on top of the active scheme for every pane.
+[theme]
+cursor_color = "#ffcc00"
+
+# ---------------------------------------------------------------------------
+# Application themes (chrome): selected with app_theme
+# ---------------------------------------------------------------------------
+[[ui_theme]]
+name = "midnight"
+
+[ui_theme.tab]
+background = "accent"                 # a color, "terminalBackground" or "accent"
+unfocused_background = "#101522"
+show_close_button = "hover"           # "always" | "hover" | "never" | "active_only"
+icon_style = "monochrome"             # "default" | "hidden" | "monochrome"
+
+[ui_theme.tab_row]
+background = "#0b0f19"
+unfocused_background = "#080b12"
+
+[ui_theme.window]
+application_theme = "dark"            # "dark" | "light" | "system"
+frame = "#58a6ff"
+unfocused_frame = "#2a3350"
+use_mica = false                      # Windows 11
+rainbow_frame = false
+
+# ---------------------------------------------------------------------------
+# Custom actions: shown in the command palette, bindable, usable on the toolbar
+# ---------------------------------------------------------------------------
+[[action]]
+id = "git_status"
+name = "Git status"
+icon = "terminal"
+keys = "Ctrl+Shift+G"
+command = "send_input"
+input = "git status\r"
+
+[[action]]
+id = "agent_layout"
+name = "Dev layout"
+keys = ["Ctrl+Alt+A"]
+commands = [
+  { command = "new_tab", profile = "python", tab_title = "dev" },
+  { command = "split_pane", split = "right", profile = "shell", size = 0.3 },
+  { command = "move_focus", direction = "first" },
+]
+
+[[action]]
+name = "Prod in a new window"
+command = "new_window"
+profile = "prod"
+tab_color = "#c50f1f"
+
+[[action]]
+name = "Run command line"
+command = "wt"
+commandline = "new-tab -p shell -d ~/src ; split-pane -H htop"
+
+[[action]]
+name = "Highlight all matches"
+command = "color_selection"
+background = "#7a6420aa"
+match_mode = "all"
+
+[[action]]
+name = "Summon (global)"
+keys = "Ctrl+Alt+T"
+command = "global_summon"
+monitor = "toMouse"
+dropdown_duration = 200
+
+[[action]]
+name = "Export buffer"
+command = "export_buffer"
+
+# ---------------------------------------------------------------------------
+# New tab dropdown
+# ---------------------------------------------------------------------------
+[[new_tab_menu]]
+type = "profile"
+profile = "python"
+icon = "🐍"
+
+[[new_tab_menu]]
+type = "separator"
+
+[[new_tab_menu]]
+type = "folder"
+name = "Remote"
+icon = "terminal"
+allow_empty = false
+inline = false
+entries = [
+  { type = "profile", profile = "prod" },
+  { type = "match_profiles", source = "ssh" },
+]
+
+[[new_tab_menu]]
+type = "action"
+id = "agent_layout"
+
+[[new_tab_menu]]
+type = "remaining_profiles"
+
+# ---------------------------------------------------------------------------
+# Key bindings: command = "Combo", a list of combos, or "" to unbind.
+# Commands not listed keep their defaults. See docs/reference/keybindings.md.
+# ---------------------------------------------------------------------------
+[keys]
+find_next = "F3"
+find_prev = "Shift+F3"
+paste = ["Ctrl+Shift+V", "Shift+Insert"]
+new_tab = "Ctrl+Shift+T"
+duplicate_pane_right = "Alt+Shift+Plus"
+duplicate_pane_down = "Alt+Shift+-"
+toggle_pane_zoom = "Ctrl+Shift+Z"
+command_palette = "Ctrl+Shift+P"
+toggle_broadcast_input = "Alt+A"
+move_focus_next_in_order = "Ctrl+Alt+Right"
+quake_mode = "Win+`"                  # global (OS-level) shortcut
+clear_buffer = ""                     # unbind
+git_status = "Ctrl+Alt+G"             # an [[action]] id can be bound here too

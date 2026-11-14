@@ -1,0 +1,35 @@
+# Terminux configuration. Edits are applied live.
+default_profile = "claude"
+font_size = 14
+scrollback = 100000
+tab_position = "top"
+tab_switcher_mode = "mru"
+toolbar = ["duplicate_pane_right", "duplicate_pane_down", "toggle_pane_zoom", "find", "separator", "open_settings"]
+
+[defaults]
+color_scheme = "Terminux"
+font = { face = "JetBrains Mono", size = 14 }
+cursor_shape = "bar"
+padding = 8
+
+[[profile]]
+id = "claude"
+name = "Claude"
+cmd = "claude"
+icon = "sparkle"
+tab_color = "#d97757"
+
+[[profile]]
+id = "opencode"
+name = "OpenCode"
+cmd = "opencode"
+icon = "command"
+
+[[action]]
+id = "user.git_status"
+name = "Git status"
+command = "send_input"
+input = "git status\r"
+
+[keys]
+find = "F3"

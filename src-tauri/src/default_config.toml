@@ -1,0 +1,233 @@
+# Terminux configuration. Edits are applied live.
+# Ctrl+Space completes keys and values; unknown keys are underlined.
+
+default_profile = "shell"
+font_size = 14
+# font_family = "'JetBrains Mono', 'Symbols Nerd Font Mono', 'Noto Sans Symbols 2', 'Noto Sans Math', monospace"
+scrollback = 100000
+# renderer = "canvas"   # "webgl" | "canvas" | "dom" (default: canvas on Linux, webgl elsewhere)
+# Notify (desktop) on OSC 9 / OSC 777 or bell when the window is not focused.
+notifications = true
+
+# --- Appearance ---
+# app_theme = "dark"             # "dark" | "light" | "system" | name of a [[ui_theme]]
+# tab_width_mode = "equal"       # "equal" | "title_length" | "compact"
+# tab_position = "top"           # "top" | "left" | "right" (vertical tabs)
+# vertical_tab_width = 200       # initial width of the vertical tab panel (px)
+# vertical_tabs_collapsed = false
+# new_tab_position = "after_last_tab"   # or "after_current_tab"
+# tab_switcher_mode = "in_order" # "mru" | "in_order" | "disabled" (Ctrl+Tab overlay)
+# show_tabs_fullscreen = false
+show_zoom_badge = false          # ZOOM badge on a zoomed pane
+# show_terminal_title_in_titlebar = true
+# Title-bar buttons: command names, [[action]] ids or "separator". Toolbar edits in the UI (right-click, drag) are saved here.
+# toolbar = ["duplicate_pane_right", "duplicate_pane_down", "toggle_pane_zoom", "find", "separator", "open_settings"]
+# always_on_top = false
+# disable_animations = false
+# confirm_close_all_tabs = true
+
+# --- Startup ---
+# launch_mode = "default"        # "default" | "maximized" | "fullscreen" | "focus" | "maximized_focus"
+# initial_cols = 120
+# initial_rows = 30
+# initial_position = "100,100"   # "x,y", "x," or ",y"
+# center_on_launch = false
+# first_window_preference = "persisted_window_layout"   # restore the last session; "default_profile" to start fresh
+# windowing_behavior = "use_new" # "use_new" | "use_existing" | "use_any_existing" (when launched again)
+# startup_actions = "new-tab -p shell ; split-pane -H -p python"
+# start_on_user_login = false
+# allow_headless = false         # keep running (tray, quake mode) after the last window closes
+# disabled_profile_sources = ["ssh"]   # generated profiles: "wsl", "ssh", "powershell", "windows"
+
+# --- Interaction ---
+# Copy the selection to the clipboard on mouse release.
+copy_on_select = false
+# Let programs (vim, tmux, ssh…) set the clipboard with OSC 52. Off by default: any output,
+# e.g. a cat'ed file, could otherwise replace what you paste next.
+# osc52_clipboard = false
+# copy_formatting = false        # also copy colors as HTML: true | false | "html"
+# trim_block_selection = true
+# trim_paste = true
+# Paste the clipboard on middle / right click (Shift+click when an app grabs the mouse).
+middle_click_paste = true
+right_click_paste = true
+# right_click_context_menu = false   # right click opens the menu instead of pasting
+# Characters that delimit a word on double-click selection.
+# word_separators = " ()[]{}',\"`"
+# focus_follow_mouse = false
+# scroll_to_zoom = true              # Ctrl+wheel changes the font size
+# scroll_to_change_opacity = true    # Ctrl+Shift+wheel changes the opacity
+# detect_urls = true
+# large_paste_warning = true
+# multi_line_paste_warning = true
+# search_web_url = "https://www.bing.com/search?q=%s"
+# minimize_to_tray = false
+# always_show_tray_icon = false
+# auto_hide_window = false
+
+# Settings applied to every profile; any of them can also be set per [[profile]].
+[defaults]
+# color_scheme = "Terminux"      # name, or { light = "One Half Light", dark = "One Half Dark" }
+# font = { face = "JetBrains Mono", size = 14, weight = "normal", cell_height = 1.0, cell_width = 0, ligatures = false }
+# cursor_shape = "filled_box"    # "bar" | "vintage" | "underscore" | "filled_box" | "empty_box" | "double_underscore"
+# cursor_color = "#34d399"
+# foreground = "#d6d9e0"
+# background = "#14161b"
+# selection_background = "#3a4256"
+# intense_text_style = "bold"    # "none" | "bold" | "bright" | "all"
+# adjust_indistinguishable_colors = "never"   # "never" | "indexed" | "always"
+# padding = "6, 4, 2, 2"         # "all" | "horizontal, vertical" | "left, top, right, bottom"
+# scrollbar_state = "visible"    # "visible" | "hidden" | "always"
+# opacity = 100                  # 0-100; below 100 needs a restart the first time
+# use_acrylic = false            # blurred transparency (Windows / macOS)
+# background_image = "~/Pictures/bg.png"
+# background_image_stretch_mode = "uniform_to_fill"   # "none" | "fill" | "uniform" | "uniform_to_fill"
+# background_image_alignment = "center"
+# background_image_opacity = 1.0
+# retro_terminal_effect = false
+# unfocused_appearance = { opacity = 90 }
+# history_size = 10000
+# snap_on_input = true
+# close_on_exit = "automatic"    # "automatic" | "graceful" | "always" | "never"
+# startup_timeout = 15           # restart a new shell silent for this many seconds (0 = off)
+# startup_retries = 2            # automatic restarts on spawn failure / silent startup
+# bell_style = "none"            # "audible" | "window" | "taskbar" | "all" | "none", or a list
+# bell_sound = "~/sounds/bell.wav"
+# auto_mark_prompts = false
+# show_marks_on_scrollbar = false
+# path_translation_style = "none"   # dropped files: "none" | "wsl" | "cygwin" | "msys2" | "mingw"
+
+# Profiles: id, name, cmd + args (or commandline), cwd, env, os ("linux" | "windows" | "macos"),
+# login_shell, hidden, icon, tab_title, suppress_application_title, tab_color.
+# "$SHELL" means the user's default shell. Non-shell commands run through the
+# login shell on Unix so PATH from your rc files (nvm, ~/.local/bin, ...) applies.
+
+# Example using every profile option (any [defaults] setting is also accepted here).
+# [[profile]]
+# id = "example"
+# name = "Example"
+# cmd = "bash"                   # "$SHELL" = user's default shell
+# args = ["-l"]
+# # commandline = "bash -l"      # alternative to cmd + args
+# cwd = "~/work"                 # alias: starting_directory
+# env = { EDITOR = "vim", LANG = "en_US.UTF-8" }
+# os = "linux"                   # "linux" | "windows" | "macos"
+# login_shell = true             # run through the login shell (Unix)
+# hidden = false
+# icon = "terminal"              # emoji, image path or built-in name
+# tab_title = "Work"
+# suppress_application_title = false
+# tab_color = "#34d399"
+# color_scheme = "One Half Dark" # or { light = "One Half Light", dark = "One Half Dark" }
+# font = { face = "JetBrains Mono", size = 14, weight = "normal", cell_height = 1.0, cell_width = 0, ligatures = false, features = { ss01 = 1 }, axes = { wght = 450 } }
+# cursor_shape = "bar"
+# cursor_color = "#34d399"
+# foreground = "#d6d9e0"
+# background = "#14161b"
+# selection_background = "#3a4256"
+# intense_text_style = "bold"
+# adjust_indistinguishable_colors = "never"
+# padding = "6, 4"
+# scrollbar_state = "visible"
+# opacity = 100
+# use_acrylic = false
+# background_image = "~/Pictures/bg.png"
+# background_image_stretch_mode = "uniform_to_fill"
+# background_image_alignment = "center"
+# background_image_opacity = 1.0
+# retro_terminal_effect = false
+# unfocused_appearance = { opacity = 90 }
+# history_size = 10000
+# snap_on_input = true
+# close_on_exit = "automatic"
+# startup_timeout = 15
+# startup_retries = 2
+# bell_style = "none"
+# bell_sound = "~/sounds/bell.wav"
+# auto_mark_prompts = false
+# show_marks_on_scrollbar = false
+# right_click_context_menu = false
+# reposition_cursor_with_mouse = false
+# path_translation_style = "none"
+
+[[profile]]
+id = "shell"
+name = "Shell"
+cmd = "$SHELL"
+
+[[profile]]
+id = "wsl"
+name = "WSL"
+cmd = "wsl.exe"
+os = "windows"
+
+# Color schemes. Built in: Terminux, Campbell, Campbell Powershell, Vintage, One Half Dark,
+# One Half Light, Solarized Dark, Solarized Light, Tango Dark, Tango Light, Dark+,
+# VSCode Dark Modern, VSCode Light Modern, CGA, IBM 5153, Ottosson, Dimidium.
+# [[scheme]]
+# name = "Mine"
+# background = "#101010"
+# foreground = "#e0e0e0"
+# cursor_color = "#ffffff"
+# selection_background = "#404040"
+# black = "#000000"              # red, green, yellow, blue, purple, cyan, white, bright_black, ...
+
+# Custom actions: listed in the command palette, optionally bound to keys.
+# [[action]]
+# name = "Git status"
+# keys = "Ctrl+Shift+G"
+# command = "send_input"
+# input = "git status\r"
+#
+# [[action]]
+# name = "Dev layout"
+# commands = [
+#   { command = "new_tab", profile = "python" },
+#   { command = "split_pane", split = "right", profile = "shell", size = 0.3 },
+# ]
+
+# Key bindings: command = "Ctrl+Shift+X", a list of combos, or "" to unbind.
+# Unset commands keep their defaults (same as Windows Terminal).
+[keys]
+# new_tab = "Ctrl+Shift+T"
+# close_pane = "Ctrl+Shift+W"
+# duplicate_pane_right = "Alt+Shift+Plus"
+# duplicate_pane_down = "Alt+Shift+-"
+# toggle_pane_zoom = "Ctrl+Shift+Z"
+# find = "Ctrl+Shift+F"
+# command_palette = "Ctrl+Shift+P"
+# paste = ["Ctrl+Shift+V", "Shift+Insert"]
+#
+# Terminator-style bindings (uncomment to use; conflicting defaults are moved too).
+# split_pane_down = "Ctrl+Shift+O"            # split horizontally
+# split_pane_right = "Ctrl+Shift+E"           # split vertically
+# toggle_pane_zoom = "Ctrl+Shift+X"
+# toggle_split_orientation = "Super+R"        # rotate
+# equalize_panes = "Ctrl+Shift+Alt+E"
+# move_focus_up = "Alt+Up"
+# move_focus_down = "Alt+Down"
+# move_focus_left = "Alt+Left"
+# move_focus_right = "Alt+Right"
+# move_focus_next_in_order = "Ctrl+Shift+N"
+# move_focus_previous_in_order = "Ctrl+Shift+P"
+# resize_pane_up = "Ctrl+Shift+Up"
+# resize_pane_down = "Ctrl+Shift+Down"
+# resize_pane_left = "Ctrl+Shift+Left"
+# resize_pane_right = "Ctrl+Shift+Right"
+# toggle_broadcast_input = "Alt+A"
+# new_window = "Ctrl+Shift+I"
+# close_window = "Ctrl+Shift+Q"
+# next_tab = ["Ctrl+PgDn", "Ctrl+Tab"]
+# prev_tab = ["Ctrl+PgUp", "Ctrl+Shift+Tab"]
+# move_tab_forward = "Ctrl+Shift+PgDn"
+# move_tab_backward = "Ctrl+Shift+PgUp"
+# open_tab_renamer = "Ctrl+Alt+A"
+# scroll_up_page = "Shift+PgUp"
+# scroll_down_page = "Shift+PgDn"
+# scroll_up = "Ctrl+Alt+Up"
+# scroll_down = "Ctrl+Alt+Down"
+# clear_buffer = "Ctrl+Shift+G"               # reset and clear
+# command_palette = "Ctrl+Alt+P"              # was Ctrl+Shift+P
+
+# Color overrides applied on top of the active scheme (background, foreground, cursor, black, red, ...).
+[theme]
