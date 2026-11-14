@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Rust tests failing on Windows (`cli::tests::errors_and_dirs` path separator, `config::tests::profile_example_is_valid` profile filtered by `os`)
+- CI release creation denied: grant `contents: write` to the build workflow
+
 ## [0.1.1] - 2026-11-14
 
 ### Added

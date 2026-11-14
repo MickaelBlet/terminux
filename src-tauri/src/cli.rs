@@ -295,7 +295,8 @@ mod tests {
         assert!(parse(&args("--size 0,3")).is_err());
         let mut cli = parse(&args("nt -d sub ; nt -d /abs ; nt -d ~/x")).unwrap();
         resolve_dirs(&mut cli.actions, Path::new("/base"));
-        assert_eq!(cli.actions[0]["starting_directory"], "/base/sub");
+        let sub = Path::new("/base").join("sub");
+        assert_eq!(cli.actions[0]["starting_directory"], sub.to_string_lossy().as_ref());
         assert_eq!(cli.actions[1]["starting_directory"], "/abs");
         assert_eq!(cli.actions[2]["starting_directory"], "~/x");
         assert_eq!(snake("previousInOrder"), "previous_in_order");

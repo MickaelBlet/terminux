@@ -628,6 +628,8 @@ paste = ""
             .take_while(|l| !l.is_empty())
             .map(|l| l.strip_prefix("# ").unwrap_or(l))
             .filter(|l| !l.starts_with('#'))
+            // `os = "linux"` would hide the profile when testing on other platforms.
+            .filter(|l| !l.starts_with("os ="))
             .collect::<Vec<_>>()
             .join("\n");
         let cfg = Config::parse(&example).unwrap();
