@@ -5,7 +5,7 @@ import type { Restore } from "./term/session";
 
 export interface PaneSnapshot {
   id: string;
-  kind: "term" | "snippets";
+  kind: "term" | "snippets" | "file";
   spec: PaneSpec;
   title: string;
   cwd: string | null;

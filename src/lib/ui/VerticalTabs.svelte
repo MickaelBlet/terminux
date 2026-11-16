@@ -76,13 +76,17 @@
     {#each app.tabs as t (t.id)}
       <TabItem {t} {drag} {side} variant={collapsed ? "collapsed" : "vertical"} />
     {/each}
+    <div class="add">
+      <button class="plus" title="New tab ({app.keymap.hint('new_tab') ?? ''})" onclick={() => app.newTab()}><Icon name="plus" /></button>
+      {#if !collapsed}
+        <button bind:this={dropdownBtn} title="New tab with profile ({app.keymap.hint('open_new_tab_dropdown') ?? ''})" onclick={openDropdown}
+          ><Icon name="chevron" size={12} /></button
+        >
+      {/if}
+    </div>
   </div>
   <div class="foot" role="toolbar" tabindex="-1" oncontextmenu={onBarMenu}>
-    <button title="New tab ({app.keymap.hint('new_tab') ?? ''})" onclick={() => app.newTab()}><Icon name="plus" /></button>
     {#if !collapsed}
-      <button bind:this={dropdownBtn} title="New tab with profile ({app.keymap.hint('open_new_tab_dropdown') ?? ''})" onclick={openDropdown}
-        ><Icon name="chevron" size={12} /></button
-      >
       <span class="spacer"></span>
     {/if}
     <button
@@ -128,9 +132,11 @@
   }
   .vtabs {
     --ind: var(--accent);
+    --ind-bg: var(--chrome);
   }
   :global(html:not(.focused)) .vtabs {
     --ind: var(--muted);
+    --ind-bg: var(--chrome-unfocused);
   }
   .vtabs::after {
     content: "";
@@ -142,12 +148,12 @@
     z-index: 2;
     background: linear-gradient(
       to bottom,
-      transparent 0,
+      var(--ind-bg) 0,
       var(--tab-ind, var(--ind)) var(--a0),
       transparent var(--a0),
       transparent var(--a1),
       var(--tab-ind, var(--ind)) var(--a1),
-      transparent 100%
+      var(--ind-bg) 100%
     );
   }
   .vtabs.left::after {
@@ -170,6 +176,16 @@
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
+  }
+  .add {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    flex-shrink: 0;
+    margin: 4px;
+  }
+  .add .plus {
+    flex: 1;
   }
   .foot {
     display: flex;

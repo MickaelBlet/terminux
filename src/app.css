@@ -157,3 +157,17 @@ body.dragging-row * {
 kbd {
   font-family: inherit;
 }
+
+.link-tooltip {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--fg);
+  font: 12px system-ui, sans-serif;
+  box-shadow: 0 2px 8px var(--shadow);
+  white-space: nowrap;
+}

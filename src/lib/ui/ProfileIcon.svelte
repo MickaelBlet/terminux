@@ -27,7 +27,7 @@
   }
   .emoji {
     line-height: 1;
-    font-family: "Twemoji Mozilla", system-ui, sans-serif;
+    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", system-ui, sans-serif;
   }
   .mono {
     filter: grayscale(1);

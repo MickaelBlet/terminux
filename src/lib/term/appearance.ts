@@ -1,9 +1,8 @@
 // Effective settings of a pane: root (legacy) ⊕ [defaults] ⊕ profile ⊕ per-pane overrides.
 import type { ITerminalOptions, ITheme } from "@xterm/xterm";
 import {
-  DEFAULT_FONT_FAMILY,
-  FALLBACK_FONT_FAMILY,
   findProfile,
+  fontFamilyOf,
   wordSeparatorOf,
   type Appearance,
   type Config,
@@ -25,6 +24,10 @@ export interface PaneSpec {
   tabColor?: string;
   colorScheme?: string;
   suppressApplicationTitle?: boolean;
+  /** File pane: the edited file and where to put the cursor. */
+  file?: string;
+  line?: number;
+  col?: number;
   /** Runtime overrides (adjust_opacity, toggle_shader_effects). */
   opacity?: number;
   retro?: boolean;
@@ -186,12 +189,6 @@ function closeOnExitOf(v: string | boolean | undefined): CloseOnExit {
   if (v === false) return "never";
   const k = norm(v);
   return k === "graceful" || k === "always" || k === "never" ? k : "automatic";
-}
-
-function fontFamilyOf(cfg: Config, face: string | undefined): string {
-  if (!face) return cfg.font_family || DEFAULT_FONT_FAMILY;
-  const list = /[,'"]/.test(face) ? face : `'${face}'`;
-  return `${list}, ${FALLBACK_FONT_FAMILY}`;
 }
 
 const fontSettings = (o: Record<string, number> | undefined) =>

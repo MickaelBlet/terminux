@@ -118,7 +118,7 @@ The command line follows `wt.exe` syntax; see the [command-line reference](../re
 
 ![Built-in configuration editor with key completion](../images/config-editor.png)
 
-- `Ctrl+,` opens the built-in editor in a tab. `Ctrl+Space` completes keys and values; unknown keys are underlined; saving applies instantly.
+- `Ctrl+,` opens the built-in editor in a tab. `Ctrl+Space` completes keys and values; unknown keys are underlined; click the swatch before a `"#rrggbb"` value to pick a color; saving applies instantly.
 - `Ctrl+Alt+,` opens the read-only defaults, a good place to discover keys.
 - A config file with a syntax error is ignored (defaults are used) and a banner shows the error, so a typo never locks you out.
 

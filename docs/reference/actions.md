@@ -1218,7 +1218,7 @@ move_tab_backward = "Ctrl+Alt+X"   # example binding
 
 ### move_tab_to_new_window
 
-Detach the active tab (its processes stay alive) into a new window.
+Detach the active tab (its processes stay alive) into a new window. Settings editor tabs move too (unsaved edits are discarded after confirmation).
 
 - Action: `move_tab`, `window = "new"` ([parameters](#move_tab))
 - Label: Move tab to new window

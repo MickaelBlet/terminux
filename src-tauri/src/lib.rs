@@ -1,6 +1,7 @@
 mod cli;
 mod config;
 mod dynamic_profiles;
+mod editor;
 mod pty;
 mod session_store;
 mod windows;
@@ -21,6 +22,7 @@ pub struct AppState {
     config: Mutex<Config>,
     pty: PtyManager,
     windows: Mutex<windows::Windows>,
+    open_files: editor::OpenFiles,
 }
 
 type CmdResult<T> = Result<T, String>;
@@ -110,6 +112,33 @@ fn open_path(app: AppHandle, path: String) -> CmdResult<()> {
         return Err(format!("{}: not a directory", path.display()));
     }
     app.opener().open_path(path.to_string_lossy(), None::<&str>).map_err(err)
+}
+
+/// Open a file printed in the terminal (Ctrl+click) with `file_link_editor`. The program comes
+/// from the config only. `terminal`: return the commandline for a terminal pane instead; otherwise
+/// a commandline is returned only for a fallback editor tab when no editor is set.
+#[tauri::command]
+async fn open_in_editor(
+    state: State<'_, AppState>,
+    path: String,
+    line: Option<u32>,
+    col: Option<u32>,
+    terminal: bool,
+) -> CmdResult<Option<String>> {
+    let template = state.config.lock().unwrap().get_str("file_link_editor").map(str::to_string);
+    editor::open(template.as_deref(), &path, line, col, terminal)
+}
+
+/// Read a text file for the built-in editor (Ctrl+click); it may then be saved with `file_write`.
+#[tauri::command]
+async fn file_read(state: State<'_, AppState>, path: String) -> CmdResult<editor::TextFile> {
+    state.open_files.read(&path)
+}
+
+/// Save a file opened with `file_read` (no other path is writable).
+#[tauri::command]
+async fn file_write(state: State<'_, AppState>, path: String, text: String) -> CmdResult<()> {
+    state.open_files.write(&path, &text)
 }
 
 /// Write exported text to `path` (only when named in the config, e.g. an `export_buffer` action)
@@ -442,6 +471,7 @@ pub fn run() {
             config: Mutex::new(config::load()),
             pty: PtyManager::default(),
             windows: Mutex::new(windows::Windows::default()),
+            open_files: editor::OpenFiles::default(),
         })
         .setup(move |app| {
             let handle = app.handle().clone();
@@ -478,6 +508,9 @@ pub fn run() {
             default_config,
             read_binary,
             open_path,
+            open_in_editor,
+            file_read,
+            file_write,
             save_text,
             pty_spawn,
             pty_detach,

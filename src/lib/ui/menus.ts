@@ -101,6 +101,8 @@ export function tabMenu(app: App, index: number, x: number, y: number): MenuRequ
       item("Move tab to new window", "move_tab_to_new_window"),
     ]);
     groups.push([item("Export text…", "export_buffer"), item("Find…", "find")]);
+  } else if (t) {
+    groups.push([item("Move tab to new window", "move_tab_to_new_window")]);
   }
   groups.push([
     { label: "Close tabs to the right", disabled: index >= app.tabs.length - 1, run: () => void app.closeTabs((_x, i) => i <= index) },

@@ -51,6 +51,16 @@ Font stack for terminals. A profile `font.face` replaces the first entries (the 
 font_family = "'Fira Code', monospace"
 ```
 
+### emoji_font
+
+**Type:** string (font name or CSS font-family list) | **Default:** `'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji'`
+
+Color emoji font, placed in the fallback stack right after Symbols Nerd Font Mono and before the bundled Twemoji Mozilla (which still covers emoji the chosen font lacks). By default the platform emoji font wins when installed: Segoe UI Emoji on Windows, Apple Color Emoji on macOS, Noto Color Emoji on most Linux distributions. Ignored when `font_family` is set (that list is used verbatim). To force Twemoji everywhere: `emoji_font = "Twemoji Mozilla"`.
+
+```toml
+emoji_font = "Segoe UI Emoji"
+```
+
 ### scrollback
 
 **Type:** integer (lines) | **Default:** `10000` (the generated `config.toml` sets `100000`) | **Windows Terminal:** `historySize`
@@ -380,6 +390,16 @@ Copy the selection to the clipboard when the mouse is released.
 copy_on_select = true
 ```
 
+### copy_feedback
+
+**Type:** boolean | **Default:** `true`
+
+Show a "Copied to clipboard" toast when the selection is copied (copy action, `copy_on_select`, right click). Clipboard writes by programs (OSC 52) show nothing.
+
+```toml
+copy_feedback = false
+```
+
 ### osc52_clipboard
 
 **Type:** boolean | **Default:** `false`
@@ -496,10 +516,49 @@ scroll_to_change_opacity = false
 
 **Type:** boolean | **Default:** `true` | **Windows Terminal:** `experimental.detectURLs`
 
-Underline plain-text `http(s)` URLs and make them clickable (OSC 8 hyperlinks always work).
+Underline plain-text `http(s)` URLs and open them on Ctrl+click (Cmd+click on macOS). OSC 8 hyperlinks always work, also with Ctrl+click.
 
 ```toml
 detect_urls = false
+```
+
+### detect_file_paths
+
+**Type:** boolean | **Default:** `true`
+
+Underline file paths printed in the terminal (with an optional `:line:col`, `(line,col)` or `", line N` suffix). Ctrl+click (Cmd+click on macOS) opens the file with [`file_link_editor`](#file_link_editor). Relative paths resolve against the pane's current directory.
+
+```toml
+detect_file_paths = false
+```
+
+### file_link_editor
+
+**Type:** string | **Default:** unset
+
+Command opening Ctrl+clicked file paths when [`file_link_open`](#file_link_open) is `"external"`, `"tab"` or `"pane"`, run directly (no shell) and detached. `{file}`, `{line}` and `{col}` are substituted (line/column default to `1`); the file is appended when `{file}` is absent. Unset: a new tab runs `$VISUAL` / `$EDITOR` (`vi` fallback) as `editor +line file`; on Windows, Notepad. Paths from WSL shells are passed as-is (use e.g. `"wsl code --goto {file}:{line}:{col}"`).
+
+```toml
+file_link_editor = "code --goto {file}:{line}:{col}"
+# file_link_editor = "subl {file}:{line}:{col}"
+# file_link_editor = "idea --line {line} {file}"
+```
+
+### file_link_open
+
+**Type:** string | **Default:** `"builtin"`
+
+**Values:** `"builtin"`, `"external"`, `"tab"`, `"pane"`
+
+Where Ctrl+clicked file paths open:
+
+- `"builtin"`: Terminux's own editor in a new tab (syntax highlighting, Ctrl+S save, Ctrl+F find, Reload). Clicking a file already open focuses its tab at the line. Text files up to 8 MiB (UTF-8); only files opened this way can be saved.
+
+- `"external"`: [`file_link_editor`](#file_link_editor) launched detached (fallback: `$VISUAL` / `$EDITOR` in a new tab, Notepad on Windows).
+- `"tab"` / `"pane"`: a new tab / a split next to the clicked pane running `file_link_editor` as a terminal program (e.g. `"nvim +{line} {file}"`), or `$VISUAL` / `$EDITOR` / `vi` when unset. On Windows `file_link_editor` is required.
+
+```toml
+file_link_open = "external"
 ```
 
 ### large_paste_warning

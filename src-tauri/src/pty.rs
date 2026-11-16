@@ -127,6 +127,35 @@ pub fn user_shell() -> String {
     }
 }
 
+fn is_wsl(cmd: &str) -> bool {
+    let name = cmd.rsplit(['/', '\\']).next().unwrap_or(cmd).to_ascii_lowercase();
+    name == "wsl.exe" || name == "wsl"
+}
+
+/// `/home/x` or `~`, not a UNC `//wsl.localhost/...` nor `C:/...`.
+fn is_linux_path(p: &str) -> bool {
+    p.starts_with('~') || (p.starts_with('/') && !p.starts_with("//"))
+}
+
+/// wsl.exe arguments with `--cd <dir>` replacing any existing `--cd`.
+fn with_wsl_cd(args: &[String], dir: &str) -> Vec<String> {
+    let mut out = vec!["--cd".to_string(), dir.to_string()];
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        if matches!(a.as_str(), "--" | "-e" | "--exec") {
+            // Command line of the distro: copied verbatim.
+            out.push(a.clone());
+            out.extend(it.cloned());
+            break;
+        } else if a == "--cd" {
+            it.next();
+        } else {
+            out.push(a.clone());
+        }
+    }
+    out
+}
+
 fn expand_home(p: &str) -> PathBuf {
     match (p.strip_prefix('~'), dirs::home_dir()) {
         (Some(rest), Some(home)) => home.join(rest.trim_start_matches(['/', '\\'])),
@@ -225,13 +254,25 @@ impl PtyManager {
             profile.cmd = parts.next().unwrap_or_default();
             profile.args = parts.collect();
         }
+        // wsl.exe: the directory lives inside the distro (Linux path, unreachable from
+        // Windows), so it goes through `--cd`, replacing the generated `--cd ~`.
+        let mut req_cwd = req.cwd.as_deref();
+        let mut inherit_cwd = req.inherit_cwd.as_deref();
+        if is_wsl(&profile.cmd) {
+            let dir = req_cwd.or(profile.cwd.is_none().then_some(inherit_cwd).flatten());
+            if let Some(dir) = dir.filter(|d| is_linux_path(d)) {
+                profile.args = with_wsl_cd(&profile.args, dir);
+                req_cwd = None;
+                inherit_cwd = None;
+            }
+        }
         let id = self.next_id.fetch_add(1, Ordering::Relaxed) + 1;
         let mut cmd = build_command(&profile);
         cmd.env("TERMINUX_SESSION", id.to_string());
         for (k, v) in &req.env {
             cmd.env(k, v);
         }
-        let cwd = [req.cwd.as_deref(), profile.cwd.as_deref(), req.inherit_cwd.as_deref()]
+        let cwd = [req_cwd, profile.cwd.as_deref(), inherit_cwd]
             .into_iter()
             .flatten()
             .map(expand_home)
@@ -453,6 +494,15 @@ impl PtyManager {
 #[cfg(all(test, not(windows)))]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wsl_cd_replaces_existing() {
+        let v = |a: &[&str]| a.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        assert!(is_linux_path("/home/a") && is_linux_path("~") && !is_linux_path("//wsl.localhost/U/home") && !is_linux_path("C:/x"));
+        assert!(is_wsl("wsl.exe") && is_wsl(r"C:\Windows\System32\WSL.EXE") && !is_wsl("bash"));
+        assert_eq!(with_wsl_cd(&v(&["-d", "Ubuntu", "--cd", "~"]), "/srv/x"), v(&["--cd", "/srv/x", "-d", "Ubuntu"]));
+        assert_eq!(with_wsl_cd(&v(&["-e", "ls", "--cd", "y"]), "/a"), v(&["--cd", "/a", "-e", "ls", "--cd", "y"]));
+    }
 
     #[test]
     fn quoting() {

@@ -81,7 +81,7 @@ export class TabDrag {
     if (!d?.active) return;
     const app = this.app;
     const t = app.tabs[d.from];
-    if (d.outside && t?.kind === "term") {
+    if (d.outside && t) {
       const target = await windowAt(e.screenX, e.screenY);
       await moveTabToWindow(app, app.tabs.indexOf(t), target ?? "new", target ? undefined : { x: e.screenX - 60, y: e.screenY - 16 });
       return;

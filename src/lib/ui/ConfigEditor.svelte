@@ -2,9 +2,14 @@
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
-  import { Compartment, EditorState } from "@codemirror/state";
+  import { Compartment, EditorState, RangeSetBuilder } from "@codemirror/state";
   import {
+    Decoration,
     EditorView,
+    ViewPlugin,
+    WidgetType,
+    type DecorationSet,
+    type ViewUpdate,
     drawSelection,
     highlightActiveLine,
     highlightActiveLineGutter,
@@ -33,8 +38,10 @@
   import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
   import { app } from "../state.svelte";
   import { editorMenu } from "./menus";
-  import { DEFAULT_THEME, fontFamilyOf } from "../config";
+  import { DEFAULT_THEME } from "../config";
+  import { BASE_RULES, fontTheme as sharedFontTheme } from "./editor-theme";
   import { completions, keyInfoAt, unknownKeys } from "../config-schema";
+  import { findHexColors, fromPickerHex, toPickerHex } from "../color-swatch";
 
   interface ConfigError {
     message: string;
@@ -64,34 +71,30 @@
 
   const editorTheme = EditorView.theme(
     {
-      "&": { height: "100%", color: "var(--fg)", backgroundColor: "var(--term-bg)" },
-      ".cm-content": { caretColor: "var(--accent)" },
-      ".cm-cursor": { borderLeftColor: "var(--accent)" },
-      "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection": {
-        backgroundColor: `${c.selectionBackground} !important`,
-      },
-      ".cm-gutters": { backgroundColor: "var(--chrome)", color: "var(--muted)", border: "none" },
-      ".cm-activeLine": { backgroundColor: "#ffffff08" },
-      ".cm-activeLineGutter": { backgroundColor: "#ffffff0d", color: "var(--fg)" },
-      ".cm-matchingBracket": { backgroundColor: "#ffffff1a", outline: "none" },
-      ".cm-tooltip": { backgroundColor: "var(--panel)", border: "1px solid var(--border)", color: "var(--fg)" },
+      ...BASE_RULES,
       ".cm-tooltip-autocomplete > ul > li[aria-selected]": { backgroundColor: "var(--hover)", color: "var(--fg)" },
       ".cm-completionDetail": { color: "var(--muted)", marginLeft: "1em" },
       ".cm-key-doc": { padding: "4px 8px", maxWidth: "480px", fontSize: "12px", lineHeight: "1.5" },
       ".cm-key-doc-head": { color: "var(--accent)" },
       ".cm-key-doc-meta": { color: "var(--muted)" },
       ".cm-completionInfo": { backgroundColor: "var(--panel)", border: "1px solid var(--border)" },
-      ".cm-panels": { backgroundColor: "var(--panel)", color: "var(--fg)" },
-      ".cm-searchMatch": { backgroundColor: "#34d39933" },
+      ".cm-swatch": {
+        position: "relative",
+        display: "inline-block",
+        width: "0.8em",
+        height: "0.8em",
+        marginRight: "3px",
+        verticalAlign: "-0.05em",
+        border: "1px solid var(--border)",
+        borderRadius: "2px",
+        cursor: "pointer",
+      },
+      ".cm-swatch input": { position: "absolute", inset: "0", width: "100%", height: "100%", opacity: "0", cursor: "pointer", padding: "0", border: "none" },
     },
     { dark: true },
   );
 
-  const fontTheme = () =>
-    EditorView.theme({
-      "&": { fontSize: `${app.editorFontSize}px` },
-      ".cm-scroller": { fontFamily: fontFamilyOf(app.config) },
-    });
+  const fontTheme = () => sharedFontTheme(app.config, app.editorFontSize);
 
   /** Apply a key completion, then open value completion. */
   const applyAndContinue = (view: EditorView, comp: Completion, from: number, to: number) => {
@@ -140,6 +143,7 @@
     return {
       pos: info.from,
       end: info.to,
+      above: true,
       create() {
         const range = { from: info.from, to: info.to };
         const dom = document.createElement("div");
@@ -168,7 +172,70 @@
         };
       },
     };
-  });
+  }, { hideOnChange: true });
+
+  /** Clickable swatch before a quoted hex color; opens the native color picker. */
+  class SwatchWidget extends WidgetType {
+    hex: string;
+    constructor(hex: string) {
+      super();
+      this.hex = hex;
+    }
+    eq(o: SwatchWidget) {
+      return o.hex === this.hex;
+    }
+    toDOM(v: EditorView) {
+      const dom = document.createElement("span");
+      dom.className = "cm-swatch";
+      if (!readonly) {
+        const input = dom.appendChild(document.createElement("input"));
+        input.type = "color";
+        input.tabIndex = -1;
+        // `input` fires while dragging; the position is looked up each time since the doc may have moved.
+        input.addEventListener("input", () => {
+          const at = v.posAtDOM(dom);
+          const line = v.state.doc.lineAt(at);
+          const c = findHexColors(line.text, line.from).find((c) => c.from - 1 >= at);
+          if (!c) return;
+          const hex = fromPickerHex(input.value, c.hex);
+          if (hex !== c.hex) v.dispatch({ changes: { from: c.from, to: c.to, insert: hex }, userEvent: "input.color" });
+        });
+      }
+      this.updateDOM(dom);
+      return dom;
+    }
+    /** Reuse the DOM so an open picker survives the rebuild caused by its own edits. */
+    updateDOM(dom: HTMLElement) {
+      dom.style.background = this.hex;
+      dom.title = readonly ? this.hex : `${this.hex} — click to pick`;
+      const input = dom.querySelector("input");
+      if (input && document.activeElement !== input) input.value = toPickerHex(this.hex);
+      return true;
+    }
+  }
+
+  function swatches(v: EditorView): DecorationSet {
+    const b = new RangeSetBuilder<Decoration>();
+    for (const { from, to } of v.visibleRanges) {
+      for (const c of findHexColors(v.state.sliceDoc(from, to), from)) {
+        b.add(c.from - 1, c.from - 1, Decoration.widget({ widget: new SwatchWidget(c.hex), side: -1 }));
+      }
+    }
+    return b.finish();
+  }
+
+  const colorSwatches = ViewPlugin.fromClass(
+    class {
+      decorations: DecorationSet;
+      constructor(v: EditorView) {
+        this.decorations = swatches(v);
+      }
+      update(u: ViewUpdate) {
+        if (u.docChanged || u.viewportChanged) this.decorations = swatches(u.view);
+      }
+    },
+    { decorations: (p) => p.decorations },
+  );
 
   const lint = linter(
     async (v) => {
@@ -256,6 +323,7 @@
               autocompletion({ override: [source] }),
               keyDocs,
               hideKeyDocs,
+              colorSwatches,
               ...(readonly ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : [lint, lintGutter()]),
               editorTheme,
               font.of(fontTheme()),

@@ -6,7 +6,7 @@ import { ProgressBarStatus } from "@tauri-apps/api/window";
 import type { ActionSpec } from "./commands";
 import * as tree from "./layout/tree";
 import { sanitizeTab, type TabSnapshot, type WindowSnapshot } from "./snapshot";
-import type { App, NewPaneArgs } from "./state.svelte";
+import type { App, NewPaneArgs, Tab } from "./state.svelte";
 import { setRootKey } from "./snippets";
 import { sessions } from "./term/session";
 
@@ -335,11 +335,27 @@ async function handOff(app: App, target: string, snap: TabSnapshot, at: number, 
 
 export async function moveTabToWindow(app: App, index: number, target: string, position?: { x: number; y: number }) {
   const t = app.tabs[index];
-  if (!t || t.kind !== "term" || isSelf(app, target)) return false;
+  if (!t || isSelf(app, target)) return false;
+  if (t.kind === "config" || t.kind === "defaults") return moveEditorToWindow(app, t, target, position);
+  if (t.kind !== "term") return false;
   const snap = await app.captureTab(t, true);
   const at = app.tabs.indexOf(t);
   app.detachTab(at);
   return handOff(app, target, snap, at, position);
+}
+
+/** Editor tabs carry no process: open the editor there, close it here. Unsaved edits are not carried over. */
+async function moveEditorToWindow(app: App, t: Tab, target: string, position?: { x: number; y: number }) {
+  const kind = t.kind as "config" | "defaults";
+  if (kind === "config" && app.configDirty && !(await app.confirm("Discard unsaved changes?", "config.toml has unsaved changes.", { ok: "Discard", danger: true }))) return false;
+  try {
+    await send(app, target, { snapshot: { name: null, tabs: [], activeTab: 0, editors: [{ kind, index: 0 }], activeEditor: kind }, position });
+  } catch (e) {
+    console.error(e);
+    app.toast(`Move failed: ${e}`, "error");
+    return false;
+  }
+  return app.closeTab(app.tabs.indexOf(t), { force: true });
 }
 
 export async function movePaneToWindow(app: App, target: string) {

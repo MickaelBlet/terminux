@@ -134,9 +134,9 @@ font = { face = "JetBrains Mono", size = 14, weight = "normal", cell_height = 1.
 
 ### Bundled fonts
 
-Terminux ships its fonts and needs nothing installed: **JetBrains Mono** (regular, bold, italic, bold italic), **Symbols Nerd Font Mono**, **Twemoji Mozilla** (color emoji), **Noto Sans Symbols**, **Noto Sans Symbols 2** and **Noto Sans Math**. The default stack is JetBrains Mono, then Symbols Nerd Font Mono, Twemoji Mozilla, the Noto symbol fonts and the generic `monospace`. Licenses are under `static/fonts/LICENSES/`.
+Terminux ships its fonts and needs nothing installed: **JetBrains Mono** (regular, bold, italic, bold italic), **Symbols Nerd Font Mono**, **Twemoji Mozilla** (color emoji), **Noto Sans Symbols**, **Noto Sans Symbols 2** and **Noto Sans Math**. The default stack is JetBrains Mono, then Symbols Nerd Font Mono, the system color emoji font (Segoe UI Emoji, Apple Color Emoji or Noto Color Emoji, when installed), Twemoji Mozilla, the Noto symbol fonts and the generic `monospace`. Licenses are under `static/fonts/LICENSES/`.
 
-Setting `face` keeps the symbol/emoji fallbacks, so Nerd Font glyphs and emoji still render with a custom face. The legacy root keys `font_size` and `font_family` remain as fallbacks.
+Setting `face` keeps the symbol/emoji fallbacks, so Nerd Font glyphs and emoji still render with a custom face. The legacy root keys `font_size` and `font_family` remain as fallbacks. The root key `emoji_font` picks the color emoji font (e.g. `emoji_font = "Twemoji Mozilla"` to always use the bundled one).
 
 ### Zoom
 

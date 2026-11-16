@@ -15,6 +15,9 @@ import { mergedSettings, resolve, wantsTransparency, xtermOptions, type PaneSpec
 import { Marks } from "./marks";
 import { MarkMode, isBlockSelection } from "./markmode";
 import { ShellIntegration } from "./shell-integration";
+import { fileLinkProvider } from "./file-link-provider";
+import { hideLinkTooltip, showLinkTooltip } from "./link-tooltip";
+import { resolveFilePath, type FileLink } from "../file-links";
 
 export interface SessionHooks {
   /** Window-level inputs of the appearance resolution. */
@@ -38,7 +41,11 @@ export interface SessionHooks {
   onMarkMode(paneId: string, active: boolean, block: boolean): void;
   /** Mouse paste (middle / right click): the app reads, filters and confirms. */
   requestPaste(paneId: string): void;
+  /** The selection was copied to the clipboard (copy_on_select, right click). */
+  onCopy(paneId: string): void;
   openLink(uri: string): void;
+  /** Ctrl+click on a file path; `path` is absolute or `~`-relative. */
+  openFile(paneId: string, path: string, line?: number, col?: number): void;
 }
 
 /** Buffer (and optionally a live pty) a session starts from: restored session, moved tab. */
@@ -91,6 +98,7 @@ export class TermSession {
   markMode!: MarkMode;
   private serializer!: SerializeAddon;
   private links: WebLinksAddon | null = null;
+  private fileLinks: { dispose(): void } | null = null;
   private ligatureJoiner: number | null = null;
   /** Appearance currently applied. */
   look: Resolved;
@@ -150,7 +158,11 @@ export class TermSession {
       customGlyphs: true,
       rescaleOverlappingGlyphs: true,
       macOptionIsMeta: true,
-      linkHandler: { activate: (_e, uri) => this.hooks.openLink(uri) },
+      linkHandler: {
+        activate: (e, uri) => this.openWebLink(e, uri),
+        hover: (e) => showLinkTooltip(e, "link"),
+        leave: hideLinkTooltip,
+      },
     });
     this.term = t;
     this.fit = new FitAddon();
@@ -162,8 +174,10 @@ export class TermSession {
     t.loadAddon(new Unicode11Addon());
     t.unicode.activeVersion = "11";
     this.links = null;
+    this.fileLinks = null;
     this.ligatureJoiner = null;
     this.setLinks(this.config.detect_urls !== false);
+    this.setFileLinks(this.config.detect_file_paths !== false);
     try {
       t.loadAddon(new ImageAddon());
     } catch (e) {
@@ -246,15 +260,39 @@ export class TermSession {
     });
   }
 
+  // Ctrl/Cmd+click opens links; a plain click stays a terminal click/selection.
+  private openWebLink(e: MouseEvent, uri: string) {
+    hideLinkTooltip();
+    if (e.ctrlKey || e.metaKey) this.hooks.openLink(uri);
+  }
+
   private setLinks(on: boolean) {
     if (on === !!this.links) return;
     if (on) {
-      this.links = new WebLinksAddon((_e, uri) => this.hooks.openLink(uri));
+      this.links = new WebLinksAddon((e, uri) => this.openWebLink(e, uri), {
+        hover: (e) => showLinkTooltip(e, "link"),
+        leave: hideLinkTooltip,
+      });
       this.term.loadAddon(this.links);
     } else {
       this.links?.dispose();
       this.links = null;
     }
+  }
+
+  private setFileLinks(on: boolean) {
+    if (on === !!this.fileLinks) return;
+    if (on) {
+      this.fileLinks = this.term.registerLinkProvider(fileLinkProvider(this.term, (l) => void this.openFile(l)));
+    } else {
+      this.fileLinks?.dispose();
+      this.fileLinks = null;
+    }
+  }
+
+  private async openFile(l: FileLink) {
+    const path = resolveFilePath(l.path, await this.cwdNow());
+    if (path) this.hooks.openFile(this.paneId, path, l.line, l.col);
   }
 
   private setCwd(cwd: string) {
@@ -368,6 +406,10 @@ export class TermSession {
     if (hadFocus) this.focus();
   }
 
+  private copySelection() {
+    writeText(this.selectionText()).then(() => this.hooks.onCopy(this.paneId)).catch(console.error);
+  }
+
   // Capture phase: runs before xterm's own handlers.
   private bindMouse() {
     const el = this.el;
@@ -377,7 +419,7 @@ export class TermSession {
     el.addEventListener("mouseup", (e) => {
       if (e.button !== 0) return;
       if (this.term.hasSelection()) {
-        if (this.config.copy_on_select) writeText(this.selectionText()).catch(console.error);
+        if (this.config.copy_on_select) this.copySelection();
       } else if (this.look.repositionCursorWithMouse && !appGrabs(e)) {
         this.moveCursorTo(e);
       }
@@ -412,7 +454,7 @@ export class TermSession {
       if (appGrabs(e)) return;
       // Like Windows Terminal: copy the selection if there is one, else paste.
       if (this.term.hasSelection() && !this.config.copy_on_select) {
-        writeText(this.selectionText()).catch(console.error);
+        this.copySelection();
         this.term.clearSelection();
       } else {
         this.pasteClipboard();
@@ -666,6 +708,7 @@ export class TermSession {
   applyConfig(cfg: Config) {
     this.config = cfg;
     this.setLinks(cfg.detect_urls !== false);
+    this.setFileLinks(cfg.detect_file_paths !== false);
     this.update();
     if (this.opened) this.setRenderer(rendererOf(cfg));
   }
@@ -818,6 +861,7 @@ export class TermSession {
 
   dispose(kill = true) {
     this.disposed = true;
+    hideLinkTooltip();
     clearTimeout(this.fitTimer);
     document.fonts.removeEventListener("loadingdone", this.onFontsLoaded);
     this.dropPty(kill);

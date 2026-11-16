@@ -35,3 +35,11 @@ jobs:
           releaseDraft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload portable exe
+        if: runner.os == 'Windows' && startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          cp src-tauri/target/release/terminux.exe terminux-portable.exe
+          gh release upload "${{ github.ref_name }}" terminux-portable.exe --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

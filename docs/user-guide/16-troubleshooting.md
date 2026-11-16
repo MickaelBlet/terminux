@@ -72,7 +72,7 @@ Using **WSL from Terminux on Windows**: generated profiles `wsl-<distro>` start 
 
 ## Fonts and glyphs
 
-- Bundled: JetBrains Mono, Symbols Nerd Font Mono, Twemoji Mozilla, Noto Sans Symbols / Symbols 2 / Math. The default stack is `'JetBrains Mono', 'Symbols Nerd Font Mono', 'Noto Sans Symbols 2', 'Noto Sans Math', monospace`, so Nerd Font icons, powerline glyphs and emoji work without installing anything.
+- Bundled: JetBrains Mono, Symbols Nerd Font Mono, Twemoji Mozilla, Noto Sans Symbols / Symbols 2 / Math. The default stack is JetBrains Mono, Symbols Nerd Font Mono, the system color emoji font (`emoji_font`), Twemoji Mozilla, the Noto symbol fonts, then `monospace`, so Nerd Font icons, powerline glyphs and emoji work without installing anything.
 - To use your own font set `font.face` (profile or `[defaults]`) to its **family name** as the system lists it, and keep a fallback list in `font_family` if you need symbols:
 
   ```toml
@@ -132,7 +132,7 @@ Common collisions: `Alt+Arrows` (move focus), `Alt+Shift+Arrows` (resize), `Ctrl
 
 - Terminux watches `config.toml` **and** `fragments/*.toml`. A save applies immediately in every window; no restart is needed (exceptions: first-time transparency, `start_on_user_login` and tray settings take effect through the OS; global shortcuts are re-registered).
 - **Config error bar**: if the file is not valid TOML (or a value has the wrong type), Terminux uses the built-in defaults for that load and shows `Config error, using defaults - <path>: <message>` at the top. Your file is untouched. Fix it and save; it reloads by itself.
-- **Built-in editor** (`Ctrl+,`): `Ctrl+Space` completes keys and values, `Ctrl+S` saves, `Ctrl+F` finds. Red = parse error (saving is refused with the message), yellow = unknown key or section (the app ignores it silently, usually a typo). Hover a key for its documentation. A "changed on disk" notice appears if the file was edited elsewhere. The read-only defaults are at `Ctrl+Alt+,`; edit in an external editor with `Ctrl+Shift+,`.
+- **Built-in editor** (`Ctrl+,`): `Ctrl+Space` completes keys and values, `Ctrl+S` saves, `Ctrl+F` finds. Red = parse error (saving is refused with the message), yellow = unknown key or section (the app ignores it silently, usually a typo). Hover a key for its documentation. Click the swatch before a hex color (`"#rgb"`, `"#rrggbb"`, with optional alpha) to pick it with the system color picker. A "changed on disk" notice appears if the file was edited elsewhere. The read-only defaults are at `Ctrl+Alt+,`; edit in an external editor with `Ctrl+Shift+,`.
 - Typical mistakes:
   - A root key placed **after** a `[table]` becomes a key of that table: put `toolbar`, `startup_actions`, `default_profile`, ... at the top.
   - `[[action]]` placed after `[keys]` or `[theme]` is parsed in the wrong context; put actions earlier.

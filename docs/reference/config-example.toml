@@ -13,6 +13,7 @@
 default_profile = "python"            # profile id (or name) used by new tabs
 font_size = 14                        # px; [defaults].font.size wins
 font_family = "'JetBrains Mono', 'Symbols Nerd Font Mono', 'Twemoji Mozilla', 'Noto Sans Symbols 2', 'Noto Sans Math', monospace"
+emoji_font = "Segoe UI Emoji"         # color emoji font before the bundled Twemoji; default: system emoji font
 scrollback = 100000                   # lines; history_size per profile wins
 notifications = true                  # desktop notifications (OSC 9 / OSC 777 / bell) when unfocused
 renderer = "canvas"                   # "webgl" | "canvas" | "dom"; unset = canvas on Linux, webgl elsewhere
@@ -68,6 +69,7 @@ allow_headless = false                # keep running (tray, quake mode) after th
 # Interaction
 # ---------------------------------------------------------------------------
 copy_on_select = false
+copy_feedback = true                  # "Copied to clipboard" toast on copy
 osc52_clipboard = false               # let programs set the clipboard (write only). Security: keep off unless needed
 middle_click_paste = true
 right_click_paste = true              # copy the selection, else paste
@@ -80,6 +82,9 @@ focus_follow_mouse = false
 scroll_to_zoom = true                 # Ctrl+wheel changes the font size
 scroll_to_change_opacity = true       # Ctrl+Shift+wheel changes the opacity
 detect_urls = true
+detect_file_paths = true              # Ctrl+click file paths
+# file_link_editor = "code --goto {file}:{line}:{col}"
+file_link_open = "builtin"            # "builtin" | "external" | "tab" | "pane"
 large_paste_warning = true            # true | false | "always" | "never"
 multi_line_paste_warning = true       # true | false | "always" | "never"
 search_web_url = "https://duckduckgo.com/?q=%s"   # %s = the selection

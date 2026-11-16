@@ -10,7 +10,7 @@ export function notifyTabMotion(list: HTMLElement) {
 /**
  * Baseline under/beside the tab strip: publishes the active tab's edges on `host` as
  * `--a0` / `--a1` (px, host coordinates along `axis`) and, for a colored tab, its outline
- * color as `--tab-ind`. Returns a cleanup function.
+ * `--tab-bg` as `--tab-ind`. Returns a cleanup function.
  */
 export function trackActiveTab(host: HTMLElement, list: HTMLElement, axis: "x" | "y"): () => void {
   const clear = () => {
@@ -24,8 +24,10 @@ export function trackActiveTab(host: HTMLElement, list: HTMLElement, axis: "x" |
     const [a0, a1] = axis === "x" ? [r.left - h.left, r.right - h.left] : [r.top - h.top, r.bottom - h.top];
     host.style.setProperty("--a0", `${a0}px`);
     host.style.setProperty("--a1", `${a1}px`);
-    // Colored tab: its outline uses its text color, match it.
-    if (act.classList.contains("colored")) host.style.setProperty("--tab-ind", getComputedStyle(act).color);
+    // Colored tab: match its outline color. Read the inline target, not the computed
+    // background, which lags behind during its transition.
+    const bg = act.classList.contains("colored") && act.style.getPropertyValue("--tab-bg");
+    if (bg) host.style.setProperty("--tab-ind", bg);
     else host.style.removeProperty("--tab-ind");
   };
   sync();

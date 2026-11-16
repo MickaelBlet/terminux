@@ -9,7 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Ctrl+click on file paths in terminal output opens them at the given line in a built-in editor tab (`detect_file_paths`)
+- `file_link_open`: open them in an external editor (`file_link_editor`), a terminal tab or split pane instead
+- "Copied to clipboard" toast on copy (`copy_feedback`)
 - Config editor: `icon` completion offers built-in icon names and emoji searchable by name
+- Config editor: color swatch before hex values opens the system color picker
+- `emoji_font`: color emoji font tried before the bundled Twemoji (default: system emoji font)
+- Settings editor tabs can be moved to another window (drag out, `move_tab_to_new_window`, tab menu)
+- Hover tooltip on URLs and file links
+- Windows portable exe uploaded to the GitHub release
+
+### Changed
+
+- URLs and OSC 8 hyperlinks open on Ctrl+click (Cmd+click on macOS) instead of a plain click
+- Duplicated panes/tabs start in the source pane's directory even when the profile sets `starting_directory`
+- WSL profiles: an inherited Linux directory is passed through `wsl.exe --cd`
+- System color emoji font preferred over Twemoji in the terminal and profile icons
+- Vertical tabs: new-tab buttons moved below the tab list
+- Tabs: taller horizontal tabs, colored tab outline matches its color, readable text on concrete tab backgrounds
+- Default config: split examples use `duplicate_pane_right` / `duplicate_pane_down`
 
 ## [0.1.2] - 2026-11-14
 

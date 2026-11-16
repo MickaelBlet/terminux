@@ -232,9 +232,11 @@
   /* Accent baseline from each edge of the bar to the active tab, fading toward the bar ends. */
   .bar {
     --ind: var(--accent);
+    --ind-bg: var(--chrome);
   }
   :global(html:not(.focused)) .bar {
     --ind: var(--muted);
+    --ind-bg: var(--chrome-unfocused);
   }
   .bar::after {
     content: "";
@@ -247,12 +249,12 @@
     z-index: 2;
     background: linear-gradient(
       to right,
-      transparent 0,
+      var(--ind-bg) 0,
       var(--tab-ind, var(--ind)) var(--a0),
       transparent var(--a0),
       transparent var(--a1),
       var(--tab-ind, var(--ind)) var(--a1),
-      transparent 100%
+      var(--ind-bg) 100%
     );
   }
   .bar:not([style*="--a0"])::after {

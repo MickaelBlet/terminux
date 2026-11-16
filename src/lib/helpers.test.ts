@@ -5,7 +5,7 @@ import { isMultiLine, pasteWarning, sanitizePaste } from "./paste";
 import { insertBlock, setRootKey, snippetToml } from "./snippets";
 import { sanitizeTab } from "./snapshot";
 import { findScheme, schemeName, toTheme, parseHex, withAlpha } from "./schemes";
-import { FALLBACK_CONFIG } from "./config";
+import { FALLBACK_CONFIG, fontFamilyOf } from "./config";
 import { fontWeightOf, parsePadding, resolve } from "./term/appearance";
 import { move, wordAt } from "./term/markmode";
 import { targetLine } from "./term/marks";
@@ -125,6 +125,19 @@ describe("schemes and appearance", () => {
     expect(r.cursorStyle).toBe("bar");
     expect(resolve(cfg, { profileId: "a" }, { ...env, focused: false }).opacity).toBe(0.5);
     expect(resolve(cfg, { profileId: "a", colorScheme: "Mine", opacity: 100 }, env).background).toBe("#101010");
+  });
+});
+
+describe("fontFamilyOf", () => {
+  it("puts the emoji font after the Nerd Font and before Twemoji", () => {
+    expect(fontFamilyOf({})).toBe(
+      "'JetBrains Mono', 'Symbols Nerd Font Mono', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', " +
+        "'Twemoji Mozilla', 'Noto Sans Symbols 2', 'Noto Sans Symbols', 'Noto Sans Math', monospace",
+    );
+    expect(fontFamilyOf({ emoji_font: "Noto Color Emoji" }, "Fira Code")).toMatch(
+      /^'Fira Code', 'Symbols Nerd Font Mono', 'Noto Color Emoji', 'Twemoji Mozilla',/,
+    );
+    expect(fontFamilyOf({ font_family: "x", emoji_font: "y" })).toBe("x");
   });
 });
 

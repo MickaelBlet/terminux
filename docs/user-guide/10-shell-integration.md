@@ -87,6 +87,8 @@ Which one to emit:
 
 Things to know:
 
+- A duplicate (tab, or split without a profile) uses this directory even when the profile sets its own `starting_directory`. A split that names another profile keeps that profile's `starting_directory` and only falls back to the source pane's directory when the profile sets none.
+- WSL (`wsl.exe` profiles): a Linux path (`/home/me`, `~`) is passed to `wsl.exe --cd`, replacing any `--cd` in the profile's `args`. A Windows path (`//wsl.localhost/...`, `C:\...`) is used as-is.
 - The reported path is used as a directory on the machine running Terminux. If it does not exist there (for example a remote path from an `ssh` session), Terminux silently falls back to the profile `cwd`, then the home directory.
 - An explicit `-d` / `starting_directory` always wins, and so does the profile's `cwd`: a profile with `cwd = "~/work"` always starts there, even for splits. Leave `cwd` unset on profiles where you want splits to inherit.
 - New tabs do **not** inherit the directory; they start in the profile `cwd` (or the home directory).

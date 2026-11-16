@@ -6,6 +6,7 @@
   import { find, contains } from "../layout/tree";
   import SearchBar from "./SearchBar.svelte";
   import SnippetsPane from "./SnippetsPane.svelte";
+  import FilePane from "./FilePane.svelte";
   import Icon from "./Icon.svelte";
 
   let { paneId, tab }: { paneId: string; tab: Tab } = $props();
@@ -74,6 +75,8 @@
   {/if}
   {#if kind === "snippets"}
     <SnippetsPane {paneId} />
+  {:else if kind === "file"}
+    {#key info?.spec.file}<FilePane {paneId} />{/key}
   {:else}
     <div class="host" bind:this={host}></div>
   {/if}

@@ -4,6 +4,8 @@
 default_profile = "shell"
 font_size = 14
 # font_family = "'JetBrains Mono', 'Symbols Nerd Font Mono', 'Noto Sans Symbols 2', 'Noto Sans Math', monospace"
+# Color emoji font, tried before the bundled Twemoji (default: the system one: Segoe UI Emoji / Apple Color Emoji / Noto Color Emoji).
+# emoji_font = "Segoe UI Emoji"
 scrollback = 100000
 # renderer = "canvas"   # "webgl" | "canvas" | "dom" (default: canvas on Linux, webgl elsewhere)
 # Notify (desktop) on OSC 9 / OSC 777 or bell when the window is not focused.
@@ -42,6 +44,8 @@ show_zoom_badge = false          # ZOOM badge on a zoomed pane
 # --- Interaction ---
 # Copy the selection to the clipboard on mouse release.
 copy_on_select = false
+# Show a "Copied to clipboard" toast when the selection is copied.
+# copy_feedback = true
 # Let programs (vim, tmux, ssh…) set the clipboard with OSC 52. Off by default: any output,
 # e.g. a cat'ed file, could otherwise replace what you paste next.
 # osc52_clipboard = false
@@ -58,6 +62,9 @@ right_click_paste = true
 # scroll_to_zoom = true              # Ctrl+wheel changes the font size
 # scroll_to_change_opacity = true    # Ctrl+Shift+wheel changes the opacity
 # detect_urls = true
+# detect_file_paths = true          # Ctrl+click a file path to open it in an editor
+# file_link_editor = "code --goto {file}:{line}:{col}"   # unset: $VISUAL/$EDITOR in a new tab
+# file_link_open = "builtin"         # builtin (editor tab in Terminux) | external | tab | pane
 # large_paste_warning = true
 # multi_line_paste_warning = true
 # search_web_url = "https://www.bing.com/search?q=%s"
@@ -199,8 +206,8 @@ os = "windows"
 # paste = ["Ctrl+Shift+V", "Shift+Insert"]
 #
 # Terminator-style bindings (uncomment to use; conflicting defaults are moved too).
-# split_pane_down = "Ctrl+Shift+O"            # split horizontally
-# split_pane_right = "Ctrl+Shift+E"           # split vertically
+# duplicate_pane_right = "Ctrl+Shift+E"           # split vertically
+# duplicate_pane_down = "Ctrl+Shift+O"            # split horizontally
 # toggle_pane_zoom = "Ctrl+Shift+X"
 # toggle_split_orientation = "Super+R"        # rotate
 # equalize_panes = "Ctrl+Shift+Alt+E"

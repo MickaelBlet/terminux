@@ -174,7 +174,7 @@
     --ind: var(--muted);
   }
   .tab.colored.active {
-    --ind: currentColor;
+    --ind: var(--tab-bg);
   }
   .tab.active::before {
     content: "";
@@ -219,7 +219,7 @@
   }
   .tab.vertical {
     flex: 0 0 auto;
-    height: 28px;
+    height: 32px;
     /* Flush with the inner edge so the active tab joins the terminal. */
     margin: 1px 0 1px 4px;
     min-width: 0;
@@ -254,12 +254,6 @@
     color: var(--fg);
     font-weight: 500;
     z-index: 1;
-  }
-  .tab:not(.vertical).active {
-    box-shadow:
-      inset 1px 0 0 var(--border),
-      inset -1px 0 0 var(--border),
-      inset 0 1px 0 var(--border);
   }
   .tab:not(.active) .lead {
     opacity: 0.7;

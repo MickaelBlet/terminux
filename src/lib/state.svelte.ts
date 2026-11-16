@@ -15,6 +15,8 @@ import type { Dir, Direction, LayoutNode } from "./layout/tree";
 import type { Progress } from "./osc";
 import { pasteWarning, sanitizePaste } from "./paste";
 import { droppedPaths } from "./paths";
+import { dirOf } from "./file-links";
+import { baseName } from "./file-langs";
 import type { PaneSnapshot, TabSnapshot } from "./snapshot";
 import type { PaneSpec, Resolved } from "./term/appearance";
 import { sessionByPty, sessions, TermSession, type Restore, type SessionHooks } from "./term/session";
@@ -27,8 +29,10 @@ import * as windows from "./windows";
 
 export interface PaneInfo {
   id: string;
-  kind: "term" | "snippets";
+  kind: "term" | "snippets" | "file";
   spec: PaneSpec;
+  /** File pane with unsaved changes. */
+  dirty?: boolean;
   /** Title set by the application (OSC 0/2). */
   title: string;
   bell: boolean;
@@ -163,6 +167,8 @@ export class App {
   userActions: UserAction[] = [];
   /** Focus callbacks of the mounted editors, by tab kind. */
   editors = new Map<string, () => void>();
+  /** Mounted file editor panes, by pane id. */
+  paneEditors = new Map<string, { focus(): void; goto(line?: number, col?: number): void }>();
   /** Set by TabBar: where the new-tab dropdown opens. */
   dropdownAnchor: (() => { x: number; y: number }) | null = null;
   private closed: Closed[] = [];
@@ -342,6 +348,7 @@ export class App {
     const p = this.panes[t.active];
     if (!p) return "";
     if (p.kind === "snippets") return "Snippets";
+    if (p.kind === "file") return baseName(p.spec.file ?? "") + (p.dirty ? " ●" : "");
     return p.title || p.look?.tabTitle || this.profileName(p.spec.profileId);
   }
 
@@ -462,8 +469,51 @@ export class App {
       if (this.panes[id]) this.panes[id].markMode = active ? (block ? "block" : "linear") : null;
     },
     requestPaste: (id) => this.paste({}, id),
+    onCopy: () => this.copied(),
     openLink: (uri) => void openUrl(uri).catch(console.error),
+    openFile: (id, path, line, col) => void this.openFile(id, path, line, col),
   };
+
+  /** Ctrl+click on a file path, per `file_link_open`. */
+  private async openFile(from: string, path: string, line?: number, col?: number) {
+    const mode = norm(this.config.file_link_open) || "builtin";
+    try {
+      if (mode === "builtin") return this.openFileBuiltin(path, line, col);
+      const terminal = mode === "tab" || mode === "pane";
+      const commandline = await invoke<string | null>("open_in_editor", { path, line, col, terminal });
+      if (!commandline) return;
+      const args = { commandline, starting_directory: dirOf(path) };
+      if (mode === "pane" && this.tabOf(from)) {
+        this.focusPane(from);
+        await this.splitPane({ ...args, split: "auto" });
+      } else this.newTab(args);
+    } catch (e) {
+      this.toast(String(e), "error");
+    }
+  }
+
+  /** Built-in editor in its own tab; a file already open is focused at the line. */
+  private openFileBuiltin(file: string, line?: number, col?: number) {
+    const same = Object.values(this.panes).find((p) => p.kind === "file" && p.spec.file === file && this.tabOf(p.id));
+    if (same) {
+      this.focusPane(same.id);
+      this.paneEditors.get(same.id)?.goto(line, col);
+      return;
+    }
+    const id = this.addPaneInfo("file", clean({ profileId: this.config.default_profile, file, line, col })).id;
+    this.insertTab({
+      id: tree.newId("t"), kind: "term", root: tree.pane(id), active: id, zoom: null,
+      name: null, color: null, broadcast: false, mru: [id], group: null,
+    });
+  }
+
+  /** Ask before dropping unsaved file editor changes. */
+  private async confirmUnsaved(ids: string[]): Promise<boolean> {
+    const dirty = ids.map((id) => this.panes[id]).filter((p) => p?.kind === "file" && p.dirty);
+    if (!dirty.length) return true;
+    const names = dirty.map((p) => baseName(p.spec.file ?? "")).join(", ");
+    return this.confirm("Discard unsaved changes?", names, { ok: "Discard", danger: true });
+  }
 
   private async notify(title: string, body: string) {
     if (!this.config.notifications) return;
@@ -596,7 +646,7 @@ export class App {
 
   /** Recreate a captured pane; returns its new id. */
   adoptPane(snap: PaneSnapshot): string {
-    if (snap.kind === "snippets") return this.addPaneInfo("snippets", snap.spec).id;
+    if (snap.kind !== "term") return this.addPaneInfo(snap.kind, snap.spec).id;
     const live = snap.restore.ptyId != null || snap.restore.exited;
     // A fresh process starts where the old one was.
     const spec = live ? snap.spec : clean({ ...snap.spec, cwd: snap.cwd ?? snap.spec.cwd, inheritCwd: undefined });
@@ -739,6 +789,7 @@ export class App {
     if (!opts.force) {
       if (t.kind === "config" && this.configDirty && !(await this.confirm("Discard unsaved changes?", "config.toml has unsaved changes.", { ok: "Discard", danger: true }))) return false;
       if (tree.paneIds(t.root).some((id) => this.panes[id]?.readOnly) && !(await this.confirm("Close read-only pane?", "This tab contains a read-only pane.", { ok: "Close", danger: true }))) return false;
+      if (!(await this.confirmUnsaved(tree.paneIds(t.root)))) return false;
     }
     if (t.kind === "config") this.configDirty = false;
     if (t.kind === "term" && opts.record !== false) {
@@ -832,7 +883,7 @@ export class App {
     }
     if (previous !== id) sessions.get(previous)?.setFocused(false);
     sessions.get(id)?.setFocused(this.windowFocused);
-    queueMicrotask(() => sessions.get(id)?.focus());
+    queueMicrotask(() => (sessions.get(id)?.focus(), this.paneEditors.get(id)?.focus()));
     windows.syncTitle(this);
   }
 
@@ -870,7 +921,8 @@ export class App {
       const base = duplicate && source?.kind === "term" ? { ...$state.snapshot(source.spec), cwd: undefined, opacity: undefined, retro: undefined } : undefined;
       const spec = this.specFrom(a, base);
       if (!spec || !this.tabs.includes(t)) return false;
-      id = this.createPane({ ...spec, inheritCwd });
+      // A duplicate follows the source pane's directory, even over the profile's own.
+      id = this.createPane(duplicate ? { ...spec, cwd: spec.cwd ?? inheritCwd } : { ...spec, inheritCwd });
     }
     t.zoom = null;
     t.root = tree.split(t.root, t.active, side.dir, id, { before: side.before, size: typeof a.size === "number" ? a.size : undefined });
@@ -899,6 +951,7 @@ export class App {
     const ids = tree.paneIds(node);
     if (!tree.remove(t.root, id)) return this.closeTab(this.tabs.indexOf(t), opts);
     if (!opts.force && ids.some((p) => this.panes[p]?.readOnly) && !(await this.confirm("Close read-only pane?", "", { ok: "Close", danger: true }))) return false;
+    if (!opts.force && !(await this.confirmUnsaved(ids))) return false;
     if (opts.record !== false && node.kind === "pane" && this.panes[id]?.kind === "term") {
       const parent = tree.parentOf(t.root, id);
       const idx = parent?.children.findIndex((c) => c.id === id) ?? -1;
@@ -1130,6 +1183,10 @@ export class App {
 
   // ---------- clipboard ----------
 
+  private copied() {
+    if (this.config.copy_feedback !== false) this.toast("Copied to clipboard");
+  }
+
   /** Returns false when there is nothing selected (the key then reaches the terminal). */
   copy(a: { single_line?: boolean; with_control_sequences?: boolean; copy_formatting?: boolean | string; dismiss_selection?: boolean } = {}): boolean {
     const s = this.session;
@@ -1138,7 +1195,7 @@ export class App {
     if (a.single_line) text = text.replace(/\r?\n/g, "");
     const fmt = a.copy_formatting ?? this.config.copy_formatting;
     const html = fmt === true || fmt === "all" || fmt === "html" ? s.selectionHtml() : "";
-    (html ? writeHtml(html, text) : writeText(text)).catch(console.error);
+    (html ? writeHtml(html, text) : writeText(text)).then(() => this.copied()).catch(console.error);
     if (a.dismiss_selection !== false) {
       s.markMode.exit(false);
       s.term.clearSelection();

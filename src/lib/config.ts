@@ -103,9 +103,11 @@ export interface Config {
   default_profile: string;
   font_size: number;
   font_family?: string | null;
+  emoji_font?: string | null;
   scrollback: number;
   notifications: boolean;
   copy_on_select: boolean;
+  copy_feedback: boolean;
   osc52_clipboard: boolean;
   middle_click_paste: boolean;
   right_click_paste: boolean;
@@ -159,6 +161,10 @@ export interface Config {
   scroll_to_zoom?: boolean;
   scroll_to_change_opacity?: boolean;
   detect_urls?: boolean;
+  detect_file_paths?: boolean;
+  file_link_editor?: string;
+  /** "external" | "tab" | "pane" | "builtin". */
+  file_link_open?: string;
   large_paste_warning?: boolean | string;
   multi_line_paste_warning?: boolean | string;
   search_web_url?: string;
@@ -168,6 +174,7 @@ export interface Config {
   screen_reader?: boolean;
 }
 
+/** Bundled fonts (loaded up front by the terminal). */
 export const FONT_FAMILIES = [
   "JetBrains Mono",
   "Symbols Nerd Font Mono",
@@ -177,9 +184,29 @@ export const FONT_FAMILIES = [
   "Noto Sans Symbols",
   "Noto Sans Math",
 ];
-/** Symbol / emoji fallbacks appended to any user font. */
-export const FALLBACK_FONT_FAMILY = FONT_FAMILIES.slice(1).map((f) => `'${f}'`).join(", ") + ", monospace";
-export const DEFAULT_FONT_FAMILY = `'${FONT_FAMILIES[0]}', ${FALLBACK_FONT_FAMILY}`;
+/** Platform color emoji fonts, tried before the bundled Twemoji. */
+export const SYSTEM_EMOJI_FONTS = ["Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji"];
+
+const quote = (f: string) => `'${f}'`;
+/** A single family name is quoted; a CSS list is kept as is. */
+const fontList = (face: string) => (/[,'"]/.test(face) ? face : quote(face));
+
+/** Symbol / emoji fallbacks appended to any user font. `emoji` replaces the system emoji fonts. */
+export function fallbackFontFamily(emoji?: string | null): string {
+  const e = emoji?.trim();
+  return [
+    quote(FONT_FAMILIES[1]),
+    e ? fontList(e) : SYSTEM_EMOJI_FONTS.map(quote).join(", "),
+    ...FONT_FAMILIES.slice(2).map(quote),
+    "monospace",
+  ].join(", ");
+}
+
+/** Terminal font stack: `face` (profile font.face) ⊕ fallbacks, else root font_family, else the default. */
+export function fontFamilyOf(cfg: Pick<Config, "font_family" | "emoji_font">, face?: string): string {
+  if (face) return `${fontList(face)}, ${fallbackFontFamily(cfg.emoji_font)}`;
+  return cfg.font_family || `${quote(FONT_FAMILIES[0])}, ${fallbackFontFamily(cfg.emoji_font)}`;
+}
 
 /** The "Terminux" color scheme. */
 export const DEFAULT_THEME: ITheme = {
@@ -212,6 +239,7 @@ export const FALLBACK_CONFIG: Config = {
   scrollback: 10000,
   notifications: true,
   copy_on_select: false,
+  copy_feedback: true,
   osc52_clipboard: false,
   middle_click_paste: true,
   right_click_paste: true,
@@ -226,7 +254,6 @@ export const FALLBACK_CONFIG: Config = {
 
 export const DEFAULT_WORD_SEPARATORS = " ()[]{}',\"`";
 export const wordSeparatorOf = (cfg: Config) => cfg.word_separators ?? DEFAULT_WORD_SEPARATORS;
-export const fontFamilyOf = (cfg: Config) => cfg.font_family || DEFAULT_FONT_FAMILY;
 export const DEFAULT_SEARCH_URL = "https://www.bing.com/search?q=%s";
 
 /** Profiles shown in menus. */
