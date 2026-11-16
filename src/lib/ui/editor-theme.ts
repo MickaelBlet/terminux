@@ -26,7 +26,9 @@ export const BASE_RULES: Record<string, Record<string, string>> = {
 export const fontTheme = (cfg: Config, size: number) =>
   EditorView.theme({
     "&": { fontSize: `${size}px` },
-    ".cm-scroller": { fontFamily: fontFamilyOf(cfg) },
+    // Tooltips sit outside the scroller and the completion list forces `monospace`:
+    // give them the same stack so emoji fall back to the bundled Twemoji.
+    ".cm-scroller, .cm-tooltip, .cm-tooltip.cm-tooltip-autocomplete > ul": { fontFamily: fontFamilyOf(cfg) },
   });
 
 /** Highlighting for general source code (legacy stream modes). */

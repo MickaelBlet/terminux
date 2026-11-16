@@ -32,6 +32,8 @@ Set [`copy_on_select`](../reference/configuration.md#copy_on_select) = `true` to
 
 Each copy shows a short "Copied to clipboard" toast; turn it off with [`copy_feedback`](../reference/configuration.md#copy_feedback) = `false`.
 
+![A selected path and the "Copied to clipboard" toast](../images/copy-toast.png)
+
 ## Copying
 
 `copy` is bound to `Ctrl+C`, `Ctrl+Shift+C`, `Ctrl+Insert` and `Enter`. It only acts when something is selected; with no selection the key goes to the program, so `Ctrl+C` still interrupts a running command and `Enter` still runs it.
@@ -206,6 +208,10 @@ Only *writing* is supported; a program can never read your clipboard through OSC
 - Set `detect_urls = false` to stop automatic URL detection (OSC 8 links keep working).
 - File paths in the output (`src/main.rs:12:5`, `./a.txt`, `~/notes.md`, `C:\work\app.ts(4,2)`, Python `File "x.py", line 7`) are underlined on hover; **Ctrl+click** (Cmd+click on macOS) opens the file at that line in Terminux's built-in editor, in a new tab (syntax highlighting, **Ctrl+S** to save, **Ctrl+F** to find; closing with unsaved changes asks first). Relative paths resolve against the pane's current directory (shell integration or the live process directory).
 - [`file_link_open`](../reference/configuration.md#file_link_open) changes that: `"external"` runs [`file_link_editor`](../reference/configuration.md#file_link_editor) (e.g. `"code --goto {file}:{line}:{col}"`; unset: `$VISUAL` / `$EDITOR` in a new tab, Notepad on Windows), `"tab"` / `"pane"` run the editor in a terminal tab / split (e.g. `file_link_editor = "nvim +{line} {file}"`). Set [`detect_file_paths = false`](../reference/configuration.md#detect_file_paths) to turn file links off.
+
+![Hovering a file path in compiler output](../images/file-links.png)
+
+![The built-in editor opened at the line of the error](../images/file-editor.png)
 
 ## Dropping files
 

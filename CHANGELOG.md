@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Config editor: emoji in the completion list rendered as empty boxes on systems without a color emoji font (the list now uses the editor font stack with the bundled Twemoji)
+
 ## [0.1.4] - 2026-11-16
 
 ### Added

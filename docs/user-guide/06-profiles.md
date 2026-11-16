@@ -232,6 +232,8 @@ id = "dev-layout"
 
 In the built-in editor (`Ctrl+,`), completion on any `icon` key (profiles, `[[action]]`, `new_tab_menu`) lists the built-in icon names and a selection of emoji searchable by name: typing `"pengu` and accepting inserts `"🐧"`.
 
+![Emoji completion on an icon key in the config editor](../images/icon-completion.png)
+
 Icons appear in tabs, menus and the palette. Tabs can hide or monochrome them with `icon_style` in a UI theme (see [Appearance](07-appearance.md#app-theme-and-ui_theme)).
 
 ## Recipes

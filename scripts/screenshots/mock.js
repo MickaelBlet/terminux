@@ -93,11 +93,96 @@
     return s + prompt();
   };
 
+  // Compiler and test output with file paths: used by the file link screenshots.
+  const build = () =>
+    cmd("cargo build", c("1;31", "error[E0425]") + c("1", ": cannot find value `sessoin` in this scope") + "\r\n" +
+      c("1;34", "   --> ") + "src-tauri/src/pty.rs:212:17\r\n" +
+      c("1;34", "    |") + "\r\n" +
+      c("1;34", "212 |") + "         let s = sessoin.lock();\r\n" +
+      c("1;34", "    |") + c("1;31", "                 ^^^^^^^ help: a local variable with a similar name exists: `session`") + "\r\n\r\n" +
+      c("1;31", "error") + c("1", ": could not compile `terminux` (lib) due to 1 previous error") + "\r\n", 101) +
+    cmd("npx vitest run src/lib/layout", c("1;41;37", " FAIL ") + " src/lib/layout/tree.test.ts > split > keeps the focused pane\r\n" +
+      c("31", "AssertionError: expected 'p2' to be 'p1'") + "\r\n" +
+      c("2", " ❯ ") + "src/lib/layout/tree.test.ts:48:31\r\n\r\n " +
+      c("2", "Test Files") + "  " + c("1;31", "1 failed") + " (1)\r\n", 1) +
+    prompt();
+
+  // Source served by the mocked `file_read` (line 212 is the one in the compiler error).
+  const ptySource = () => {
+    const head = [
+      "// PTY sessions: spawn, stream output over a channel, detach / re-attach.",
+      "use std::collections::HashMap;",
+      "use std::io::{Read, Write};",
+      "use std::sync::{Arc, Mutex};",
+      "",
+      "use portable_pty::{native_pty_system, CommandBuilder, PtySize};",
+      "use tauri::ipc::Channel;",
+      "",
+      "const BACKLOG_MAX: usize = 8 * 1024 * 1024;",
+      "",
+    ];
+    const lines = [...head];
+    let n = 0;
+    while (lines.length + 5 <= 186) {
+      n++;
+      lines.push(`/// Helper ${n}: clamp a terminal dimension to a sane range.`);
+      lines.push(`fn clamp_dim_${n}(v: u16) -> u16 {`);
+      lines.push("    v.clamp(1, 1000)");
+      lines.push("}");
+      lines.push("");
+    }
+    while (lines.length < 186) lines.push("");
+    lines.push(
+      "struct Session {",
+      "    writer: Box<dyn Write + Send>,",
+      "    master: Box<dyn portable_pty::MasterPty + Send>,",
+      "    channel: Option<Channel<Vec<u8>>>,",
+      "    /// Output kept while detached (tab moving to another window).",
+      "    backlog: Vec<u8>,",
+      "    exit_code: Option<u32>,",
+      "}",
+      "",
+      "",
+    );
+    lines.push(
+      "pub struct PtyManager {",
+      "    sessions: Mutex<HashMap<u32, Arc<Mutex<Session>>>>,",
+      "    next_id: Mutex<u32>,",
+      "}",
+      "",
+      "impl PtyManager {",
+      "    /// Write user input to a session.",
+      "    pub fn write(&self, id: u32, data: &[u8]) -> Result<(), String> {",
+      "        let session = self",
+      "            .sessions",
+      "            .lock()",
+      "            .unwrap()",
+      "            .get(&id)",
+      "            .cloned()",
+      "            .ok_or(\"no such session\")?;",
+      "        let s = sessoin.lock();",
+      "        let mut s = s.map_err(|e| e.to_string())?;",
+      "        s.writer.write_all(data).map_err(|e| e.to_string())?;",
+      "        s.writer.flush().map_err(|e| e.to_string())",
+      "    }",
+      "",
+      "    /// Resize the PTY of a session.",
+      "    pub fn resize(&self, id: u32, cols: u16, rows: u16) -> Result<(), String> {",
+      "        let size = PtySize { cols, rows, pixel_width: 0, pixel_height: 0 };",
+      "        self.with(id, |s| s.master.resize(size).map_err(|e| e.to_string()))",
+      "    }",
+      "}",
+      "",
+    );
+    return lines.join("\n");
+  };
+
   const OUTPUT = {
     shell: () => cmd("ls", ls) + cmd("git status", gitStatus) + prompt(),
     history,
     git: () => cmd("git log --oneline -5", gitLog) + prompt(),
     tests: () => cmd("npx vitest run", tests) + prompt(),
+    build,
     top: () => top,
     logs: () => cmd("tail -f /tmp/terminux-dev.log", logs, 0),
     claude: () => agent("claude", "38;5;173"),
@@ -157,6 +242,8 @@
         return null;
       case "pty_cwd":
         return CWD;
+      case "file_read":
+        return { path: args.path, text: ptySource() };
       case "cli_parse":
         return { window: null, actions: [] };
       case "pty_spawn": {

@@ -199,6 +199,53 @@ const SCENES = {
     await evalApp(p, (app, ids) => app.focusPane(ids[2]), panes);
     await run(p, { command: "split_pane", split: "down", color_scheme: names[5] });
   },
+  async "file-links"(p) {
+    await queue(p, ["build"]);
+    await run(p, { command: "new_tab" });
+    await p.waitForTimeout(400);
+    await closeFirst(p);
+    const pos = await cellOf(p, "src/lib/layout/tree.test.ts:48:31");
+    await p.mouse.move(pos.x + 60, pos.y);
+    await p.keyboard.down("Control");
+    await p.waitForTimeout(700);
+    await shotNow(p, "file-links", { width: 1280, height: 380 });
+    await p.keyboard.up("Control");
+    return "done";
+  },
+  async "file-editor"(p) {
+    await queue(p, ["build"]);
+    await run(p, { command: "new_tab" });
+    await evalApp(p, (app) => app.openFileBuiltin("/home/dev/src/terminux/src-tauri/src/pty.rs", 212, 17));
+    await p.waitForTimeout(1500);
+  },
+  async "copy-toast"(p) {
+    await queue(p, ["shell"]);
+    await run(p, { command: "new_tab" });
+    await p.waitForTimeout(400);
+    await evalApp(p, (app) => {
+      const t = app.session.term;
+      const buf = t.buffer.active;
+      for (let y = 0; y < buf.length; y++) {
+        const x = buf.getLine(y)?.translateToString().indexOf("modified:   src/lib/state.svelte.ts") ?? -1;
+        if (x >= 0) return t.select(x + 12, y, 23);
+      }
+    });
+    await run(p, { command: "copy", dismiss_selection: false });
+    await p.waitForTimeout(300);
+  },
+  async "icon-completion"(p) {
+    await run(p, { command: "open_settings" });
+    await p.waitForTimeout(1500);
+    await p.locator(".cm-content").first().click();
+    // After the [defaults] table (line 13), so the completion list has room below.
+    await p.keyboard.press("Control+Home");
+    for (let i = 0; i < 12; i++) await p.keyboard.press("ArrowDown");
+    await p.keyboard.press("End");
+    await p.keyboard.type('\n\n[[profile]]\nid = "wsl"\nname = "Ubuntu"\nicon = "pengu', { delay: 30 });
+    await p.keyboard.press("Control+Space");
+    await p.waitForTimeout(400);
+    return { height: 440 };
+  },
   async "focus-mode"(p) {
     await queue(p, ["git", "tests"]);
     await run(p, { command: "new_tab" });
@@ -238,6 +285,23 @@ async function extraTabs(p, n = 4) {
     const t = app.tabs[0];
     if (t && app.tabs.length > 1 && !t.renamed) app.closeTab(0, { force: true, record: false });
   });
+}
+/** Viewport center of the first cell of `text` in the active terminal. */
+const cellOf = (p, text) =>
+  evalApp(p, (app, s) => {
+    const t = app.session.term;
+    const buf = t.buffer.active;
+    const cell = t._core._renderService.dimensions.css.cell;
+    const r = t.element.querySelector(".xterm-screen").getBoundingClientRect();
+    for (let y = buf.viewportY; y < buf.viewportY + t.rows; y++) {
+      const x = buf.getLine(y)?.translateToString().indexOf(s) ?? -1;
+      if (x >= 0) return { x: r.left + (x + 0.5) * cell.width, y: r.top + (y - buf.viewportY + 0.5) * cell.height };
+    }
+    throw new Error(`text not on screen: ${s}`);
+  }, text);
+async function closeFirst(p) {
+  await evalApp(p, (app) => app.tabs.length > 1 && app.closeTab(0, { force: true, record: false }));
+  await p.waitForTimeout(300);
 }
 async function focusFirst(p) {
   await evalApp(p, (app) => app.gotoTab(0));
