@@ -16,6 +16,13 @@
     app.init();
   });
 
+  // Never show the webview's native context menu (except in text fields); our own menus handle right-click.
+  function blockNativeMenu(e: MouseEvent) {
+    // xterm moves its hidden helper textarea under the cursor on right-click: still block there.
+    if ((e.target as Element | null)?.closest?.("input, textarea:not(.xterm-helper-textarea)")) return;
+    e.preventDefault();
+  }
+
   $effect(() => {
     document.documentElement.classList.toggle("focused", app.windowFocused);
   });
@@ -32,6 +39,8 @@
     if (path) fileUrl(path).then((u) => (windowImage = u));
   });
 </script>
+
+<svelte:window oncontextmenu={blockNativeMenu} />
 
 <main>
   {#if app.tabBarVisible}<TabBar />{/if}
