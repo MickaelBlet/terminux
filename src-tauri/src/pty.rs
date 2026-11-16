@@ -413,6 +413,22 @@ impl PtyManager {
         }
     }
 
+    /// Detach every session shown by a window (its webview reloaded): the new page re-attaches
+    /// them, and those it does not are reaped after `DETACH_TIMEOUT`.
+    pub fn detach_owned(&self, owner: &str) {
+        let ids: Vec<u32> = self
+            .sessions
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|(_, s)| s.owner == owner)
+            .map(|(id, _)| *id)
+            .collect();
+        for id in ids {
+            let _ = self.detach(id);
+        }
+    }
+
     /// Stop delivering output (buffered until the next attach). Returns the bytes delivered so far.
     /// A session (or its orphan) nobody attaches within `DETACH_TIMEOUT` is killed and dropped.
     pub fn detach(&self, id: u32) -> Result<u64> {

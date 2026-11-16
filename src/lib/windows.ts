@@ -37,6 +37,8 @@ interface ParsedCommandLine {
 const win = getCurrentWebviewWindow();
 const norm = (s: unknown) => (typeof s === "string" ? s : "").toLowerCase().replace(/[_-]/g, "");
 const SAVE_INTERVAL = 30_000;
+/** sessionStorage key holding the window state across a page reload. */
+const RELOAD_KEY = "terminux:reload";
 
 let transparent = false;
 let warnedTransparency = false;
@@ -73,7 +75,10 @@ export async function init(app: App) {
 
   const mode = norm(info?.launch_mode);
   if (mode === "focus" || mode === "maximizedfocus") app.focusMode = true;
+  const reloaded = takeReloadSnapshot();
   if (info?.payload) await applyPayload(app, info.payload);
+  else if (reloaded) await applyPayload(app, { snapshot: reloaded });
+  window.addEventListener("pagehide", () => keepForReload(app));
   if (app.tabs.length === 0) app.newTab();
   await showWindow(app, info, mode);
   saveTimer = window.setInterval(() => void saveSession(app), SAVE_INTERVAL);
@@ -224,6 +229,41 @@ export async function saveSession(app: App, empty = false) {
     await invoke("session_save", { snapshot: snap });
   } catch (e) {
     console.warn("session save", e);
+  }
+}
+
+// ---------- page reload ----------
+
+/** Page unloading (reload): keep tabs and their live ptys for the next page of this window. */
+function keepForReload(app: App) {
+  if (closing) return;
+  try {
+    const tabs = app.tabs.filter((t) => t.kind === "term").map((t) => app.captureTabNow(t));
+    const editors: NonNullable<WindowSnapshot["editors"]> = [];
+    app.tabs.forEach((t, index) => {
+      if (t.kind === "config" || t.kind === "defaults") editors.push({ kind: t.kind, index });
+    });
+    const cur = app.tab?.kind;
+    const snap: WindowSnapshot = {
+      name: app.windowName,
+      tabs,
+      activeTab: Math.max(0, tabs.length ? app.tabs.filter((t) => t.kind === "term").indexOf(app.tab!) : 0),
+      editors,
+      activeEditor: cur === "config" || cur === "defaults" ? cur : undefined,
+    };
+    sessionStorage.setItem(RELOAD_KEY, JSON.stringify(snap));
+  } catch (e) {
+    console.warn("reload snapshot", e);
+  }
+}
+
+function takeReloadSnapshot(): WindowSnapshot | null {
+  try {
+    const raw = sessionStorage.getItem(RELOAD_KEY);
+    sessionStorage.removeItem(RELOAD_KEY);
+    return raw ? (JSON.parse(raw) as WindowSnapshot) : null;
+  } catch {
+    return null;
   }
 }
 

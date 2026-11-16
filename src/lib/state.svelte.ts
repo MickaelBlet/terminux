@@ -644,6 +644,18 @@ export class App {
     return { root: $state.snapshot(t.root), active: t.active, name: t.name, color: t.color, panes };
   }
 
+  /** Synchronous capture keeping the pty reference (page unload: no await possible). */
+  captureTabNow(t: Tab): TabSnapshot {
+    const panes = tree.paneIds(t.root).flatMap((id): PaneSnapshot[] => {
+      const p = this.panes[id];
+      if (!p) return [];
+      const s = sessions.get(id);
+      const restore: Restore = s ? { buffer: s.serialize(true), ptyId: s.ptyId, exited: s.exited } : { buffer: "" };
+      return [{ id, kind: p.kind, spec: $state.snapshot(p.spec), title: p.title, cwd: p.cwd, readOnly: p.readOnly, restore }];
+    });
+    return { root: $state.snapshot(t.root), active: t.active, name: t.name, color: t.color, panes };
+  }
+
   /** Recreate a captured pane; returns its new id. */
   adoptPane(snap: PaneSnapshot): string {
     if (snap.kind !== "term") return this.addPaneInfo(snap.kind, snap.spec).id;
@@ -913,6 +925,9 @@ export class App {
     const side = this.splitSide(a.split, t.active);
     let id: string;
     if (norm(a.type) === "snippets") {
+      // One snippets pane per tab: opening it again closes it.
+      const existing = tree.paneIds(t.root).find((p) => this.panes[p]?.kind === "snippets");
+      if (existing) return this.closePane(existing, { force: true, record: false });
       id = this.addPaneInfo("snippets", { profileId: this.config.default_profile }).id;
     } else {
       const inheritCwd = (await sessions.get(t.active)?.cwdNow()) ?? null;
@@ -925,7 +940,9 @@ export class App {
       id = this.createPane(duplicate ? { ...spec, cwd: spec.cwd ?? inheritCwd } : { ...spec, inheritCwd });
     }
     t.zoom = null;
-    t.root = tree.split(t.root, t.active, side.dir, id, { before: side.before, size: typeof a.size === "number" ? a.size : undefined });
+    // The snippets pane is a side panel: narrow unless a size is given.
+    const size = typeof a.size === "number" ? a.size : norm(a.type) === "snippets" ? 0.2 : undefined;
+    t.root = tree.split(t.root, t.active, side.dir, id, { before: side.before, size });
     this.focusPane(id);
     return true;
   }

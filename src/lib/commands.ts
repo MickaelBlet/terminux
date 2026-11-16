@@ -97,7 +97,7 @@ export const COMMANDS: Record<string, NamedCommand> = {
   move_pane_to_new_tab: n("Move pane to new tab", "move_pane", { index: -1 }),
   move_pane_to_new_window: n("Move pane to new window", "move_pane", { window: "new" }),
   restart_connection: n("Restart connection", "restart_connection"),
-  open_snippets_pane: n("Open snippets pane", "split_pane", { type: "snippets", split: "right" }),
+  toggle_snippets_pane: n("Toggle snippets pane", "split_pane", { type: "snippets", split: "right" }),
   equalize_panes: n("Equalize panes", "equalize_panes"),
 
   // Clipboard and selection
@@ -318,6 +318,7 @@ export const LEGACY_NAMES: Record<string, string> = {
   font_reset: "reset_font_size",
   open_config: "open_settings",
   open_config_external: "open_settings_file",
+  open_snippets_pane: "toggle_snippets_pane",
   ...Object.fromEntries(DIRS.flatMap((d) => [[`focus_${d}`, `move_focus_${d}`], [`resize_${d}`, `resize_pane_${d}`]])),
   ...Object.fromEntries(Array.from({ length: 8 }, (_, i) => [`tab_${i + 1}`, `switch_to_tab_${i + 1}`])),
   tab_9: "switch_to_last_tab",

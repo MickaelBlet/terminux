@@ -43,7 +43,7 @@ commands = [
 - A handler that cannot act returns "not handled" and the key press then reaches the terminal (for example `copy` without a selection sends `Ctrl+C` to the program).
 - While text is being edited (settings editor, palette, dialogs) only window-level commands stay active: `new_tab`, `new_window`, `close_tab`, `close_pane`, `close_window`, `next_tab`, `prev_tab`, `switch_to_tab`, `command_palette`, `open_settings`, `toggle_fullscreen`, `toggle_focus_mode`, `toggle_vertical_tabs`, `toggle_always_on_top`, `adjust_font_size`, `reset_font_size`, `quit`, `open_new_tab_dropdown`, `tab_search`, `restore_last_closed`, `quake_mode`, `global_summon`, `minimize_to_tray`, `identify_window`, `identify_windows`, `customize_toolbar`.
 - In `[keys]`, old pre-parity names are still accepted (listed under each command as *Legacy names*).
-- Terminux-specific additions with no Windows Terminal counterpart: `toggle_vertical_tabs`, `toggle_vertical_tabs_collapsed`, `save_snippet`, `open_cwd`, `customize_toolbar`, `open_snippets_pane`, `equalize_panes`, `show_recent_commands`.
+- Terminux-specific additions with no Windows Terminal counterpart: `toggle_vertical_tabs`, `toggle_vertical_tabs_collapsed`, `save_snippet`, `open_cwd`, `customize_toolbar`, `toggle_snippets_pane`, `equalize_panes`, `show_recent_commands`.
 
 ## Parameterised actions
 
@@ -149,7 +149,7 @@ window = "main"
 
 Split the active pane.
 
-Named commands using it: [`duplicate_pane_auto`](#duplicate_pane_auto), [`duplicate_pane_down`](#duplicate_pane_down), [`duplicate_pane_right`](#duplicate_pane_right), [`open_snippets_pane`](#open_snippets_pane), [`split_pane_left`](#split_pane_left), [`split_pane_right`](#split_pane_right), [`split_pane_up`](#split_pane_up), [`split_pane_down`](#split_pane_down).
+Named commands using it: [`duplicate_pane_auto`](#duplicate_pane_auto), [`duplicate_pane_down`](#duplicate_pane_down), [`duplicate_pane_right`](#duplicate_pane_right), [`toggle_snippets_pane`](#toggle_snippets_pane), [`split_pane_left`](#split_pane_left), [`split_pane_right`](#split_pane_right), [`split_pane_up`](#split_pane_up), [`split_pane_down`](#split_pane_down).
 
 Windows Terminal: `splitPane`.
 
@@ -158,7 +158,7 @@ Windows Terminal: `splitPane`.
 | `split` | string | `auto` | `auto` (direction with most room), `right`, `down`, `left`, `up`; also `vertical` (= right) and `horizontal` (= down). |
 | `split_mode` | string | none | `duplicate` copies the source pane's profile and settings. Without `profile`/`index` a split continues the source pane anyway. |
 | `size` | number | `0.5` | Share of the **new** pane, 0.05 to 0.95. |
-| `type` | string | terminal | `snippets` opens the snippets pane instead of a terminal. |
+| `type` | string | terminal | `snippets` opens the snippets pane instead of a terminal (default `size` 0.2); if the tab already has one, it is closed instead (toggle). |
 | `profile / index / commandline / starting_directory / tab_title / tab_color / color_scheme / suppress_application_title` |  |  | Same as `new_tab`. A split inherits the working directory of the pane it comes from unless `starting_directory` is given. |
 
 ```toml
@@ -1735,17 +1735,18 @@ Kill the pane's process and start it again in the same pane.
 restart_connection = "Ctrl+Alt+X"   # example binding
 ```
 
-### open_snippets_pane
+### toggle_snippets_pane
 
-Open the snippets pane in a split to the right (lists `send_input` actions; click to run).
+Toggle the snippets pane: open it in a split to the right (lists `send_input` actions; click to run), or close it if the tab already has one. A tab has at most one snippets pane.
 
 - Action: `split_pane`, `type = "snippets"`, `split = "right"` ([parameters](#split_pane))
-- Label: Open snippets pane
+- Label: Toggle snippets pane
 - Default keys: none
+- Legacy names: `open_snippets_pane`
 
 ```toml
 [keys]
-open_snippets_pane = "Ctrl+Alt+X"   # example binding
+toggle_snippets_pane = "Ctrl+Alt+X"   # example binding
 ```
 
 ### equalize_panes

@@ -105,7 +105,7 @@ A snippet is a `send_input` action. The **snippets pane** is a pane type that li
 
 ![Snippets pane on the right of a terminal](../images/snippets.png)
 
-- Open it with [`open_snippets_pane`](../reference/actions.md#open_snippets_pane) (palette: "Open snippets pane"); it splits to the right with `split_pane` `type = "snippets"`. Equivalent action: `command = "split_pane"`, `type = "snippets"`, `split = "right"`.
+- Toggle it with [`toggle_snippets_pane`](../reference/actions.md#toggle_snippets_pane) (palette: "Toggle snippets pane"): a tab has at most one snippets pane, and running the action again closes it (so does the × button in its header). It splits to the right, taking 20% of the width (set `size` to change it), with `split_pane` `type = "snippets"`. Equivalent action: `command = "split_pane"`, `type = "snippets"`, `split = "right"`.
 - A filter box matches both the action name and the text it sends.
 - Clicking a snippet writes its `input` to the last focused terminal of that tab (the most recently used terminal pane other than the snippets pane itself) and focuses it. With no terminal in the tab you get a "No terminal in this tab." toast.
 - Only `[[action]]` entries with `command = "send_input"` and a string `input` are listed.

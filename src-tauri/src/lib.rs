@@ -255,7 +255,9 @@ fn pty_cwd(state: State<AppState>, id: u32) -> Option<String> {
 // ---------- windows ----------
 
 #[tauri::command]
-fn window_init(app: AppHandle, window: WebviewWindow) -> windows::InitInfo {
+fn window_init(app: AppHandle, state: State<AppState>, window: WebviewWindow) -> windows::InitInfo {
+    // A reloaded page lost its output channels: buffer until it re-attaches.
+    state.pty.detach_owned(window.label());
     windows::init_info(&app, window.label())
 }
 

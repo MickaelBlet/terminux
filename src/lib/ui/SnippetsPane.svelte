@@ -23,7 +23,12 @@
 </script>
 
 <div class="snippets">
-  <header><Icon name="snippet" size={13} /> Snippets</header>
+  <header>
+    <Icon name="snippet" size={13} /> Snippets
+    <button class="close" onclick={() => app.closePane(paneId, { force: true, record: false })} title="Close snippets pane" aria-label="Close snippets pane">
+      <Icon name="close" size={12} />
+    </button>
+  </header>
   <input bind:value={filter} placeholder="Filter…" spellcheck="false" />
   <ul>
     {#each list as t, i (i)}
@@ -94,6 +99,16 @@
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+  }
+  header .close {
+    flex-direction: row;
+    width: auto;
+    margin-left: auto;
+    padding: 3px;
+    color: var(--muted);
+  }
+  header .close:hover {
+    color: var(--fg);
   }
   .empty {
     padding: 8px;

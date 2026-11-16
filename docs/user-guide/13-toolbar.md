@@ -77,7 +77,7 @@ Versions that stored the toolbar in the browser's local storage migrate it to `c
   profile = "python"
   ```
 
-- Useful buttons: `toggle_broadcast_input`, `toggle_read_only_mode`, `toggle_pane_zoom`, `command_palette` (hidden command, add by hand), `save_snippet`, `open_snippets_pane`, `toggle_vertical_tabs`.
+- Useful buttons: `toggle_broadcast_input`, `toggle_read_only_mode`, `toggle_pane_zoom`, `command_palette` (hidden command, add by hand), `save_snippet`, `toggle_snippets_pane`, `toggle_vertical_tabs`.
 
 ## See also
 

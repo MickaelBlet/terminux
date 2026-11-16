@@ -51,7 +51,7 @@ profile = "shell"
 | `split` | `auto` (default), `right`, `down`, `left`, `up`. `vertical` means right and `horizontal` means down (the `-V` / `-H` flags of `wt`). |
 | `split_mode` | `duplicate` starts from the source pane's settings even when other arguments are given (explicit arguments such as `profile` still override them). |
 | `size` | Share of the existing pane given to the new one, between 0.05 and 0.95 (default 0.5). |
-| `type` | `snippets` opens the [snippets pane](11-command-palette.md) instead of a terminal. |
+| `type` | `snippets` opens the [snippets pane](11-command-palette.md) instead of a terminal (closes it if the tab already has one). |
 | `profile`, `index`, `commandline`, `starting_directory`, `tab_title`, `tab_color`, `color_scheme`, `suppress_application_title` | Same as `new_tab`. |
 
 Splitting in the same direction as the enclosing split adds a sibling to that split (the target pane's share is divided) instead of nesting a new split. A split un-zooms the tab.

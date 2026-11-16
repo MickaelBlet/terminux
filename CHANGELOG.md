@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `open_snippets_pane` renamed `toggle_snippets_pane` (old name still accepted): a tab has at most one snippets pane, running the action again closes it; it opens at 20% width (`size` overrides) and has a close button in its header
+
 ### Fixed
 
+- Reloading the page (e.g. F5 / devtools) keeps the window's tabs and their running shells instead of losing them
 - The webview's native context menu no longer appears on right-click (still available in text fields)
 
 ## [0.1.5] - 2026-11-16
