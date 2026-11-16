@@ -73,11 +73,16 @@ const CODE_KEYS: Record<string, string> = {
 
 /** Layout-independent key name for an event. */
 export function eventKey(e: KeyboardEvent): string {
+  if (/^Numpad\d$/.test(e.code)) return `numpad_${e.code.slice(6)}`;
+  // Named keys (arrows, Home…): trust the keysym, not the scancode. X servers with
+  // legacy XFree86 keycodes (Citrix, Xvnc…) make WebKitGTK report e.g. Down as "NumpadEnter".
+  if (NAMED_KEY.test(e.key)) return e.key.toLowerCase();
   if (e.code.startsWith("Key")) return e.code.slice(3).toLowerCase();
   if (e.code.startsWith("Digit")) return e.code.slice(5);
-  if (/^Numpad\d$/.test(e.code)) return `numpad_${e.code.slice(6)}`;
   return CODE_KEYS[e.code] ?? e.key.toLowerCase();
 }
+
+const NAMED_KEY = /^(Arrow(Up|Down|Left|Right)|Home|End|Page(Up|Down)|Insert|Delete|Tab|Escape|Backspace|ContextMenu|F\d{1,2})$/;
 
 /** Key names to try for an event: physical position first, then the produced character (AZERTY "-" …). */
 export function eventKeys(e: KeyboardEvent): string[] {

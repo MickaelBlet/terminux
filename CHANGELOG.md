@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Arrow keys, Home/End, PgUp/PgDn and other named keys matched by keysym instead of scancode, so bindings work on X servers with legacy XFree86 keycodes (Citrix, Xvnc), where Down was reported as `NumpadEnter`
 - `scroll_to_previous_mark` from the bottom jumps to the start of the last command instead of skipping prompts visible on screen, and no longer gets stuck when marks fit on the last screen
 
 ## [0.1.3] - 2026-11-16
