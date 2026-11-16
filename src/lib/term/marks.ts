@@ -36,8 +36,27 @@ export function targetLine(lines: number[], current: number, direction: MarkDire
   }
 }
 
+export interface NavState {
+  /** Line last navigated to. */
+  line: number;
+  /** Viewport top right after that navigation. */
+  viewportY: number;
+}
+
+/**
+ * Line to navigate from: the last navigation target while the viewport has not moved since
+ * (the target may sit in the last screen, where scrolling is clamped), the cursor line when
+ * not scrolled back (so "previous" is the start of the last command), else the viewport top.
+ */
+export function referenceLine(p: { viewportY: number; baseY: number; cursorLine: number; nav?: NavState }): number {
+  if (p.nav && p.nav.viewportY === p.viewportY) return p.nav.line;
+  if (p.viewportY >= p.baseY) return p.cursorLine;
+  return p.viewportY;
+}
+
 export class Marks {
   private marks: Mark[] = [];
+  private nav?: NavState;
 
   constructor(
     private term: Terminal,
@@ -98,6 +117,7 @@ export class Marks {
   }
 
   clearAll() {
+    this.nav = undefined;
     for (const m of [...this.marks]) this.remove(m);
   }
 
@@ -113,9 +133,17 @@ export class Marks {
       .sort((a, b) => a - b);
   }
 
-  scrollTo(direction: MarkDirection) {
-    const line = targetLine(this.lines(), this.term.buffer.active.viewportY, direction);
-    if (line != null) this.term.scrollToLine(line);
+  /** Returns false when there is nothing to navigate (no marks, alternate screen) so the key reaches the app. */
+  scrollTo(direction: MarkDirection): boolean {
+    const buf = this.term.buffer.active;
+    const lines = this.lines();
+    if (buf.type === "alternate" || !lines.length) return false;
+    const current = referenceLine({ viewportY: buf.viewportY, baseY: buf.baseY, cursorLine: buf.baseY + buf.cursorY, nav: this.nav });
+    const line = targetLine(lines, current, direction);
+    if (line == null) return true;
+    this.term.scrollToLine(line);
+    this.nav = { line, viewportY: this.term.buffer.active.viewportY };
+    return true;
   }
 
   get count() {

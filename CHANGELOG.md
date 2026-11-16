@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `Ctrl+Up` / `Ctrl+Down` default keys for `scroll_to_previous_mark` / `scroll_to_next_mark` (jump between commands, like VS Code)
+
+### Fixed
+
+- `scroll_to_previous_mark` from the bottom jumps to the start of the last command instead of skipping prompts visible on screen, and no longer gets stuck when marks fit on the last screen
+
 ## [0.1.3] - 2026-11-16
 
 ### Added

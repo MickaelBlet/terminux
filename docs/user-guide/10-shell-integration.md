@@ -25,7 +25,7 @@ Shell integration is a handful of escape sequences that your shell prints around
 
 - **Command marks**: a thin bar in the left gutter of every prompt, gray while the command runs, green on exit code 0, red otherwise. They can also be shown on the scrollbar with [`show_marks_on_scrollbar`](../reference/profile-settings.md#show_marks_on_scrollbar).
 - **Select command / select output**: [`select_previous_command`](../reference/actions.md#select_previous_command), [`select_next_command`](../reference/actions.md#select_next_command), [`select_previous_output`](../reference/actions.md#select_previous_output), [`select_next_output`](../reference/actions.md#select_next_output).
-- **Scroll to mark**: [`scroll_to_previous_mark`](../reference/actions.md#scroll_to_previous_mark) and friends jump between prompts (see [Search and navigation](09-search-and-navigation.md)).
+- **Scroll to mark**: [`scroll_to_previous_mark`](../reference/actions.md#scroll_to_previous_mark) (`Ctrl+Up`, start of the last command) and friends (`Ctrl+Down`) jump between prompts (see [Search and navigation](09-search-and-navigation.md)).
 - **Recent commands**: [`show_recent_commands`](../reference/actions.md#show_recent_commands) and [`show_suggestions`](../reference/actions.md#show_suggestions) (`Ctrl+Shift+Period`) list the commands you ran in this pane.
 - **Click to move the cursor** on the command line ([`reposition_cursor_with_mouse`](../reference/profile-settings.md#reposition_cursor_with_mouse)).
 - **Save the command line as a snippet** ([`save_snippet`](../reference/actions.md#save_snippet)) when nothing is selected.

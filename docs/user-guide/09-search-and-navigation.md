@@ -89,16 +89,16 @@ A scroll mark is a colored tick in the left gutter of a line (and, optionally, o
 | Mark the cursor line | `add_mark` | none |
 | Remove marks in the selection, or on the cursor line | `clear_mark` | none |
 | Remove all marks of the pane | `clear_all_marks` | none |
-| Jump to the previous / next mark | `scroll_to_previous_mark`, `scroll_to_next_mark` | none |
+| Jump to the previous / next mark | `scroll_to_previous_mark`, `scroll_to_next_mark` | `Ctrl+Up` / `Ctrl+Down` |
 | Jump to the first / last mark | `scroll_to_first_mark`, `scroll_to_last_mark` | none |
 
-Previous/next are relative to the top line of the viewport. Pane menu: "Add scroll mark". One mark per line; a new mark replaces the old one. Marks live in the pane's buffer and are dropped with the text they annotate.
+Previous/next are relative to the top line of the viewport, or to the cursor line when you are not scrolled back (so `Ctrl+Up` from the prompt jumps to the start of the last command, like VS Code); repeated presses keep walking even when the marks fit on the last screen. With no marks, or in the alternate screen (vim, less…), `Ctrl+Up` / `Ctrl+Down` are sent to the terminal. Pane menu: "Add scroll mark". One mark per line; a new mark replaces the old one. Marks live in the pane's buffer and are dropped with the text they annotate.
 
 ```toml
 [keys]
 add_mark = "Ctrl+Alt+M"
-scroll_to_previous_mark = "Ctrl+Alt+PgUp"
-scroll_to_next_mark = "Ctrl+Alt+PgDn"
+scroll_to_previous_mark = "Ctrl+Alt+PgUp"   # default: Ctrl+Up
+scroll_to_next_mark = "Ctrl+Alt+PgDn"       # default: Ctrl+Down
 
 [[action]]
 name = "Mark in red"
@@ -115,7 +115,7 @@ Related profile settings:
 | [`show_marks_on_scrollbar`](../reference/profile-settings.md#show_marks_on_scrollbar) | Also draw marks on the scrollbar (default off). |
 | [`auto_mark_prompts`](../reference/profile-settings.md#auto_mark_prompts) | Mark the line when you press `Enter`, for shells that do not emit prompt marks. Ignored once [shell integration](10-shell-integration.md) is active, and in the alternate screen. |
 
-With shell integration, every prompt gets a mark automatically, colored by the command's exit status, so `scroll_to_previous_mark` becomes "previous command".
+With shell integration, every prompt gets a mark automatically, colored by the command's exit status, so `scroll_to_previous_mark` (`Ctrl+Up`) becomes "previous command".
 
 ## Jumping between commands
 

@@ -181,6 +181,8 @@ Every command with default keys. All other commands (`toggle_focus_mode`, `toggl
 | [`scroll_down_page`](actions.md#scroll_down_page) | `Ctrl+Shift+PgDn` |
 | [`scroll_to_top`](actions.md#scroll_to_top) | `Ctrl+Shift+Home` |
 | [`scroll_to_bottom`](actions.md#scroll_to_bottom) | `Ctrl+Shift+End` |
+| [`scroll_to_previous_mark`](actions.md#scroll_to_previous_mark) | `Ctrl+Up` |
+| [`scroll_to_next_mark`](actions.md#scroll_to_next_mark) | `Ctrl+Down` |
 | [`clear_buffer`](actions.md#clear_buffer) | `Ctrl+Shift+K` |
 
 ### Visual

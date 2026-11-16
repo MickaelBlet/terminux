@@ -2429,11 +2429,13 @@ Scroll to the previous mark (user marks and, with shell integration, prompt mark
 
 - Action: `scroll_to_mark`, `direction = "previous"` ([parameters](#scroll_to_mark))
 - Label: Scroll to previous mark
-- Default keys: none
+- Default keys: `Ctrl+Up`
+
+From the bottom of the buffer this jumps to the start of the last command (like VS Code). The key reaches the terminal when the pane has no marks or is in the alternate screen.
 
 ```toml
 [keys]
-scroll_to_previous_mark = "Ctrl+Alt+X"   # example binding
+scroll_to_previous_mark = "Ctrl+Up"
 ```
 
 ### scroll_to_next_mark
@@ -2442,11 +2444,11 @@ Scroll to the next mark.
 
 - Action: `scroll_to_mark`, `direction = "next"` ([parameters](#scroll_to_mark))
 - Label: Scroll to next mark
-- Default keys: none
+- Default keys: `Ctrl+Down`
 
 ```toml
 [keys]
-scroll_to_next_mark = "Ctrl+Alt+X"   # example binding
+scroll_to_next_mark = "Ctrl+Down"
 ```
 
 ### scroll_to_first_mark
