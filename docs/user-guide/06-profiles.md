@@ -230,6 +230,8 @@ id = "dev-layout"
 - a path to an image (`png`, `jpg`, `gif`, `svg`, `ico`, `webp`, `bmp`; relative paths resolve against the config directory),
 - an emoji or short text.
 
+In the built-in editor (`Ctrl+,`), completion on any `icon` key (profiles, `[[action]]`, `new_tab_menu`) lists the built-in icon names and a selection of emoji searchable by name: typing `"pengu` and accepting inserts `"🐧"`.
+
 Icons appear in tabs, menus and the palette. Tabs can hide or monochrome them with `icon_style` in a UI theme (see [Appearance](07-appearance.md#app-theme-and-ui_theme)).
 
 ## Recipes

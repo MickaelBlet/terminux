@@ -161,7 +161,7 @@ hidden = true
 
 **Type:** string | **Default:** unset (terminal icon) | **Windows Terminal:** `icon`
 
-Profile icon shown in menus and tabs. Three forms: a **built-in icon name** (`terminal`, `folder`, `gear`, `lock`, `search`, `bell`, ...), an **image path** (anything containing `/` or `\`, or ending in png, jpg, gif, svg, ico, webp, bmp; relative to the config directory, `~` allowed), or an **emoji / short text**.
+Profile icon shown in menus and tabs. Three forms: a **built-in icon name** (`terminal`, `folder`, `gear`, `lock`, `search`, `bell`, ...), an **image path** (anything containing `/` or `\`, or ending in png, jpg, gif, svg, ico, webp, bmp; relative to the config directory, `~` allowed), or an **emoji / short text**. In the built-in editor, completion (`Ctrl+Space`) on `icon` lists the built-in names and emoji searchable by name (type `"pyth` to insert `"🐍"`).
 
 ```toml
 icon = "🐍"

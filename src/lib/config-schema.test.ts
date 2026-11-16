@@ -79,6 +79,19 @@ describe("completions", () => {
   });
 });
 
+describe("icon completion", () => {
+  it("suggests emoji by name", () => {
+    const { text, pos } = at('[[profile]]\nicon = "|');
+    const o = completions(text, pos)?.options.find((x) => x.label === '"python"');
+    expect(o?.apply).toBe('"🐍"');
+  });
+  it("suggests built-in icons", () => {
+    const { text, pos } = at('[[profile]]\nicon = |');
+    const o = completions(text, pos)?.options.find((x) => x.label === '"terminal"' && x.detail === "built-in");
+    expect(o?.apply).toBeUndefined();
+  });
+});
+
 describe("profileIds / unknownKeys", () => {
   it("collects ids", () => {
     expect(profileIds('[[profile]]\nid = "x"\n[keys]\nid = "y"')).toEqual(["shell", "x"]);

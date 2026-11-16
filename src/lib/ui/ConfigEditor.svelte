@@ -99,12 +99,20 @@
     setTimeout(() => startCompletion(view));
   };
 
+  /** Insert a quoted value, swallowing a closing quote already after the cursor. */
+  const applyValue = (text: string) => (view: EditorView, _c: Completion, from: number, to: number) => {
+    const end = text.endsWith('"') && view.state.sliceDoc(to, to + 1) === '"' ? to + 1 : to;
+    view.dispatch(insertCompletionText(view.state, text, from, end));
+  };
+
   function source(ctx: CompletionContext): CompletionResult | null {
     const r = completions(ctx.state.doc.toString(), ctx.pos);
     if (!r) return null;
     return {
       from: r.from,
-      options: r.options.map((o) => (o.type === "property" ? { ...o, apply: (v, comp, f, to) => applyAndContinue(v, { ...comp, apply: o.apply }, f, to) } : o)),
+      options: r.options.map((o) =>
+        o.type === "property" ? { ...o, apply: (v, comp, f, to) => applyAndContinue(v, { ...comp, apply: o.apply }, f, to) } : { ...o, apply: applyValue(String(o.apply ?? o.label)) },
+      ),
       validFor: /^["\w#$.+\-[\]]*$/,
     };
   }

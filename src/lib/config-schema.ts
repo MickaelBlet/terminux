@@ -1,6 +1,8 @@
 // Schema of config.toml used by the in-app editor for completion and lint.
 import { COMMANDS, LEGACY_NAMES } from "./commands";
 import { DEFAULT_THEME } from "./config";
+import { EMOJI_ICONS } from "./emoji-icons";
+import { ICONS } from "./ui/icons";
 import { BUILTIN_SCHEMES } from "./schemes";
 import { BUILTIN_UI_THEMES } from "./ui-theme";
 
@@ -236,6 +238,7 @@ const FREE_SECTIONS = new Set(["profile.env", "defaults.env", "profile.font.feat
 export interface Option {
   label: string;
   type: string;
+  displayLabel?: string;
   detail?: string;
   info?: string;
   apply?: string;
@@ -421,6 +424,11 @@ export function completions(text: string, pos: number): { from: number; options:
       ...Object.entries(COMMANDS).filter(([, c]) => !c.hidden).map(([n, c]) => ({ label: q(n), type: "enum", detail: c.label })),
       ...valuesIn(text, "action", "id").map((id) => ({ label: q(id), type: "variable", detail: "action" })),
       { label: q("separator"), type: "keyword" },
+    ];
+  } else if (key === "icon" && ctx.section !== "keys") {
+    options = [
+      ...Object.keys(ICONS).map((n) => ({ label: q(n), type: "enum", detail: "built-in" })),
+      ...EMOJI_ICONS.map(([n, e]) => ({ label: q(n), displayLabel: `${e}  ${n}`, type: "text", detail: "emoji", apply: q(e) })),
     ];
   } else if (ctx.section === "action" && key === "command") {
     options = ACTION_COMMANDS.map((c) => ({ label: q(c), type: "enum" }));
