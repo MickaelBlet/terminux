@@ -12,7 +12,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-latest]
+        include:
+          # AppImage is repacked self-contained (glibc >= 2.28) from the deb below.
+          - os: ubuntu-22.04
+            args: --bundles deb,rpm
+          - os: windows-latest
+            args: ""
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +38,7 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: Terminux ${{ github.ref_name }}
           releaseDraft: true
+          args: ${{ matrix.args }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload portable exe
@@ -43,3 +49,21 @@ jobs:
           gh release upload "${{ github.ref_name }}" terminux-portable.exe --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build self-contained AppImage (glibc >= 2.28)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p dist
+          cp src-tauri/target/release/bundle/deb/Terminux_*_amd64.deb dist/
+          docker build -f docker/Dockerfile --target appimage -t terminux-build:appimage docker/
+          docker run --rm -v "$PWD/dist:/out" -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
+            terminux-build:appimage "$(cd dist && ls Terminux_*_amd64.deb)"
+      - name: Upload AppImage to release
+        if: runner.os == 'Linux' && startsWith(github.ref, 'refs/tags/')
+        run: gh release upload "${{ github.ref_name }}" dist/*.AppImage --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Linux' && !startsWith(github.ref, 'refs/tags/')
+        with:
+          name: appimage
+          path: dist/*.AppImage

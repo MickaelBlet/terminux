@@ -177,6 +177,26 @@ body.dragging-pane * {
   pointer-events: none;
 }
 
+.scroll-mark-flash {
+  box-sizing: border-box;
+  border: 1px solid var(--mark-color);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--mark-color) 18%, transparent);
+  pointer-events: none;
+  animation: scroll-mark-flash 1.2s ease-out forwards;
+}
+
+@keyframes scroll-mark-flash {
+  0% { opacity: 0; box-shadow: 0 0 0 0 var(--mark-color); }
+  15% { opacity: 1; box-shadow: 0 0 6px 1px var(--mark-color); }
+  60% { opacity: 1; box-shadow: 0 0 0 0 transparent; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-mark-flash { animation-duration: 0.01s; animation-delay: 1s; }
+}
+
 kbd {
   font-family: inherit;
 }

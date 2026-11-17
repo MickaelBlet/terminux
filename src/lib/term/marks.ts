@@ -57,6 +57,7 @@ export function referenceLine(p: { viewportY: number; baseY: number; cursorLine:
 export class Marks {
   private marks: Mark[] = [];
   private nav?: NavState;
+  private flash?: { decoration?: IDecoration; timer: ReturnType<typeof setTimeout> };
 
   constructor(
     private term: Terminal,
@@ -118,6 +119,7 @@ export class Marks {
 
   clearAll() {
     this.nav = undefined;
+    this.clearFlash();
     for (const m of [...this.marks]) this.remove(m);
   }
 
@@ -143,7 +145,28 @@ export class Marks {
     if (line == null) return true;
     this.term.scrollToLine(line);
     this.nav = { line, viewportY: this.term.buffer.active.viewportY };
+    this.highlight(line);
     return true;
+  }
+
+  /** Briefly outline the row of the mark navigated to. */
+  private highlight(line: number) {
+    this.clearFlash();
+    const mark = this.marks.find((m) => m.marker.line === line);
+    if (!mark) return;
+    const decoration = this.term.registerDecoration({ marker: mark.marker, x: 0, width: this.term.cols, layer: "top" });
+    decoration?.onRender((el) => {
+      el.classList.add("scroll-mark-flash");
+      el.style.setProperty("--mark-color", mark.color);
+    });
+    this.flash = { decoration, timer: setTimeout(() => this.clearFlash(), 1200) };
+  }
+
+  private clearFlash() {
+    if (!this.flash) return;
+    clearTimeout(this.flash.timer);
+    this.flash.decoration?.dispose();
+    this.flash = undefined;
   }
 
   get count() {

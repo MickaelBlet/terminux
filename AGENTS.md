@@ -16,7 +16,7 @@ cargo test --manifest-path src-tauri/Cargo.toml     # Rust tests (add a test nam
 scripts/build-linux.sh | build-windows.sh | docker-build.sh   # packaged builds in Docker → dist/
 ```
 
-CI (`.github/workflows/build.yml`, on `v*` tags) runs vitest + cargo test, then tauri-action on Ubuntu 22.04 and Windows.
+CI (`.github/workflows/build.yml`, on `v*` tags) runs vitest + cargo test, then tauri-action on Ubuntu 22.04 (deb/rpm) and Windows; the Linux job repacks a self-contained AppImage (glibc >= 2.28) from the deb via the `appimage` stage of `docker/Dockerfile`.
 
 ## Architecture
 

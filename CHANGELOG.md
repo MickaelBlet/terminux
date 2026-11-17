@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tab_title_ellipsis = "start"`: cut long tab titles on the left
 - `[[new_tab_menu]]` `type = "action"` accepts built-in command names
 - Color schemes: `cursor_accent`, `selection_foreground` in completion
+- Jumping to a scroll mark briefly outlines its row in the mark's color
+- CI: release builds attach a self-contained Linux AppImage (glibc ≥ 2.28), repacked from the deb
 
 ### Changed
 
