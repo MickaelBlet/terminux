@@ -32,6 +32,7 @@ new_tab_position = "after_last_tab"   # "after_last_tab" | "after_current_tab"
 tab_switcher_mode = "mru"             # "mru" | "in_order" | "disabled"
 show_tabs_fullscreen = false          # keep the tab bar in fullscreen
 show_zoom_badge = true                # ZOOM badge on a zoomed pane
+show_pane_title_bar = "never"         # "never" | "multiple" | "always"
 show_terminal_title_in_titlebar = true
 always_on_top = false
 disable_animations = false

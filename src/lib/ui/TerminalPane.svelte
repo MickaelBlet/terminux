@@ -3,7 +3,10 @@
   import { app, type Tab } from "../state.svelte";
   import { sessions } from "../term/session";
   import { fileUrl } from "../audio";
-  import { find, contains } from "../layout/tree";
+  import { find, contains, paneIds } from "../layout/tree";
+  import { paneTitleBarMode, showPaneTitleBar } from "./pane-title";
+  import PaneTitleBar from "./PaneTitleBar.svelte";
+  import { paneDrag } from "./pane-drag.svelte";
   import SearchBar from "./SearchBar.svelte";
   import SnippetsPane from "./SnippetsPane.svelte";
   import FilePane from "./FilePane.svelte";
@@ -30,6 +33,16 @@
   const grouped = $derived(!!tab.group && contains(find(tab.root, tab.group) ?? tab.root, paneId));
   const look = $derived(info?.look);
   const pad = $derived(look?.padding ?? [6, 4, 2, 2]);
+  const titleBar = $derived(
+    app.renamingPane === paneId ||
+      showPaneTitleBar(paneTitleBarMode(app.config.show_pane_title_bar), paneIds(tab.root).length, zoomed),
+  );
+  const dragged = $derived(!!paneDrag.state?.active && paneDrag.state.paneId === paneId);
+  const drop = $derived.by(() => {
+    const t = paneDrag.state?.target;
+    if (t?.kind === "pane" && t.paneId === paneId) return t.box;
+    return paneDrag.external?.paneId === paneId ? paneDrag.external.box : null;
+  });
   const windowImage = $derived(!!app.config.use_background_image_for_window);
 
   let image = $state<string | null>(null);
@@ -58,8 +71,9 @@
   class:grouped
   class:retro={look?.retro}
   class:flash={flashing}
+  class:dragged
+  data-pane-id={paneId}
   style:background={windowImage && look?.backgroundImage ? "transparent" : (look?.paneBackground ?? "var(--term-bg)")}
-  style:padding="{pad[1]}px {pad[2]}px {pad[3]}px {pad[0]}px"
   onmousedown={() => app.focusPane(paneId)}
   onmouseenter={() => app.config.focus_follow_mouse && !active && app.windowFocused && app.focusPane(paneId)}
   role="presentation"
@@ -73,6 +87,8 @@
       style:opacity={look.backgroundImage.opacity}
     ></div>
   {/if}
+  {#if titleBar}<PaneTitleBar {paneId} {tab} />{/if}
+  <div class="body" style:padding="{pad[1]}px {pad[2]}px {pad[3]}px {pad[0]}px">
   {#if kind === "snippets"}
     <SnippetsPane {paneId} />
   {:else if kind === "file"}
@@ -92,13 +108,25 @@
   {#if app.searchPane === paneId}
     <SearchBar {paneId} />
   {/if}
+  </div>
+  {#if drop}
+    <div class="drop" style:left="{drop.left}px" style:top="{drop.top}px" style:width="{drop.width}px" style:height="{drop.height}px"></div>
+  {/if}
 </div>
 
 <style>
   .pane {
     position: relative;
+    display: flex;
+    flex-direction: column;
     width: 100%;
     height: 100%;
+    box-sizing: border-box;
+  }
+  .body {
+    position: relative;
+    flex: 1;
+    min-height: 0;
     box-sizing: border-box;
   }
   .pane.multi {
@@ -113,6 +141,19 @@
   }
   .pane.multi:not(.active):not(.grouped) {
     opacity: 0.88;
+  }
+  .pane.dragged {
+    opacity: 0.5;
+  }
+  .drop {
+    position: absolute;
+    z-index: 20;
+    box-sizing: border-box;
+    background: color-mix(in srgb, var(--accent) 25%, transparent);
+    border: 2px solid var(--accent);
+    border-radius: 4px;
+    pointer-events: none;
+    transition: all 0.08s ease-out;
   }
   .pane.flash::after {
     content: "";

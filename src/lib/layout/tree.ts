@@ -142,6 +142,49 @@ export function swap(root: LayoutNode, a: string, b: string): LayoutNode {
   return rec(root);
 }
 
+/** Split direction and insertion side for a pane placed toward `side`. */
+export const sideOf = (side: Direction): { dir: Dir; before: boolean } => ({
+  dir: side === "left" || side === "right" ? "row" : "col",
+  before: side === "left" || side === "up",
+});
+
+/** Same arrangement of panes (ignoring sizes and split ids). */
+function sameShape(a: LayoutNode, b: LayoutNode): boolean {
+  if (a.kind === "pane" || b.kind === "pane") return a.kind === b.kind && a.id === b.id;
+  return a.dir === b.dir && a.children.length === b.children.length && a.children.every((c, i) => sameShape(c, b.children[i]));
+}
+
+/** Move the node `src` next to `target`, on its `side`. Returns `root` when nothing changes. */
+export function move(root: LayoutNode, src: string, target: string, side: Direction): LayoutNode {
+  const node = find(root, src);
+  if (!node || src === target || contains(node, target)) return root;
+  const rest = remove(root, src);
+  if (!rest || !find(rest, target)) return root;
+  const { dir, before } = sideOf(side);
+  const out = insert(rest, target, dir, node, { before });
+  return sameShape(out, root) ? root : out;
+}
+
+/** Move the node `src` to an outer edge of the layout, spanning it. Returns `root` when nothing changes. */
+export function dock(root: LayoutNode, src: string, side: Direction): LayoutNode {
+  const node = find(root, src);
+  const rest = node ? remove(root, src) : null;
+  if (!node || !rest) return root;
+  const { dir, before } = sideOf(side);
+  let out: LayoutNode;
+  if (rest.kind === "split" && rest.dir === dir) {
+    // Join the outer split, with an equal share.
+    const share = 1 / (rest.children.length + 1);
+    const sizes = rest.sizes.map((x) => x * (1 - share));
+    out = before
+      ? { ...rest, children: [node, ...rest.children], sizes: [share, ...sizes] }
+      : { ...rest, children: [...rest.children, node], sizes: [...sizes, share] };
+  } else {
+    out = insert(rest, rest.id, dir, node, { before });
+  }
+  return sameShape(out, root) ? root : out;
+}
+
 /** Flip the orientation of the split holding `target`. */
 export function toggleOrientation(root: LayoutNode, target: string): LayoutNode {
   const parent = parentOf(root, target);

@@ -86,6 +86,23 @@ command = "rename_tab"
 title = "build"
 ```
 
+### rename_pane
+
+Set the active pane's name (shown in its title bar, and in the tab title when the tab has no name); without `title` it resets to automatic.
+
+Named commands using it: [`reset_pane_title`](#reset_pane_title).
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `title` | string | none (reset) | New pane name. |
+
+```toml
+[[action]]
+name = "Pane: logs"
+command = "rename_pane"
+title = "logs"
+```
+
 ### set_tab_color
 
 Set the active tab's color; without `color` it resets.
@@ -172,9 +189,9 @@ profile = "shell"
 
 ### move_pane
 
-Move the active pane (or selected subtree) to another tab or window.
+Move the active pane (or selected subtree) to another tab or window, or within its tab with `direction`.
 
-Named commands using it: [`move_pane_to_new_tab`](#move_pane_to_new_tab), [`move_pane_to_new_window`](#move_pane_to_new_window), [`move_pane_to_tab_1`](#move_pane_to_tab_1), [`move_pane_to_tab_2`](#move_pane_to_tab_2), [`move_pane_to_tab_3`](#move_pane_to_tab_3), [`move_pane_to_tab_4`](#move_pane_to_tab_4), [`move_pane_to_tab_5`](#move_pane_to_tab_5), [`move_pane_to_tab_6`](#move_pane_to_tab_6), [`move_pane_to_tab_7`](#move_pane_to_tab_7), [`move_pane_to_tab_8`](#move_pane_to_tab_8), [`move_pane_to_tab_9`](#move_pane_to_tab_9).
+Named commands using it: [`move_pane_left`](#move_pane_left), [`move_pane_right`](#move_pane_right), [`move_pane_up`](#move_pane_up), [`move_pane_down`](#move_pane_down), [`move_pane_to_new_tab`](#move_pane_to_new_tab), [`move_pane_to_new_window`](#move_pane_to_new_window), [`move_pane_to_tab_1`](#move_pane_to_tab_1), [`move_pane_to_tab_2`](#move_pane_to_tab_2), [`move_pane_to_tab_3`](#move_pane_to_tab_3), [`move_pane_to_tab_4`](#move_pane_to_tab_4), [`move_pane_to_tab_5`](#move_pane_to_tab_5), [`move_pane_to_tab_6`](#move_pane_to_tab_6), [`move_pane_to_tab_7`](#move_pane_to_tab_7), [`move_pane_to_tab_8`](#move_pane_to_tab_8), [`move_pane_to_tab_9`](#move_pane_to_tab_9).
 
 Windows Terminal: `movePane`.
 
@@ -182,6 +199,7 @@ Windows Terminal: `movePane`.
 | --- | --- | --- | --- |
 | `index` | integer | `-1` | Target tab index; `-1` (or past the end) creates a new tab. |
 | `window` | string or integer | none | Target window (as `move_tab`); overrides `index`. |
+| `direction` | string | none | `left`, `right`, `up` or `down`: place the pane on that side of its neighbour in that direction, or along that edge of the tab when there is none (like VS Code's "Move editor group"). Overrides `index` and `window`. Not handled when zoomed. |
 
 ```toml
 [[action]]
@@ -1505,6 +1523,32 @@ Zoom the active pane (or selected subtree) to fill the tab, or unzoom. No effect
 toggle_pane_zoom = "Ctrl+Alt+X"   # example binding
 ```
 
+### open_pane_renamer
+
+Rename the active pane inline in its title bar (shown for the edit even when [`show_pane_title_bar`](configuration.md#show_pane_title_bar) hides it).
+
+- Action: `open_pane_renamer`
+- Label: Rename pane…
+- Default keys: none
+
+```toml
+[keys]
+open_pane_renamer = "Ctrl+Alt+X"   # example binding
+```
+
+### reset_pane_title
+
+Reset the active pane's name to automatic (`rename_pane` without `title`).
+
+- Action: `rename_pane` ([parameters](#rename_pane))
+- Label: Reset pane title
+- Default keys: none
+
+```toml
+[keys]
+reset_pane_title = "Ctrl+Alt+X"   # example binding
+```
+
 ### toggle_split_orientation
 
 Rotate the split containing the active pane (row to column and vice versa).
@@ -1951,6 +1995,58 @@ Move the active pane's down border by 5% of the split. Not handled with a single
 ```toml
 [keys]
 resize_pane_down = "Alt+Shift+Down"
+```
+
+### move_pane_left
+
+Move the active pane (or selected subtree) left: to the left of its neighbour in that direction, or along the left edge of the tab when there is none. Not handled when zoomed.
+
+- Action: `move_pane`, `direction = "left"` ([parameters](#move_pane))
+- Label: Move pane left
+- Default keys: `Ctrl+Alt+Shift+Left`
+
+```toml
+[keys]
+move_pane_left = "Ctrl+Alt+Shift+Left"
+```
+
+### move_pane_right
+
+Move the active pane (or selected subtree) right: to the right of its neighbour in that direction, or along the right edge of the tab when there is none. Not handled when zoomed.
+
+- Action: `move_pane`, `direction = "right"` ([parameters](#move_pane))
+- Label: Move pane right
+- Default keys: `Ctrl+Alt+Shift+Right`
+
+```toml
+[keys]
+move_pane_right = "Ctrl+Alt+Shift+Right"
+```
+
+### move_pane_up
+
+Move the active pane (or selected subtree) up: to the up of its neighbour in that direction, or along the up edge of the tab when there is none. Not handled when zoomed.
+
+- Action: `move_pane`, `direction = "up"` ([parameters](#move_pane))
+- Label: Move pane up
+- Default keys: `Ctrl+Alt+Shift+Up`
+
+```toml
+[keys]
+move_pane_up = "Ctrl+Alt+Shift+Up"
+```
+
+### move_pane_down
+
+Move the active pane (or selected subtree) down: to the down of its neighbour in that direction, or along the down edge of the tab when there is none. Not handled when zoomed.
+
+- Action: `move_pane`, `direction = "down"` ([parameters](#move_pane))
+- Label: Move pane down
+- Default keys: `Ctrl+Alt+Shift+Down`
+
+```toml
+[keys]
+move_pane_down = "Ctrl+Alt+Shift+Down"
 ```
 
 ### swap_pane_left

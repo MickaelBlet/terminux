@@ -50,6 +50,7 @@ export function paneMenu(app: App, paneId: string, x: number, y: number): MenuRe
       ],
     },
     act(app, t?.zoom ? "Unzoom pane" : "Zoom pane", "toggle_pane_zoom", { disabled: !multi }),
+    act(app, "Rename pane…", "open_pane_renamer"),
     act(app, "Swap with previous pane", "swap_pane_previous", { disabled: !multi }),
     act(app, "Toggle split orientation", "toggle_split_orientation", { disabled: !multi }),
     act(app, "Equalize panes", "equalize_panes", { disabled: !multi || !!t?.zoom }),

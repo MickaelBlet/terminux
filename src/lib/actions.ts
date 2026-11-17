@@ -168,6 +168,10 @@ export const ACTIONS: Record<string, Handler> = {
   open_tab_renamer: (app) => {
     if (app.tab) app.renaming = app.tab.id;
   },
+  open_pane_renamer: (app) => {
+    if (app.activePane) app.renamingPane = app.activePane;
+  },
+  rename_pane: (app, spec) => app.renamePane(app.activePane, str(spec.title) ?? null),
   rename_tab: (app, spec) => app.renameTab(app.activeTab, str(spec.title) ?? null),
   open_tab_color_picker: (app) => {
     const t = app.tab;
@@ -189,6 +193,7 @@ export const ACTIONS: Record<string, Handler> = {
   enable_read_only_mode: (app) => app.setReadOnly(true),
   disable_read_only_mode: (app) => app.setReadOnly(false),
   move_pane: (app, spec) => {
+    if (str(spec.direction)) return app.movePaneDir(str(spec.direction)!);
     if (spec.window !== undefined && spec.window !== null) return windows.movePaneToWindow(app, String(spec.window));
     return app.movePane(num(spec.index) ?? -1);
   },

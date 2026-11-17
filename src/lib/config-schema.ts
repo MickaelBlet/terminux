@@ -43,6 +43,7 @@ export const ROOT_FIELDS: Record<string, Field> = {
   tab_switcher_mode: str("Ctrl+Tab behavior: MRU overlay or tab-bar order.", ["mru", "in_order", "disabled"]),
   show_tabs_fullscreen: bool("Keep the tab bar visible in fullscreen."),
   show_zoom_badge: bool("Show the ZOOM badge in the top-right corner of a zoomed pane."),
+  show_pane_title_bar: str("Title bar above each pane (icon, title, zoom and close buttons; double-click to rename): never, only when the tab shows several panes, or always.", ["never", "multiple", "always"]),
   show_terminal_title_in_titlebar: bool("Use the active tab title as the window title."),
   always_on_top: bool("Keep windows above the others."),
   disable_animations: bool("Disable UI animations."),

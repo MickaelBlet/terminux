@@ -160,6 +160,10 @@ Every command with default keys. All other commands (`toggle_focus_mode`, `toggl
 | [`resize_pane_right`](actions.md#resize_pane_right) | `Alt+Shift+Right` |
 | [`resize_pane_up`](actions.md#resize_pane_up) | `Alt+Shift+Up` |
 | [`resize_pane_down`](actions.md#resize_pane_down) | `Alt+Shift+Down` |
+| [`move_pane_left`](actions.md#move_pane_left) | `Ctrl+Alt+Shift+Left` |
+| [`move_pane_right`](actions.md#move_pane_right) | `Ctrl+Alt+Shift+Right` |
+| [`move_pane_up`](actions.md#move_pane_up) | `Ctrl+Alt+Shift+Up` |
+| [`move_pane_down`](actions.md#move_pane_down) | `Ctrl+Alt+Shift+Down` |
 
 ### Clipboard and selection
 

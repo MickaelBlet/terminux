@@ -133,6 +133,8 @@ export interface Config {
   tab_switcher_mode?: string | boolean;
   show_tabs_fullscreen?: boolean;
   show_zoom_badge?: boolean;
+  /** "never" | "multiple" | "always" (booleans accepted). */
+  show_pane_title_bar?: string | boolean;
   show_terminal_title_in_titlebar?: boolean;
   always_on_top?: boolean;
   disable_animations?: boolean;

@@ -3,6 +3,7 @@
   import { tabMenu } from "./menus";
   import { tabInfo, tabStyle, type TabVariant } from "./tab-info";
   import type { TabDrag } from "./tab-drag.svelte";
+  import { paneDrag } from "./pane-drag.svelte";
   import { shiftFor } from "./tab-shift";
   import Icon from "./Icon.svelte";
   import ProfileIcon from "./ProfileIcon.svelte";
@@ -55,6 +56,7 @@
   class:dragging={dragged}
   class:torn={dragged && d?.outside}
   class:colored={!!app.tabColor(t)}
+  class:pane-drop={paneDrag.state?.target?.kind === "tab" && paneDrag.state.target.tabId === t.id}
   data-tab-id={t.id}
   role="tab"
   tabindex="-1"
@@ -254,6 +256,10 @@
     color: var(--fg);
     font-weight: 500;
     z-index: 1;
+  }
+  .tab.pane-drop {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
   }
   .tab:not(.active) .lead {
     opacity: 0.7;

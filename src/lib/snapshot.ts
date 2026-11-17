@@ -5,9 +5,11 @@ import type { Restore } from "./term/session";
 
 export interface PaneSnapshot {
   id: string;
-  kind: "term" | "snippets" | "file";
+  kind: "term" | "snippets" | "file" | "config" | "defaults";
   spec: PaneSpec;
   title: string;
+  /** Name given by the user (pane title bar). */
+  name?: string | null;
   cwd: string | null;
   readOnly: boolean;
   restore: Restore;

@@ -216,6 +216,20 @@ Show the `ZOOM` badge in the top-right corner of a zoomed pane.
 show_zoom_badge = true
 ```
 
+### show_pane_title_bar
+
+**Type:** string | **Default:** `"never"`
+
+Title bar above each pane: profile icon, title, read-only flag, zoom and close buttons. Double-click the title to rename the pane ([`open_pane_renamer`](actions.md#open_pane_renamer)); the name is kept across session restore and pane moves.
+
+- `"never"`: no bar.
+- `"multiple"`: only while the tab shows several panes (split and not zoomed).
+- `"always"`: on every pane. `true` / `false` are accepted as `"always"` / `"never"`.
+
+```toml
+show_pane_title_bar = "multiple"
+```
+
 ### show_terminal_title_in_titlebar
 
 **Type:** boolean | **Default:** `true` | **Windows Terminal:** `showTerminalTitleInTitlebar`

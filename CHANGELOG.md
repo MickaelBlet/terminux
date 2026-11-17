@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - SSH panes: split / duplicate reconnects to the same host in the remote directory (`ssh_follow_directory`); reconnect and session restore resume there too
 - SSH panes: Ctrl+clicked file paths open from the remote host in the built-in editor (copied with `scp`, uploaded back on save)
+- Pane title bar (`show_pane_title_bar`): icon, title, zoom and close buttons; double-click or `open_pane_renamer` to rename a pane, `reset_pane_title` / `rename_pane` action
+- Drag panes by their title bar: dock on a side of another pane, swap, move to another tab, a new tab or another window
+- `move_pane_left` / `_right` / `_up` / `_down` (`Ctrl+Alt+Shift+Arrow`): move the active pane next to its neighbour or along the tab edge
 
 ### Changed
 

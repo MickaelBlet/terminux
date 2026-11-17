@@ -73,7 +73,7 @@ describe("layout tree", () => {
   });
 });
 
-import { find, insert, parentOf, swap, toggleOrientation } from "./tree";
+import { dock, find, insert, move, parentOf, swap, toggleOrientation } from "./tree";
 
 describe("layout tree (pane operations)", () => {
   it("splits before and with a size", () => {
@@ -104,5 +104,44 @@ describe("layout tree (pane operations)", () => {
     const sub = parentOf(t, "c")!;
     expect(neighbor(t, sub.id, "left")).toBe("a");
     expect(remove(t, sub.id)).toEqual(pane("a"));
+  });
+});
+
+describe("moving panes", () => {
+  const row = (...ids: string[]): LayoutNode => ({ kind: "split", id: "r", dir: "row", sizes: ids.map(() => 1 / ids.length), children: ids.map(pane) });
+  const shape = (n: LayoutNode): unknown => (n.kind === "pane" ? n.id : { [n.dir]: n.children.map(shape) });
+
+  it("moves a pane next to another", () => {
+    expect(shape(move(row("a", "b"), "b", "a", "left"))).toEqual({ row: ["b", "a"] });
+    expect(shape(move(row("a", "b", "c"), "c", "b", "left"))).toEqual({ row: ["a", "c", "b"] });
+    expect(shape(move(row("a", "b"), "b", "a", "down"))).toEqual({ col: ["a", "b"] });
+    expect(shape(move(row("a", "b", "c"), "a", "c", "up"))).toEqual({ row: ["b", { col: ["a", "c"] }] });
+  });
+  it("keeps sizes summing to 1", () => {
+    const r = move(row("a", "b", "c"), "c", "a", "left");
+    expect(r.kind === "split" && sum(r.sizes)).toBeCloseTo(1);
+  });
+  it("ignores no-op moves", () => {
+    const t = row("a", "b");
+    expect(move(t, "a", "a", "left")).toBe(t);
+    expect(move(t, "a", "b", "left")).toBe(t);
+    expect(move(t, "a", "x", "left")).toBe(t);
+    const nested = split(t, "b", "col", "c");
+    const sub = parentOf(nested, "c")!;
+    expect(move(nested, sub.id, "c", "up")).toBe(nested);
+  });
+  it("docks a pane to an outer edge", () => {
+    const t = split(row("a", "b"), "b", "col", "c");
+    expect(shape(dock(t, "c", "left"))).toEqual({ row: ["c", "a", "b"] });
+    expect(shape(dock(t, "c", "down"))).toEqual({ col: [{ row: ["a", "b"] }, "c"] });
+    expect(shape(dock(row("a", "b"), "a", "down"))).toEqual({ col: ["b", "a"] });
+    const d = dock(t, "c", "right");
+    expect(d.kind === "split" && sum(d.sizes)).toBeCloseTo(1);
+  });
+  it("ignores docking where the pane already is", () => {
+    const t = row("a", "b");
+    expect(dock(t, "a", "left")).toBe(t);
+    expect(dock(t, "b", "right")).toBe(t);
+    expect(dock(pane("a"), "a", "left")).toEqual(pane("a"));
   });
 });

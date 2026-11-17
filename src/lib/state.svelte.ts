@@ -27,14 +27,20 @@ import { canonicalEntry, DEFAULT_TOOLBAR, moveEntry, resolveToolbar, toolbarEntr
 import { setRootKey, tomlStringArray } from "./config-edit";
 import * as windows from "./windows";
 
+/** "config" / "defaults": the settings editor shown as a pane. */
+export type PaneKind = "term" | "snippets" | "file" | "config" | "defaults";
+export const isEditorPane = (k: PaneKind | undefined): k is "config" | "defaults" => k === "config" || k === "defaults";
+
 export interface PaneInfo {
   id: string;
-  kind: "term" | "snippets" | "file";
+  kind: PaneKind;
   spec: PaneSpec;
   /** File pane with unsaved changes. */
   dirty?: boolean;
   /** Title set by the application (OSC 0/2). */
   title: string;
+  /** Name given by the user; overrides the title. */
+  name: string | null;
   bell: boolean;
   activity: boolean;
   readOnly: boolean;
@@ -137,6 +143,8 @@ export class App {
   colorPicker = $state<{ tabId: string; x: number; y: number } | null>(null);
   /** Id of the tab whose title is being edited. */
   renaming = $state<string | null>(null);
+  /** Pane whose title bar shows the rename input. */
+  renamingPane = $state<string | null>(null);
   about = $state(false);
   configDirty = $state(false);
   searchPane = $state<string | null>(null);
@@ -345,8 +353,13 @@ export class App {
     if (t.kind === "config") return "config.toml" + (this.configDirty ? " ●" : "");
     if (t.kind === "defaults") return "Default settings";
     if (t.name) return t.name;
-    const p = this.panes[t.active];
+    return this.paneTitle(t.active);
+  }
+
+  paneTitle(id: string): string {
+    const p = this.panes[id];
     if (!p) return "";
+    if (p.name) return p.name;
     if (p.kind === "snippets") return "Snippets";
     if (p.kind === "file") return baseName(p.spec.file ?? "") + (p.dirty ? " ●" : "");
     return p.title || p.look?.tabTitle || this.profileName(p.spec.profileId);
@@ -625,7 +638,7 @@ export class App {
   private addPaneInfo(kind: PaneInfo["kind"], spec: PaneSpec): PaneInfo {
     const id = tree.newId("p");
     this.panes[id] = {
-      id, kind, spec, title: "", bell: false, activity: false, readOnly: false, progress: null, cwd: null,
+      id, kind, spec, title: "", name: null, bell: false, activity: false, readOnly: false, progress: null, cwd: null,
       look: null, flash: 0, markMode: null, seq: ++this.paneSeq,
     };
     return this.panes[id];
@@ -648,7 +661,14 @@ export class App {
     const s = sessions.get(id);
     const cwd = (await s?.cwdNow()) ?? p.cwd;
     const restore: Restore = !s ? { buffer: "" } : live ? await s.release() : { buffer: s.serialize(false) };
-    return { id, kind: p.kind, spec: $state.snapshot(p.spec), title: p.title, cwd, readOnly: p.readOnly, restore };
+    return { id, kind: p.kind, spec: this.resumeSpec(id), title: p.title, name: p.name, cwd, readOnly: p.readOnly, restore };
+  }
+
+  /** Spec of a captured pane: an ssh pane reconnects in its last remote directory. */
+  private resumeSpec(id: string): PaneSpec {
+    const spec = $state.snapshot(this.panes[id].spec);
+    const resume = sessions.get(id)?.sshResume;
+    return resume ? { ...spec, commandline: resume, cwd: undefined } : spec;
   }
 
   async captureTab(t: Tab, live: boolean): Promise<TabSnapshot> {
@@ -663,20 +683,25 @@ export class App {
       if (!p) return [];
       const s = sessions.get(id);
       const restore: Restore = s ? { buffer: s.serialize(true), ptyId: s.ptyId, exited: s.exited } : { buffer: "" };
-      return [{ id, kind: p.kind, spec: $state.snapshot(p.spec), title: p.title, cwd: p.cwd, readOnly: p.readOnly, restore }];
+      return [{ id, kind: p.kind, spec: this.resumeSpec(id), title: p.title, name: p.name, cwd: p.cwd, readOnly: p.readOnly, restore }];
     });
     return { root: $state.snapshot(t.root), active: t.active, name: t.name, color: t.color, panes };
   }
 
   /** Recreate a captured pane; returns its new id. */
   adoptPane(snap: PaneSnapshot): string {
-    if (snap.kind !== "term") return this.addPaneInfo(snap.kind, snap.spec).id;
+    if (snap.kind !== "term") {
+      const info = this.addPaneInfo(snap.kind, snap.spec);
+      info.name = snap.name ?? null;
+      return info.id;
+    }
     const live = snap.restore.ptyId != null || snap.restore.exited;
     // A fresh process starts where the old one was.
     const spec = live ? snap.spec : clean({ ...snap.spec, cwd: snap.cwd ?? snap.spec.cwd, inheritCwd: undefined });
     const id = this.createPane(spec, snap.restore);
     const p = this.panes[id];
     p.title = snap.title;
+    p.name = snap.name ?? null;
     p.cwd = snap.cwd;
     p.readOnly = snap.readOnly;
     return id;
@@ -861,6 +886,12 @@ export class App {
 
   renameTab(i: number, name: string | null | undefined) {
     if (this.tabs[i]) this.tabs[i].name = name?.trim() || null;
+    windows.syncTitle(this);
+  }
+
+  renamePane(id: string | undefined, name: string | null | undefined) {
+    const p = id ? this.panes[id] : undefined;
+    if (p) p.name = name?.trim() || null;
     windows.syncTitle(this);
   }
 
@@ -1121,19 +1152,66 @@ export class App {
     const target = index >= 0 ? this.tabs[index] : undefined;
     if (target === from || (target && target.kind !== "term")) return false;
     if (!target && node === from.root) return false; // already alone in its tab
+    if (target) return this.dockPane(id, target, target.active, "auto");
     const moved = $state.snapshot(node) as LayoutNode;
     const active = tree.contains(node, from.active) ? from.active : tree.firstPane(node);
     this.removeNode(from, id, "keep");
-    if (target) {
-      target.zoom = null;
-      target.root = tree.insert(target.root, target.active, this.splitSide("auto", target.active).dir, moved);
-      this.focusPane(active);
-    } else {
+    {
       this.tabs.push({
         id: tree.newId("t"), kind: "term", root: moved, active, zoom: null, name: null, color: null, broadcast: false, mru: [active], group: null,
       });
       this.gotoTab(this.tabs.length - 1);
     }
+    return true;
+  }
+
+  /**
+   * Move the node `id` (pane or split) within its tab or into another one: next to `target` on `side`,
+   * swapped with it ("center"), beside it in the roomiest direction ("auto"), or along an outer edge
+   * of `to` when `target` is null.
+   */
+  dockPane(id: string, to: Tab, target: string | null, side: Direction | "center" | "auto"): boolean {
+    const from = this.tabOf(id);
+    if (!from || from.kind !== "term" || to.kind !== "term") return false;
+    const node = tree.find(from.root, id);
+    if (!node || (target && tree.contains(node, target))) return false;
+    if (target && !tree.contains(to.root, target)) return false;
+    const active = tree.contains(node, from.active) ? from.active : tree.firstPane(node);
+    if (from === to) {
+      const root =
+        side === "center" ? tree.swap(from.root, id, target ?? "")
+        : side === "auto" ? from.root
+        : target ? tree.move(from.root, id, target, side)
+        : tree.dock(from.root, id, side);
+      if (root === from.root) return false;
+      from.zoom = null;
+      from.root = root;
+      this.focusPane(active);
+      return true;
+    }
+    const moved = $state.snapshot(node) as LayoutNode;
+    this.removeNode(from, id, "keep");
+    to.zoom = null;
+    const at = target ?? to.root.id;
+    const { dir, before } = side === "auto" || side === "center" ? this.splitSide("auto", target ?? to.active) : tree.sideOf(side);
+    to.root = tree.insert(to.root, at, dir, moved, { before });
+    this.focusPane(active);
+    return true;
+  }
+
+  /** Move the active pane (or selected subtree) toward `direction`: next to its neighbor, else to that edge of the tab. */
+  movePaneDir(direction: string): boolean {
+    const t = this.tab;
+    const d = norm(direction) as Direction;
+    if (!t || t.kind !== "term" || t.zoom || !(DIRECTIONS as string[]).includes(d)) return false;
+    const group = t.group;
+    const id = group ?? t.active;
+    const target = tree.neighbor(t.root, id, d);
+    const root = target ? tree.move(t.root, id, target, d) : tree.dock(t.root, id, d);
+    if (root === t.root) return false;
+    t.root = root;
+    this.focusPane(t.active); // the moved pane is remounted
+    t.group = group; // node ids survive a move
     return true;
   }
 

@@ -9,7 +9,9 @@ Every tab is a tree of panes. This guide shows how to split, navigate, resize, r
 - [Resizing](#resizing)
 - [Swapping, orientation and equalizing](#swapping-orientation-and-equalizing)
 - [Zoom](#zoom)
+- [Pane title bar](#pane-title-bar)
 - [Selecting a whole group: parent and child](#selecting-a-whole-group-parent-and-child)
+- [Moving panes](#moving-panes)
 - [Moving panes to another tab or window](#moving-panes-to-another-tab-or-window)
 - [Closing panes](#closing-panes)
 - [Read-only panes](#read-only-panes)
@@ -124,6 +126,14 @@ toggle_pane_zoom = "Ctrl+Shift+Z"
 - Zoom works on a whole group too, see [parent and child](#selecting-a-whole-group-parent-and-child).
 - Zoom is ignored in a tab with a single pane.
 
+## Pane title bar
+
+Set [`show_pane_title_bar`](../reference/configuration.md#show_pane_title_bar) to `"multiple"` (split tabs only) or `"always"` to show a bar above each pane with its icon, title, a zoom button and a close button. Double-click the title (or run **Rename pane…**) to name the pane; **Reset pane title** goes back to the automatic title.
+
+```toml
+show_pane_title_bar = "multiple"
+```
+
 ## Selecting a whole group: parent and child
 
 `move_focus_parent` selects the split that contains the focused pane (highlighted with an accent border on all its panes). Pane commands then act on the whole group:
@@ -135,6 +145,27 @@ toggle_pane_zoom = "Ctrl+Shift+Z"
 - `resize_pane_*` and `toggle_split_orientation` use it as the target.
 
 `move_focus_child` steps back down. Focusing any pane by key or mouse clears the group selection.
+
+## Moving panes
+
+### Drag and drop
+
+With the [pane title bar](#pane-title-bar) shown, drag a pane by its title bar:
+
+| Drop on | Result |
+| --- | --- |
+| Edge of another pane (outer quarter) | The pane is docked on that side of it (the highlighted half shows where) |
+| Center of another pane | The two panes are swapped |
+| A tab | The pane moves into that tab, next to its active pane |
+| A tab, held for half a second | That tab is shown: keep dragging to dock the pane at a precise spot in it |
+| Empty space of the tab bar | The pane moves to a new tab |
+| Outside the window | The pane moves to the window under the pointer, or a new window |
+
+`Escape` cancels the drag. Processes keep running.
+
+### With the keyboard
+
+`Ctrl+Alt+Shift+Arrow` ([`move_pane_left`](../reference/actions.md#move_pane_left) / `_right` / `_up` / `_down`) moves the active pane (or selected group) to that side of its neighbour, or along that edge of the tab when there is no neighbour, like VS Code's "Move editor group". `swap_pane_*` exchanges two panes instead.
 
 ## Moving panes to another tab or window
 
@@ -192,7 +223,7 @@ Right-click opens it when `right_click_context_menu = true`; `Ctrl+right-click` 
 | Clipboard | Copy (enabled with a selection), Paste |
 | Selection (only with a selection) | Search the web, Highlight selection, Save as snippet |
 | Shell integration (when commands were detected) | Select previous command, Select previous output |
-| Layout | Split pane (Duplicate right, Duplicate down, Split left, Split up, then each profile), Zoom pane / Unzoom pane, Swap with previous pane, Toggle split orientation, Equalize panes |
+| Layout | Split pane (Duplicate right, Duplicate down, Split left, Split up, then each profile), Zoom pane / Unzoom pane, Rename pane..., Swap with previous pane, Toggle split orientation, Equalize panes |
 | Buffer | Find..., Add scroll mark, Clear buffer, Export text... |
 | State | Focus mode, Read-only, Broadcast input to all panes, Restart connection |
 | Close | Close other panes, Close pane |

@@ -89,6 +89,8 @@ export const COMMANDS: Record<string, NamedCommand> = {
   duplicate_pane_down: n("Duplicate pane down", "split_pane", { split: "down", split_mode: "duplicate" }, ["Alt+Shift+-"]),
   duplicate_pane_right: n("Duplicate pane right", "split_pane", { split: "right", split_mode: "duplicate" }, ["Alt+Shift+Plus"]),
   toggle_pane_zoom: n("Toggle pane zoom", "toggle_pane_zoom"),
+  open_pane_renamer: n("Rename pane…", "open_pane_renamer"),
+  reset_pane_title: n("Reset pane title", "rename_pane"),
   toggle_split_orientation: n("Toggle split orientation", "toggle_split_orientation"),
   toggle_broadcast_input: n("Toggle broadcast input to all panes", "toggle_broadcast_input"),
   toggle_read_only_mode: n("Toggle read-only mode", "toggle_read_only_mode"),
@@ -149,6 +151,7 @@ for (const d of DIRS) {
   COMMANDS[`move_focus_${d}`] = n(`Move focus ${d}`, "move_focus", { direction: d }, [`Alt+${cap(d)}`]);
   COMMANDS[`resize_pane_${d}`] = n(`Resize pane ${d}`, "resize_pane", { direction: d }, [`Alt+Shift+${cap(d)}`]);
   COMMANDS[`swap_pane_${d}`] = n(`Swap pane ${d}`, "swap_pane", { direction: d });
+  COMMANDS[`move_pane_${d}`] = n(`Move pane ${d}`, "move_pane", { direction: d }, [`Ctrl+Alt+Shift+${cap(d)}`]);
 }
 for (const d of FOCUS_EXTRA) {
   COMMANDS[`move_focus_${d}`] = n(`Move focus to ${words(d)} pane`, "move_focus", { direction: d }, d === "previous" ? ["Ctrl+Alt+Left"] : []);
@@ -209,6 +212,8 @@ const ICON_BY_ACTION: Record<string, string> = {
   close_other_panes: "close-others",
   split_pane: "split-right",
   toggle_pane_zoom: "zoom",
+  open_pane_renamer: "pencil",
+  rename_pane: "undo",
   toggle_split_orientation: "rotate",
   toggle_broadcast_input: "broadcast",
   toggle_read_only_mode: "lock",
@@ -271,6 +276,7 @@ export function actionIcon(spec: ActionSpec): string {
       if (spec.window) return "window-out";
       return dir === "backward" ? "move-left" : "move-right";
     case "move_pane":
+      if (spec.direction) return ARROWS[dir] ?? "swap";
       return spec.window ? "window-out" : "tab";
     case "adjust_font_size":
       return typeof spec.delta === "number" && spec.delta < 0 ? "font-minus" : "font-plus";

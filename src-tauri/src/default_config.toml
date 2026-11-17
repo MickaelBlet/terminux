@@ -21,6 +21,7 @@ notifications = true
 # tab_switcher_mode = "in_order" # "mru" | "in_order" | "disabled" (Ctrl+Tab overlay)
 # show_tabs_fullscreen = false
 show_zoom_badge = false          # ZOOM badge on a zoomed pane
+# show_pane_title_bar = "never"  # "never" | "multiple" (split tabs only) | "always"
 # show_terminal_title_in_titlebar = true
 # Title-bar buttons: command names, [[action]] ids or "separator". Toolbar edits in the UI (right-click, drag) are saved here.
 # toolbar = ["duplicate_pane_right", "duplicate_pane_down", "toggle_pane_zoom", "find", "separator", "open_settings"]

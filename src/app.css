@@ -132,6 +132,11 @@ body.dragging-row * {
   cursor: row-resize !important;
   user-select: none;
 }
+body.dragging-pane,
+body.dragging-pane * {
+  cursor: grabbing !important;
+  user-select: none;
+}
 
 .term-host {
   width: 100%;
