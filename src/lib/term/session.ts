@@ -44,8 +44,8 @@ export interface SessionHooks {
   /** The selection was copied to the clipboard (copy_on_select, right click). */
   onCopy(paneId: string): void;
   openLink(uri: string): void;
-  /** Ctrl+click on a file path; `path` is absolute or `~`-relative. */
-  openFile(paneId: string, path: string, line?: number, col?: number): void;
+  /** Ctrl+click on a file path; `path` is absolute or `~`-relative. `remote`: on the pane's ssh host. */
+  openFile(paneId: string, path: string, line?: number, col?: number, remote?: boolean): void;
 }
 
 /** Buffer (and optionally a live pty) a session starts from: restored session, moved tab. */
@@ -106,6 +106,11 @@ export class TermSession {
   exited = false;
   /** Directory reported by the shell (OSC 7 / 9;9 / 633). */
   reportedCwd: string | null = null;
+  /**
+   * Pane spawned with `ssh`: commandline reconnecting in the last remote directory (kept up to
+   * date while connected, used once the process is gone: restart, session restore).
+   */
+  sshResume: string | null = null;
   private focused = true;
   private hasUnfocusedLook = false;
   private transparentCanvas = false;
@@ -291,6 +296,12 @@ export class TermSession {
   }
 
   private async openFile(l: FileLink) {
+    if (await this.isSsh()) {
+      // Relative to the remote directory reported by the shell, else to the remote home.
+      const path = resolveFilePath(l.path, this.reportedCwd) ?? l.path;
+      this.hooks.openFile(this.paneId, path, l.line, l.col, true);
+      return;
+    }
     const path = resolveFilePath(l.path, await this.cwdNow());
     if (path) this.hooks.openFile(this.paneId, path, l.line, l.col);
   }
@@ -298,6 +309,14 @@ export class TermSession {
   private setCwd(cwd: string) {
     this.reportedCwd = cwd;
     this.hooks.onCwd(this.paneId, cwd);
+    const id = this.ptyId;
+    if (id != null) {
+      void invoke<string | null>("pty_ssh_resume", { id, dir: cwd })
+        .then((line) => {
+          if (line && this.ptyId === id) this.sshResume = line;
+        })
+        .catch(() => {});
+    }
   }
 
   private pushViewportToScrollback() {
@@ -553,7 +572,7 @@ export class TermSession {
             profileId: this.spec.profileId,
             cwd: this.spec.cwd ?? null,
             inheritCwd: this.spec.inheritCwd ?? null,
-            commandline: this.spec.commandline ?? null,
+            commandline: this.sshResume ?? this.spec.commandline ?? null,
             env: this.spec.env ?? {},
             cols: this.term.cols,
             rows: this.term.rows,
@@ -696,6 +715,27 @@ export class TermSession {
     const screen = this.el.querySelector<HTMLElement>(".xterm-screen");
     if (!screen || !screen.clientWidth || !screen.clientHeight) return null;
     return { width: screen.clientWidth / this.term.cols, height: screen.clientHeight / this.term.rows };
+  }
+
+  /** The pane runs an interactive `ssh` session (foreground process on Linux). */
+  async isSsh(): Promise<boolean> {
+    if (this.ptyId == null) return false;
+    return invoke<boolean>("pty_is_ssh", { id: this.ptyId }).catch(() => false);
+  }
+
+  /**
+   * Commandline reopening the pane's ssh session in its remote directory (as reported by the
+   * remote shell via OSC 7), or null when the pane is not in ssh.
+   */
+  async sshFollow(): Promise<string | null> {
+    if (this.ptyId == null) return null;
+    return invoke<string | null>("pty_ssh_follow", { id: this.ptyId, dir: this.reportedCwd }).catch(() => null);
+  }
+
+  /** Copy a file from the pane's ssh host to a local cache file. */
+  fetchRemoteFile(path: string): Promise<{ local: string; label: string }> {
+    if (this.ptyId == null) return Promise.reject(new Error("no process"));
+    return invoke("remote_file_fetch", { id: this.ptyId, path });
   }
 
   async cwdNow(): Promise<string | null> {

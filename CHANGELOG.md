@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- SSH panes: split / duplicate reconnects to the same host in the remote directory (`ssh_follow_directory`); reconnect and session restore resume there too
+- SSH panes: Ctrl+clicked file paths open from the remote host in the built-in editor (copied with `scp`, uploaded back on save)
+
 ### Changed
 
 - `open_snippets_pane` renamed `toggle_snippets_pane` (old name still accepted): a tab has at most one snippets pane, running the action again closes it; it opens at 20% width (`size` overrides) and has a close button in its header

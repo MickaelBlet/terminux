@@ -26,6 +26,8 @@ export interface PaneSpec {
   suppressApplicationTitle?: boolean;
   /** File pane: the edited file and where to put the cursor. */
   file?: string;
+  /** File pane of a remote file: `host:path` shown instead of the local copy. */
+  remoteLabel?: string;
   line?: number;
   col?: number;
   /** Runtime overrides (adjust_opacity, toggle_shader_effects). */

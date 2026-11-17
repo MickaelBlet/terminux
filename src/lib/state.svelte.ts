@@ -471,13 +471,25 @@ export class App {
     requestPaste: (id) => this.paste({}, id),
     onCopy: () => this.copied(),
     openLink: (uri) => void openUrl(uri).catch(console.error),
-    openFile: (id, path, line, col) => void this.openFile(id, path, line, col),
+    openFile: (id, path, line, col, remote) => void this.openFile(id, path, line, col, remote),
   };
 
-  /** Ctrl+click on a file path, per `file_link_open`. */
-  private async openFile(from: string, path: string, line?: number, col?: number) {
+  /** Commandline reopening the ssh session of pane `id` in its remote directory (`ssh_follow_directory`). */
+  private async sshFollow(id: string): Promise<string | null> {
+    if (this.config.ssh_follow_directory === false) return null;
+    return (await sessions.get(id)?.sshFollow()) ?? null;
+  }
+
+  /** Ctrl+click on a file path, per `file_link_open`. A file on the pane's ssh host is copied with scp and always opens in the built-in editor (saving uploads it back). */
+  private async openFile(from: string, path: string, line?: number, col?: number, remote = false) {
     const mode = norm(this.config.file_link_open) || "builtin";
     try {
+      if (remote) {
+        const s = sessions.get(from);
+        if (!s) return;
+        const { local, label } = await s.fetchRemoteFile(path);
+        return this.openFileBuiltin(local, line, col, label);
+      }
       if (mode === "builtin") return this.openFileBuiltin(path, line, col);
       const terminal = mode === "tab" || mode === "pane";
       const commandline = await invoke<string | null>("open_in_editor", { path, line, col, terminal });
@@ -493,14 +505,14 @@ export class App {
   }
 
   /** Built-in editor in its own tab; a file already open is focused at the line. */
-  private openFileBuiltin(file: string, line?: number, col?: number) {
+  private openFileBuiltin(file: string, line?: number, col?: number, remoteLabel?: string) {
     const same = Object.values(this.panes).find((p) => p.kind === "file" && p.spec.file === file && this.tabOf(p.id));
     if (same) {
       this.focusPane(same.id);
       this.paneEditors.get(same.id)?.goto(line, col);
       return;
     }
-    const id = this.addPaneInfo("file", clean({ profileId: this.config.default_profile, file, line, col })).id;
+    const id = this.addPaneInfo("file", clean({ profileId: this.config.default_profile, file, line, col, remoteLabel })).id;
     this.insertTab({
       id: tree.newId("t"), kind: "term", root: tree.pane(id), active: id, zoom: null,
       name: null, color: null, broadcast: false, mru: [id], group: null,
@@ -862,6 +874,11 @@ export class App {
     const snap = await this.captureTab(t, false);
     // Same layout and profiles, fresh processes, no copied output.
     for (const p of snap.panes) p.restore = { buffer: "" };
+    // Panes in ssh reconnect to the same host and remote directory.
+    await Promise.all(snap.panes.map(async (p) => {
+      const follow = await this.sshFollow(p.id);
+      if (follow) [p.spec, p.cwd] = [{ ...p.spec, commandline: follow, cwd: undefined }, null];
+    }));
     const tab = this.adoptTab(snap, this.tabs.length, false);
     if (!tab) return;
     tab.color = t.color;
@@ -933,11 +950,15 @@ export class App {
       const inheritCwd = (await sessions.get(t.active)?.cwdNow()) ?? null;
       // Without an explicit profile a split continues the pane it comes from.
       const duplicate = norm(a.split_mode) === "duplicate" || (!a.profile && a.index === undefined);
-      const base = duplicate && source?.kind === "term" ? { ...$state.snapshot(source.spec), cwd: undefined, opacity: undefined, retro: undefined } : undefined;
+      // In ssh it reconnects to the same host, in the remote directory.
+      const follow = duplicate && !a.commandline ? await this.sshFollow(t.active) : null;
+      const base = duplicate && source?.kind === "term"
+        ? { ...$state.snapshot(source.spec), cwd: undefined, opacity: undefined, retro: undefined, ...(follow && { commandline: follow }) }
+        : undefined;
       const spec = this.specFrom(a, base);
       if (!spec || !this.tabs.includes(t)) return false;
       // A duplicate follows the source pane's directory, even over the profile's own.
-      id = this.createPane(duplicate ? { ...spec, cwd: spec.cwd ?? inheritCwd } : { ...spec, inheritCwd });
+      id = this.createPane(follow ? spec : duplicate ? { ...spec, cwd: spec.cwd ?? inheritCwd } : { ...spec, inheritCwd });
     }
     t.zoom = null;
     // The snippets pane is a side panel: narrow unless a size is given.

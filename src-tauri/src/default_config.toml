@@ -65,6 +65,7 @@ right_click_paste = true
 # detect_file_paths = true          # Ctrl+click a file path to open it in an editor
 # file_link_editor = "code --goto {file}:{line}:{col}"   # unset: $VISUAL/$EDITOR in a new tab
 # file_link_open = "builtin"         # builtin (editor tab in Terminux) | external | tab | pane
+# ssh_follow_directory = true       # split/duplicate of an ssh pane reconnects in the remote dir
 # large_paste_warning = true
 # multi_line_paste_warning = true
 # search_web_url = "https://www.bing.com/search?q=%s"

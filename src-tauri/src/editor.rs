@@ -34,7 +34,7 @@ pub fn expand(template: &str, file: &str, line: Option<u32>, col: Option<u32>) -
 }
 
 /// Quote one argument for `split_commandline`.
-fn quote_arg(a: &str) -> String {
+pub(crate) fn quote_arg(a: &str) -> String {
     if !a.is_empty() && !a.contains([' ', '\t', '"', '\'']) {
         return a.to_string();
     }

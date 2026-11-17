@@ -33,7 +33,7 @@ Every tab is a tree of panes. This guide shows how to split, navigate, resize, r
 
 "Auto" picks a side-by-side split when the pane is at least as wide as it is tall, otherwise a stacked split.
 
-By default a split *continues* the pane it came from: same profile, same working directory (read from the process on Linux, from the directory the shell reports elsewhere), but a fresh process. The same happens for `split_pane_*` without a `profile`. Naming a profile starts that profile instead:
+By default a split *continues* the pane it came from: same profile, same working directory (read from the process on Linux, from the directory the shell reports elsewhere), but a fresh process. The same happens for `split_pane_*` without a `profile`. A pane running `ssh` reconnects to the same host in the remote directory instead (see [SSH sessions](10-shell-integration.md#ssh-sessions)). Naming a profile starts that profile instead:
 
 ```toml
 [[action]]

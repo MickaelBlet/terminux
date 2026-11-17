@@ -557,8 +557,20 @@ Where Ctrl+clicked file paths open:
 - `"external"`: [`file_link_editor`](#file_link_editor) launched detached (fallback: `$VISUAL` / `$EDITOR` in a new tab, Notepad on Windows).
 - `"tab"` / `"pane"`: a new tab / a split next to the clicked pane running `file_link_editor` as a terminal program (e.g. `"nvim +{line} {file}"`), or `$VISUAL` / `$EDITOR` / `vi` when unset. On Windows `file_link_editor` is required.
 
+In a pane running `ssh`, a clicked path is on the remote host: it is copied with `scp` and always opens in the built-in editor; saving uploads it back. See [Shell integration › SSH](../user-guide/10-shell-integration.md#ssh-sessions).
+
 ```toml
 file_link_open = "external"
+```
+
+### ssh_follow_directory
+
+**Type:** boolean | **Default:** `true`
+
+Splitting (without an explicit profile) or duplicating a pane that runs an interactive `ssh` reconnects to the same host with the same options, in the remote directory reported by the remote shell (OSC 7). Without OSC 7 from the remote shell, the new session starts in the remote home. See [Shell integration › SSH](../user-guide/10-shell-integration.md#ssh-sessions).
+
+```toml
+ssh_follow_directory = false
 ```
 
 ### large_paste_warning

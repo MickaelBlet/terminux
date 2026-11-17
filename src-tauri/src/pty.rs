@@ -13,6 +13,7 @@ use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::{AppHandle, Emitter};
 
 use crate::config::{Profile, split_commandline};
+use crate::ssh::{SshTarget, parse_ssh_argv};
 
 /// Output kept while no window is attached (tab moving between windows).
 const BACKLOG_MAX: usize = 8 * 1024 * 1024;
@@ -74,6 +75,8 @@ struct Session {
     detach_gen: u64,
     /// Killed by the reaper: no orphan is kept.
     reaped: bool,
+    /// The spawned command is an interactive `ssh` (fallback where `/proc` is unavailable).
+    spawned_ssh: Option<SshTarget>,
 }
 
 /// A session that exited while detached: output and exit code wait for the next attach.
@@ -267,6 +270,7 @@ impl PtyManager {
             }
         }
         let id = self.next_id.fetch_add(1, Ordering::Relaxed) + 1;
+        let spawned_ssh = parse_ssh_argv(&[&[profile.cmd.clone()], &profile.args[..]].concat());
         let mut cmd = build_command(&profile);
         cmd.env("TERMINUX_SESSION", id.to_string());
         for (k, v) in &req.env {
@@ -330,6 +334,7 @@ impl PtyManager {
                 sink: sink.clone(),
                 detach_gen: 0,
                 reaped: false,
+                spawned_ssh,
             },
         );
 
@@ -486,6 +491,31 @@ impl PtyManager {
         }
         drop(sessions);
         Ok(AttachResult { exited: true, code: orphan.code })
+    }
+
+    /// The interactive `ssh` session running in the pty, if any: the foreground process on
+    /// Linux, else the spawned command.
+    pub fn ssh_target(&self, id: u32) -> Option<SshTarget> {
+        let sessions = self.sessions.lock().unwrap();
+        let s = sessions.get(&id)?;
+        #[cfg(target_os = "linux")]
+        {
+            let pid = s.master.as_ref()?.process_group_leader().map(|p| p as u32).or(s.pid)?;
+            if let Ok(raw) = std::fs::read(format!("/proc/{pid}/cmdline")) {
+                let argv: Vec<String> = raw
+                    .split(|&b| b == 0)
+                    .filter(|a| !a.is_empty())
+                    .map(|a| String::from_utf8_lossy(a).into_owned())
+                    .collect();
+                return parse_ssh_argv(&argv);
+            }
+        }
+        s.spawned_ssh.clone()
+    }
+
+    /// The `ssh` session the pty was spawned with (not one typed in a shell).
+    pub fn spawned_ssh(&self, id: u32) -> Option<SshTarget> {
+        self.sessions.lock().unwrap().get(&id)?.spawned_ssh.clone()
     }
 
     /// Current working directory of the pty's foreground process (Linux only).

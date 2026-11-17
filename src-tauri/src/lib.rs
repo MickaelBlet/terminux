@@ -3,7 +3,9 @@ mod config;
 mod dynamic_profiles;
 mod editor;
 mod pty;
+mod remote_files;
 mod session_store;
+mod ssh;
 mod windows;
 
 use std::collections::HashMap;
@@ -23,6 +25,7 @@ pub struct AppState {
     pty: PtyManager,
     windows: Mutex<windows::Windows>,
     open_files: editor::OpenFiles,
+    remote_files: remote_files::RemoteFiles,
 }
 
 type CmdResult<T> = Result<T, String>;
@@ -138,7 +141,16 @@ async fn file_read(state: State<'_, AppState>, path: String) -> CmdResult<editor
 /// Save a file opened with `file_read` (no other path is writable).
 #[tauri::command]
 async fn file_write(state: State<'_, AppState>, path: String, text: String) -> CmdResult<()> {
-    state.open_files.write(&path, &text)
+    state.open_files.write(&path, &text)?;
+    state.remote_files.upload(&path)
+}
+
+/// Copy a file from the ssh host the pane `id` is connected to (Ctrl+click in an ssh pane).
+/// The connection options come from the pane's own `ssh` command, never from the webview.
+#[tauri::command]
+async fn remote_file_fetch(state: State<'_, AppState>, id: u32, path: String) -> CmdResult<remote_files::Fetched> {
+    let target = state.pty.ssh_target(id).ok_or("the pane is not running ssh")?;
+    state.remote_files.fetch(target, &path)
 }
 
 /// Write exported text to `path` (only when named in the config, e.g. an `export_buffer` action)
@@ -245,6 +257,30 @@ fn pty_resize(state: State<AppState>, id: u32, cols: u16, rows: u16) -> CmdResul
 #[tauri::command]
 fn pty_kill(state: State<AppState>, id: u32) {
     state.pty.kill(id);
+}
+
+/// Whether the pane runs an interactive `ssh` session.
+#[tauri::command]
+fn pty_is_ssh(state: State<AppState>, id: u32) -> bool {
+    state.pty.ssh_target(id).is_some()
+}
+
+/// Commandline reopening the pane's ssh session in `dir` (remote directory), if it runs one.
+#[tauri::command]
+fn pty_ssh_follow(state: State<AppState>, id: u32, dir: Option<String>) -> Option<String> {
+    let target = state.pty.ssh_target(id)?;
+    Some(ssh_commandline(&target, dir.as_deref()))
+}
+
+/// Commandline restarting the pane's spawned ssh session in `dir` (reconnect, session restore).
+#[tauri::command]
+fn pty_ssh_resume(state: State<AppState>, id: u32, dir: Option<String>) -> Option<String> {
+    let target = state.pty.spawned_ssh(id)?;
+    Some(ssh_commandline(&target, dir.as_deref()))
+}
+
+fn ssh_commandline(target: &ssh::SshTarget, dir: Option<&str>) -> String {
+    ssh::follow_argv(target, dir).iter().map(|a| editor::quote_arg(a)).collect::<Vec<_>>().join(" ")
 }
 
 #[tauri::command]
@@ -474,6 +510,7 @@ pub fn run() {
             pty: PtyManager::default(),
             windows: Mutex::new(windows::Windows::default()),
             open_files: editor::OpenFiles::default(),
+            remote_files: Default::default(),
         })
         .setup(move |app| {
             let handle = app.handle().clone();
@@ -521,6 +558,10 @@ pub fn run() {
             pty_resize,
             pty_kill,
             pty_cwd,
+            pty_is_ssh,
+            pty_ssh_follow,
+            pty_ssh_resume,
+            remote_file_fetch,
             window_init,
             window_new,
             window_send,

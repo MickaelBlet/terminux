@@ -89,10 +89,34 @@ Things to know:
 
 - A duplicate (tab, or split without a profile) uses this directory even when the profile sets its own `starting_directory`. A split that names another profile keeps that profile's `starting_directory` and only falls back to the source pane's directory when the profile sets none.
 - WSL (`wsl.exe` profiles): a Linux path (`/home/me`, `~`) is passed to `wsl.exe --cd`, replacing any `--cd` in the profile's `args`. A Windows path (`//wsl.localhost/...`, `C:\...`) is used as-is.
-- The reported path is used as a directory on the machine running Terminux. If it does not exist there (for example a remote path from an `ssh` session), Terminux silently falls back to the profile `cwd`, then the home directory.
+- The reported path is used as a directory on the machine running Terminux. If it does not exist there, Terminux silently falls back to the profile `cwd`, then the home directory. Panes running `ssh` are the exception: see [SSH sessions](#ssh-sessions).
 - An explicit `-d` / `starting_directory` always wins, and so does the profile's `cwd`: a profile with `cwd = "~/work"` always starts there, even for splits. Leave `cwd` unset on profiles where you want splits to inherit.
 - New tabs do **not** inherit the directory; they start in the profile `cwd` (or the home directory).
 - For WSL: the generated WSL profiles pass `--cd ~` to `wsl.exe`. A reported WSL path (`/home/me/src`) is not a Windows directory, so to inherit the directory a Windows path is needed, for example `wslpath -w "$PWD"` in an OSC 9;9. <!-- TODO verify: interaction between inherited cwd and the `--cd ~` argument of generated WSL profiles -->
+
+## SSH sessions
+
+When a pane runs an interactive `ssh` (an SSH profile, or `ssh host` typed in a local shell on Linux, where Terminux sees the foreground process):
+
+- **Split / duplicate** (split without a profile, `duplicate_tab`) reconnects with the same destination and connection options (`-p`, `-l`, `-i`, `-J`, `-F`, `-o`, ...; port forwards are not repeated) and runs `cd <dir>; exec $SHELL -l` on the host, `<dir>` being the last directory the **remote** shell reported with OSC 7. Disable with [`ssh_follow_directory = false`](../reference/configuration.md#ssh_follow_directory).
+- **Reconnect** (Enter after the connection dropped, `restart_connection`, startup retries) and **session restore** of a pane started with `ssh` (SSH profile) reconnect in the last remote directory, the same way.
+- **Ctrl+click a file path** copies the file from the host with `scp` (resolved against the remote directory) and opens it in the built-in editor, titled `host:path`. Ctrl+S saves the local copy and uploads it back. This ignores `file_link_open`.
+
+Requirements:
+
+- The remote shell must emit OSC 7. Install a [remote snippet](#remote-hosts-ssh-directory-only) for the host's shell (bash, zsh, fish, ash/BusyBox, sh/dash/ksh, tcsh). Without it, the new session starts in the remote home and relative paths are resolved from it.
+- `scp` runs non-interactively (`BatchMode=yes`): use a key / `ssh-agent`, or share the pane's connection with ControlMaster, for example in `~/.ssh/config`:
+
+  ```
+  Host *
+    ControlMaster auto
+    ControlPath ~/.ssh/cm-%C
+    ControlPersist 10m
+  ```
+
+  A password prompt cannot be answered: the copy fails with an error toast.
+- Copies live in the cache directory (`~/.cache/terminux/remote`, `%LOCALAPPDATA%\terminux\remote`). An editor tab restored after a restart only saves its local copy; Ctrl+click the file again to re-link it to the host.
+- On Windows (no foreground process information) only panes started with an `ssh` command (SSH profiles) are detected, and they stay detected while the ssh session runs.
 
 ## Setup snippets
 
@@ -175,6 +199,86 @@ Notes:
 - `%{ ... %}` tells zsh the enclosed text takes no screen width.
 - Running the wrap in the **last** `precmd` hook survives themes that rebuild `PS1` on every prompt.
 - A stray inverse `%` at the start of a prompt in a test run is zsh's `PROMPT_SP` end-of-line marker, not related to this snippet.
+
+### Remote hosts (ssh): directory only
+
+Minimal snippets for the **remote** side of [SSH sessions](#ssh-sessions): they only report the directory (OSC 7) at each prompt, have no `$TERM_PROGRAM` guard (ssh does not forward it) and are harmless in other terminals. The full snippets of this page also work remotely once their guard is removed. Following a directory starts a **login** shell on the host (`$SHELL -l`), so put them where both login and interactive shells read them.
+
+#### bash
+
+`~/.bashrc` (make sure `~/.bash_profile` or `~/.profile` sources it):
+
+```sh
+# Terminux: report the directory (OSC 7) at each prompt
+__terminux_osc7() { printf '\e]7;file://%s%s\a' "$HOSTNAME" "${PWD//%/%25}"; }
+[[ $PROMPT_COMMAND == *__terminux_osc7* ]] || PROMPT_COMMAND="__terminux_osc7${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+```
+
+#### zsh
+
+`~/.zshrc`:
+
+```zsh
+# Terminux: report the directory (OSC 7) at each prompt
+__terminux_osc7() { print -rn -- $'\e]7;file://'"$HOST${PWD//\%/%25}"$'\a' }
+(( ${precmd_functions[(I)__terminux_osc7]} )) || precmd_functions+=(__terminux_osc7)
+```
+
+#### fish
+
+`~/.config/fish/conf.d/terminux.fish`:
+
+```fish
+# Terminux: report the directory (OSC 7) at each prompt
+function __terminux_osc7 --on-event fish_prompt
+    printf '\e]7;file://%s%s\a' (hostname) (string replace -a % %25 -- $PWD)
+end
+```
+
+#### ash / BusyBox
+
+Routers, NAS, Alpine. `~/.profile`:
+
+```sh
+# Terminux: report the directory (OSC 7) at each prompt
+case $- in *i*)
+  __esc=$(printf '\033') __bel=$(printf '\007')
+  PS1='\['"$__esc]7;file://$(hostname)"'${PWD}'"$__bel"'\]'"${PS1:-\\w \\$ }"
+  unset __esc __bel
+esac
+```
+
+- The escape characters are inserted raw (not every BusyBox build understands `\e` / `\a` in `PS1`). `\[ \]` keep them out of the prompt width; if they show up literally (BusyBox without `FEATURE_EDITING_FANCY_PROMPT`), remove them.
+
+#### sh / dash / ksh / mksh
+
+`~/.profile` (and the file named by `$ENV` for non-login interactive shells):
+
+```sh
+# Terminux: report the directory (OSC 7) at each prompt
+case $- in *i*)
+  __esc=$(printf '\033') __bel=$(printf '\007')
+  PS1="$__esc]7;file://$(hostname)"'${PWD}'"$__bel${PS1:-\$ }"
+  unset __esc __bel
+esac
+```
+
+- These shells have no marker for zero-width prompt text: on a long command line the cursor may be misplaced when editing. ksh93 and mksh users can wrap the sequence with their own non-printing delimiters.
+
+#### tcsh / csh
+
+`~/.tcshrc` (`~/.cshrc` for csh):
+
+```csh
+# Terminux: report the directory (OSC 7) at each prompt
+alias precmd 'printf "\033]7;file://%s%s\007" "$HOST" "$cwd"'
+```
+
+Notes (all of the above):
+
+- `${PWD}` in a prompt string is single-quoted so the shell expands it at each prompt, not once.
+- In the ash, sh and tcsh snippets, paths containing `%` are not escaped; such directories are reported wrong.
+- Tested in a pseudo-terminal: bash, zsh, dash, BusyBox ash. Not tested: fish, ksh, mksh, tcsh.
 
 ### fish
 

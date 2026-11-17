@@ -165,6 +165,8 @@ export interface Config {
   file_link_editor?: string;
   /** "external" | "tab" | "pane" | "builtin". */
   file_link_open?: string;
+  /** Splits / duplicates of a pane running ssh reconnect in the remote directory. */
+  ssh_follow_directory?: boolean;
   large_paste_warning?: boolean | string;
   multi_line_paste_warning?: boolean | string;
   search_web_url?: string;

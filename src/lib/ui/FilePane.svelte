@@ -173,7 +173,7 @@
 <div class="file-pane">
   <div class="host" bind:this={host}></div>
   <footer>
-    <span class="file" title={path}>{path || info?.spec.file}{info?.dirty ? " ●" : ""}</span>
+    <span class="file" title={info?.spec.remoteLabel ?? path}>{info?.spec.remoteLabel || path || info?.spec.file}{info?.dirty ? " ●" : ""}</span>
     {#if status}<span class:err={statusError}>{status}</span>{/if}
     <span class="hint">Ctrl+S save · Ctrl+F find</span>
     <button title="Reload from disk" onclick={reload}>Reload</button>
