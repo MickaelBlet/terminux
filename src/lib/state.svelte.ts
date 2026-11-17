@@ -1326,13 +1326,24 @@ export class App {
   // ---------- appearance ----------
 
   adjustFont(delta: number) {
-    this.fontDelta = Math.max(-8, Math.min(40, this.fontDelta + delta));
-    this.updateSessions();
+    this.setFontDelta(Math.max(-8, Math.min(40, this.fontDelta + delta)));
   }
 
   resetFont() {
-    this.fontDelta = 0;
-    this.updateSessions();
+    this.setFontDelta(0);
+  }
+
+  private fontFrame = 0;
+
+  /** Zoom steps arrive at key-repeat rate: skip no-ops and re-render sessions once per frame. */
+  private setFontDelta(value: number) {
+    if (value === this.fontDelta) return;
+    this.fontDelta = value;
+    if (this.fontFrame) return;
+    this.fontFrame = requestAnimationFrame(() => {
+      this.fontFrame = 0;
+      this.updateSessions();
+    });
   }
 
   /** Editor font size (settings tab) following the global zoom. */

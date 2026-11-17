@@ -262,8 +262,9 @@ fn pty_write(state: State<AppState>, id: u32, data: String) -> CmdResult<()> {
     state.pty.write(id, data.as_bytes()).map_err(err)
 }
 
+// Async: keeps ConPTY resizes (which can block while the console reflows) off the main thread.
 #[tauri::command]
-fn pty_resize(state: State<AppState>, id: u32, cols: u16, rows: u16) -> CmdResult<()> {
+async fn pty_resize(state: State<'_, AppState>, id: u32, cols: u16, rows: u16) -> CmdResult<()> {
     state.pty.resize(id, cols, rows).map_err(err)
 }
 

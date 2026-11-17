@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Maximized / fullscreen windows: no frame, and a pointer at the screen's top edge hits the tabs
 - Vertical tabs: a pointer at the screen's side edge hits the tabs (maximized / fullscreen)
 - Default `config.toml`: wrong default key bindings in comments
+- Windows: holding Ctrl+Plus / Ctrl+Minus (font zoom) no longer crashes the app (zoom steps coalesced per frame, pty resizes debounced and run off the main thread)
 
 ## [0.1.5] - 2026-11-16
 

@@ -118,6 +118,7 @@ export class TermSession {
   private pendingFocus = false;
   private disposed = false;
   private fitTimer = 0;
+  private ptyResizeTimer = 0;
   /** Fires when a freshly spawned process stays silent too long. */
   private startupTimer = 0;
   /** Bumped on every connect from scratch: stale retries check it and give up. */
@@ -203,9 +204,7 @@ export class TermSession {
     t.onBell(() => hooks.onBell(paneId));
     t.onData((d) => this.input(d));
     t.onBinary((d) => this.input(d));
-    t.onResize(({ cols, rows }) => {
-      if (this.ptyId != null) invoke("pty_resize", { id: this.ptyId, cols, rows }).catch(() => {});
-    });
+    t.onResize(() => this.schedulePtyResize());
     // OSC 9: ConEmu progress (9;4), current directory (9;9), else an iTerm2 notification.
     t.parser.registerOscHandler(9, (data) => {
       const progress = parseProgress(data);
@@ -699,6 +698,18 @@ export class TermSession {
     }
   }
 
+  /**
+   * Debounced pty resize: key-repeated zoom fires a resize per step, and a burst of ConPTY
+   * resizes (each one reflowing and repainting the console) can take down the app on Windows.
+   */
+  private schedulePtyResize() {
+    clearTimeout(this.ptyResizeTimer);
+    this.ptyResizeTimer = window.setTimeout(() => {
+      if (this.ptyId == null || this.disposed) return;
+      invoke("pty_resize", { id: this.ptyId, cols: this.term.cols, rows: this.term.rows }).catch(() => {});
+    }, 50);
+  }
+
   scheduleFit() {
     clearTimeout(this.fitTimer);
     this.fitTimer = window.setTimeout(() => this.fitNow(), 16);
@@ -903,6 +914,7 @@ export class TermSession {
     this.disposed = true;
     hideLinkTooltip();
     clearTimeout(this.fitTimer);
+    clearTimeout(this.ptyResizeTimer);
     document.fonts.removeEventListener("loadingdone", this.onFontsLoaded);
     this.dropPty(kill);
     sessions.delete(this.paneId);
