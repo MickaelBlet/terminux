@@ -142,7 +142,7 @@ Both `command` and `action` are read as the command name. The names must be Term
 | Command palette | always (`name`) |
 | Key | `keys`, or `[keys]` by `id` |
 | Toolbar | `toolbar = ["gs", ...]` by `id`, see [Toolbar](13-toolbar.md) |
-| New-tab dropdown | `[[new_tab_menu]]` entry `type = "action"`, `id = "..."` |
+| New-tab dropdown | `[[new_tab_menu]]` entry `type = "action"`, `id = "..."` (built-in command names work too) |
 | Snippets pane / suggestions | `send_input` with a string `input` |
 | Fragments | `[[action]]` tables in `fragments/*.toml` are merged in, see [Profiles](06-profiles.md) |
 

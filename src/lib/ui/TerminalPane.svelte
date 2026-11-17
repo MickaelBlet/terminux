@@ -10,6 +10,7 @@
   import SearchBar from "./SearchBar.svelte";
   import SnippetsPane from "./SnippetsPane.svelte";
   import FilePane from "./FilePane.svelte";
+  import ConfigEditor from "./ConfigEditor.svelte";
   import Icon from "./Icon.svelte";
 
   let { paneId, tab }: { paneId: string; tab: Tab } = $props();
@@ -91,6 +92,8 @@
   <div class="body" style:padding="{pad[1]}px {pad[2]}px {pad[3]}px {pad[0]}px">
   {#if kind === "snippets"}
     <SnippetsPane {paneId} />
+  {:else if kind === "config" || kind === "defaults"}
+    <ConfigEditor readonly={kind === "defaults"} {paneId} />
   {:else if kind === "file"}
     {#key info?.spec.file}<FilePane {paneId} />{/key}
   {:else}
@@ -134,7 +137,7 @@
     border-radius: 4px;
   }
   .pane.multi.active {
-    border-color: var(--accent-dim);
+    border-color: var(--pane-active, var(--accent-dim));
   }
   .pane.grouped {
     border-color: var(--accent) !important;

@@ -274,7 +274,32 @@ background = "accent"             # a color, "terminalBackground" or "accent"
 unfocused_background = "#1e293b"  # inactive tabs
 show_close_button = "hover"       # always | hover | never | active_only
 icon_style = "default"            # default | hidden | monochrome
+foreground = "#e2e8f0"            # active tab text
+unfocused_foreground = "#94a3b8"  # inactive tabs text
+indicator = "outline"             # outline | underline | filled | none
+radius = 6                        # corner radius (px)
+height = 34                       # tab row height (px)
+
+[ui_theme.colors]                 # interface palette (unset: dark / light defaults)
+accent = "#38bdf8"
+background = "#0f172a"            # settings, editors
+foreground = "#e2e8f0"
+muted = "#94a3b8"
+panel = "#1e293b"                 # menus, dialogs, buttons
+border = "#334155"
+hover = "#ffffff14"
+warning = "#fbbf24"
+danger = "#f87171"
+
+[ui_theme.pane]
+divider = "#334155"               # split divider
+divider_width = 2                 # px
+active_border = "#38bdf8"         # active pane outline (several panes)
 ```
+
+`[ui_theme.window]` also takes `font` and `font_size` for the interface font (terminals keep their profile font).
+
+In the settings UI, the **UI themes** page previews the edited theme and its **Try** button applies it to the window until you stop or leave the page; built-in themes are read-only and can be duplicated.
 
 Tabs that have their own color (see [Tabs](03-tabs.md#colors)) keep it. Other chrome settings: [`disable_animations`](../reference/configuration.md#disable_animations), [`show_tabs_fullscreen`](../reference/configuration.md#show_tabs_fullscreen). See the [`ui_theme`](../reference/configuration.md#ui_theme) reference.
 

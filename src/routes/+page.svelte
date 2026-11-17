@@ -11,6 +11,7 @@
   import Overlays from "$lib/ui/Overlays.svelte";
   import ResizeHandles from "$lib/ui/ResizeHandles.svelte";
   import ConfigEditor from "$lib/ui/ConfigEditor.svelte";
+  import SettingsTab from "$lib/ui/settings/SettingsTab.svelte";
 
   onMount(() => {
     app.init();
@@ -62,7 +63,7 @@
       {#each app.tabs as tab, i (tab.id)}
         <section class="tab" class:hidden={i !== app.activeTab}>
           {#if tab.kind !== "term"}
-            {#key tab.kind}<ConfigEditor readonly={tab.kind === "defaults"} />{/key}
+            {#if tab.kind === "config"}<SettingsTab />{:else}<ConfigEditor readonly />{/if}
           {:else if tab.zoom && find(tab.root, tab.zoom)}
             {#key tab.zoom}
               <SplitView node={find(tab.root, tab.zoom)!} {tab} />

@@ -21,7 +21,7 @@ Highlights:
 - Customizable title-bar toolbar (`toolbar = ["duplicate_pane_right", "find", "separator", "open_settings"]`: any command, `[[action]]` id or `"separator"`); right-click it or drag its buttons to add, remove, reorder or reset them (UI edits are written to the `toolbar` key of config.toml)
 - Shift+Enter newline, OSC 9/777 + bell desktop notifications, file drag & drop pastes paths
 - Bundled fonts (JetBrains Mono, Symbols Nerd Font Mono, Twemoji Mozilla, Noto Sans Symbols/Symbols 2/Math)
-- Config in `~/.config/terminux/config.toml` (Windows: `%APPDATA%\terminux\config.toml`), hot-reloaded; built-in editor with completion and validation (Ctrl+,), read-only defaults (Ctrl+Alt+,)
+- Config in `~/.config/terminux/config.toml` (Windows: `%APPDATA%\terminux\config.toml`), hot-reloaded; settings UI (forms for global settings, profiles, schemes, UI themes, key bindings, actions, new tab menu, toolbar; Ctrl+,) and a TOML editor with completion and validation on the same draft, comments preserved, read-only defaults (Ctrl+Alt+,)
 
 Not implemented (no equivalent in Tauri / xterm.js): default terminal of the OS, elevation, jump list, HLSL shaders, ClearType settings, snap to grid on resize, AltGr aliasing, localization.
 

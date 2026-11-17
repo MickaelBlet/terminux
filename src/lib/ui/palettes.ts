@@ -77,34 +77,6 @@ export function commandPalette(app: App): PaletteView {
   };
 }
 
-/** Toolbar editor: current buttons first, in order (reorderable), then everything that can be added. */
-export function toolbarPalette(app: App): PaletteView {
-  return { placeholder: "Add or remove toolbar buttons… (Alt+Up / Alt+Down to reorder)", items: toolbarItems(app), refresh: () => toolbarItems(app) };
-}
-
-function toolbarItems(app: App): PaletteItem[] {
-  const items: PaletteItem[] = [];
-  let seps = 0;
-  for (const it of app.toolbarItems) {
-    const id = it.separator ? `separator#${seps++}` : it.id;
-    items.push({
-      id,
-      label: it.separator ? "Separator" : it.label,
-      icon: it.separator ? "menu" : it.icon,
-      detail: "on toolbar",
-      hint: "✓",
-      keepOpen: true,
-      run: () => app.removeFromToolbar(it.index),
-      move: (delta) => app.moveToolbarItem(it.index, delta),
-    });
-  }
-  const add = (id: string, label: string, icon?: string): PaletteItem => ({ id, label, icon, keepOpen: true, run: () => app.addToToolbar(id) });
-  items.push(add("separator", "Add separator", "menu"));
-  for (const a of app.userActions) if (a.id && !app.onToolbar(a.id)) items.push(add(a.id, a.name, a.icon ?? commandIcon(a.spec)));
-  for (const [name, c] of Object.entries(COMMANDS)) if (!c.hidden && !app.onToolbar(name)) items.push(add(name, c.label, c.icon));
-  return items;
-}
-
 function tabItems(app: App): PaletteItem[] {
   return app.tabs.map((t, i) => ({
     label: app.tabTitle(t) || "Terminal",

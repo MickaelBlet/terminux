@@ -162,7 +162,8 @@
   .vtabs.right::after {
     left: 0;
   }
-  .vtabs:not([style*="--a0"])::after {
+  .vtabs:not([style*="--a0"])::after,
+  :global(html[data-tab-indicator]:not([data-tab-indicator="outline"])) .vtabs::after {
     display: none;
   }
   .vtabs.collapsed {
@@ -176,6 +177,13 @@
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
+  }
+  /* Scrollbar on the outer (left) edge: rtl flips its side, children restore ltr. */
+  .left .list {
+    direction: rtl;
+  }
+  .left .list > :global(*) {
+    direction: ltr;
   }
   .add {
     display: flex;

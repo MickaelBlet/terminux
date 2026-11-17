@@ -15,6 +15,7 @@
   const active = $derived(i === app.activeTab);
   const vertical = $derived(variant === "vertical" || variant === "collapsed");
   const closeMode = $derived(app.ui?.closeButton ?? "hover");
+  const ellipsisStart = $derived(app.config?.tab_title_ellipsis === "start");
   const d = $derived(drag.state);
   const live = $derived(!!d?.active && !d.outside);
   const dragged = $derived(!!d?.active && d.from === i);
@@ -109,7 +110,7 @@
       }}
     />
   {:else}
-    <span class="title">{app.tabTitle(t) || "Terminal"}</span>
+    <span class="title" class:ellipsis-start={ellipsisStart}><bdi>{app.tabTitle(t) || "Terminal"}</bdi></span>
   {/if}
   {#if f.readOnly}<span class="flag" title="Read-only"><Icon name="lock" size={11} /></span>{/if}
   {#if t.broadcast}<span class="flag" title="Broadcasting input to all panes"><Icon name="broadcast" size={11} /></span>{/if}
@@ -140,15 +141,19 @@
     min-width: 90px;
     max-width: 220px;
     padding: 0 6px 0 10px;
-    color: var(--muted);
+    color: var(--tab-fg, var(--muted));
     cursor: pointer;
-    border-radius: 6px 6px 0 0;
+    border-radius: var(--tab-radius, 6px) var(--tab-radius, 6px) 0 0;
     transition:
       background 0.12s,
       color 0.12s;
   }
+  /* Transparent border instead of a margin: the gap above the tab stays clickable,
+     so a pointer at the screen's top edge hits the tab (fullscreen/maximized). */
   .tab:not(.vertical) {
-    margin-top: 4px;
+    border-top: 4px solid transparent;
+    /* !important: inline/shorthand `background` (colored tabs, drag) would reset it. */
+    background-clip: padding-box !important;
   }
   /* Short centered separator between inactive tabs. */
   .tab:not(.vertical)::after {
@@ -206,6 +211,34 @@
     padding-right: 1.5px;
     padding-left: 0;
   }
+  /* ui_theme.tab.indicator: underline (bar on the side facing the terminal), filled, none. */
+  :global(html[data-tab-indicator="none"]) .tab.active::before {
+    display: none;
+  }
+  :global(html[data-tab-indicator="filled"]) .tab.active::before {
+    padding: 0;
+    -webkit-mask: none;
+    mask: none;
+    opacity: 0.25;
+  }
+  :global(html[data-tab-indicator="underline"]) .tab.active::before {
+    padding: 0;
+    -webkit-mask: none;
+    mask: none;
+    border-radius: 0;
+    top: auto;
+    height: 2px;
+  }
+  :global(html[data-tab-indicator="underline"]) .tab.vertical.active::before {
+    top: 0;
+    height: auto;
+    left: auto;
+    width: 2px;
+  }
+  :global(html[data-tab-indicator="underline"]) .tab.vertical.right.active::before {
+    left: 0;
+    right: auto;
+  }
   .titlelength {
     flex: 0 0 auto;
     max-width: 320px;
@@ -221,16 +254,16 @@
   }
   .tab.vertical {
     flex: 0 0 auto;
-    height: 32px;
+    height: calc(var(--tab-height, 34px) - 2px);
     /* Flush with the inner edge so the active tab joins the terminal. */
     margin: 1px 0 1px 4px;
     min-width: 0;
     max-width: none;
-    border-radius: 5px 0 0 5px;
+    border-radius: var(--tab-radius, 5px) 0 0 var(--tab-radius, 5px);
   }
   .tab.vertical.right {
     margin: 1px 4px 1px 0;
-    border-radius: 0 5px 5px 0;
+    border-radius: 0 var(--tab-radius, 5px) var(--tab-radius, 5px) 0;
   }
   .tab.collapsed {
     justify-content: center;
@@ -337,11 +370,19 @@
     white-space: nowrap;
     text-overflow: ellipsis;
   }
+  /* RTL line box puts the ellipsis on the left; <bdi> keeps the text LTR. */
+  .title.ellipsis-start {
+    direction: rtl;
+    text-align: left;
+  }
+  .title bdi {
+    direction: ltr;
+  }
   .tab input {
     flex: 1;
     min-width: 0;
     background: var(--panel);
-    border: 1px solid var(--accent-dim);
+    border: 1px solid var(--accent);
     color: var(--fg);
     font: inherit;
     padding: 1px 4px;

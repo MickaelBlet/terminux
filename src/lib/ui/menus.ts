@@ -1,5 +1,5 @@
 // Context menus: pane, tab, new-tab dropdown (`new_tab_menu`).
-import { commandIcon, type ActionSpec } from "../commands";
+import { COMMANDS, commandIcon, commandName, type ActionSpec } from "../commands";
 import { findProfile, visibleProfiles, type MenuEntry, type Profile } from "../config";
 import type { App, TabPosition } from "../state.svelte";
 import { sessions } from "../term/session";
@@ -103,7 +103,11 @@ export function tabMenu(app: App, index: number, x: number, y: number): MenuRequ
     ]);
     groups.push([item("Export text…", "export_buffer"), item("Find…", "find")]);
   } else if (t) {
-    groups.push([item("Move tab to new window", "move_tab_to_new_window")]);
+    const kind = t.kind as "config" | "defaults";
+    groups.push([
+      { label: "Show in a pane", disabled: !app.recentTermTab(), run: () => void app.openEditorPane(kind) },
+      item("Move tab to new window", "move_tab_to_new_window"),
+    ]);
   }
   groups.push([
     { label: "Close tabs to the right", disabled: index >= app.tabs.length - 1, run: () => void app.closeTabs((_x, i) => i <= index) },
@@ -228,7 +232,8 @@ export function expandMenu(app: App, entries: MenuEntry[]): MenuItem[][] {
           }
           break;
         case "action": {
-          const a = e.id ? app.userAction(e.id) : undefined;
+          const name = e.id ? commandName(e.id) : undefined;
+          const a = name ? { name: COMMANDS[name].label, icon: COMMANDS[name].icon, spec: COMMANDS[name].spec } : e.id ? app.userAction(e.id) : undefined;
           if (a) push({ label: a.name, icon: e.icon ?? a.icon, hint: app.keymap.hint(a.spec), run: () => void app.run(a.spec) });
           break;
         }

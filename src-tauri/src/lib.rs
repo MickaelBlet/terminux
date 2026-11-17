@@ -6,6 +6,7 @@ mod pty;
 mod remote_files;
 mod session_store;
 mod ssh;
+mod toml_patch;
 mod windows;
 
 use std::collections::HashMap;
@@ -70,6 +71,18 @@ fn validate_config(src: String) -> Option<config::ConfigError> {
 #[tauri::command]
 fn write_config(src: String) -> CmdResult<()> {
     config::write(&src)
+}
+
+/// Raw config.toml text as JSON (settings UI read side; no fragments or generated profiles).
+#[tauri::command]
+fn config_parse(src: String) -> CmdResult<serde_json::Value> {
+    toml_patch::parse(&src)
+}
+
+/// Apply settings UI edits to config.toml text, keeping comments and layout.
+#[tauri::command]
+fn config_patch(src: String, ops: Vec<toml_patch::PatchOp>) -> CmdResult<String> {
+    toml_patch::patch(&src, &ops)
 }
 
 #[tauri::command]
@@ -542,6 +555,8 @@ pub fn run() {
             open_config,
             config_path,
             read_config,
+            config_parse,
+            config_patch,
             validate_config,
             write_config,
             default_config,

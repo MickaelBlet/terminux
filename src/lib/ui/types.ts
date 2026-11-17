@@ -12,12 +12,8 @@ export interface PaletteItem {
   children?: () => PaletteItem[];
   /** Called when the item is highlighted (live preview). */
   preview?: () => void;
-  /** Stable identity, keeps the selection across `PaletteView.refresh`. */
+  /** Stable identity (list key). */
   id?: string;
-  /** Run without closing the palette; the list is rebuilt with `PaletteView.refresh`. */
-  keepOpen?: boolean;
-  /** Reorderable item (Alt+Up / Alt+Down, arrow buttons). */
-  move?: (delta: -1 | 1) => void;
 }
 
 export interface PaletteView {
@@ -29,8 +25,6 @@ export interface PaletteView {
   commandline?: (text: string) => void;
   /** Initial query. */
   query?: string;
-  /** Rebuild the top-level items (after a `keepOpen` run or a move). */
-  refresh?: () => PaletteItem[];
 }
 
 export interface MenuItem {

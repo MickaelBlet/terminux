@@ -10,7 +10,12 @@ export interface UiLook {
   closeButton: "always" | "hover" | "never" | "activeonly";
   iconStyle: "default" | "hidden" | "monochrome";
   rainbowFrame: boolean;
+  /** Tab text colors (null: theme default / contrast with the tab background). */
+  tabFg: string | null;
+  tabFgInactive: string | null;
 }
+
+export type TabIndicator = "outline" | "underline" | "filled" | "none";
 
 export const BUILTIN_UI_THEMES: UiTheme[] = [
   { name: "dark", window: { application_theme: "dark" }, tab: { background: "terminalBackground" } },
@@ -52,19 +57,71 @@ function cssColor(v: string | undefined): string | null {
   return v;
 }
 
+/** CSS variables set by a theme (all optional; unset ones fall back to app.css). */
+export const UI_THEME_VARS = [
+  "--chrome-custom", "--chrome-unfocused-custom", "--frame-custom", "--frame-focus-custom",
+  "--accent", "--accent-dim", "--term-bg", "--fg", "--muted", "--panel", "--border", "--hover", "--warn", "--danger",
+  "--tab-radius", "--tab-height", "--pane-divider", "--pane-divider-width", "--pane-active", "--ui-font", "--ui-font-size",
+] as const;
+
+const px = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? `${v}px` : null);
+
+export function tabIndicator(t: UiTheme): TabIndicator {
+  const v = norm(t.tab?.indicator);
+  return v === "underline" || v === "filled" || v === "none" ? v : "outline";
+}
+
+/** CSS variables of a theme: applied on the document, or on a preview element. */
+export function uiThemeVars(t: UiTheme): Record<string, string> {
+  const out: Record<string, string> = {};
+  const color = (name: string, v: string | undefined) => {
+    const c = cssColor(v);
+    if (c && c !== "terminal") out[name] = c;
+  };
+  color("--chrome-custom", t.tab_row?.background);
+  color("--chrome-unfocused-custom", t.tab_row?.unfocused_background);
+  color("--frame-custom", t.window?.unfocused_frame ?? t.window?.frame);
+  color("--frame-focus-custom", t.window?.frame);
+  const c = t.colors ?? {};
+  // "accent" in the accent itself would be circular.
+  if (c.accent && norm(c.accent) !== "accent") {
+    out["--accent"] = c.accent;
+    out["--accent-dim"] = `color-mix(in srgb, ${c.accent} 72%, transparent)`;
+  }
+  color("--term-bg", c.background);
+  color("--fg", c.foreground);
+  color("--muted", c.muted);
+  color("--panel", c.panel);
+  color("--border", c.border);
+  color("--hover", c.hover);
+  color("--warn", c.warning);
+  color("--danger", c.danger);
+  color("--pane-divider", t.pane?.divider);
+  color("--pane-active", t.pane?.active_border);
+  const sizes: [string, unknown][] = [
+    ["--tab-radius", t.tab?.radius],
+    ["--tab-height", t.tab?.height],
+    ["--pane-divider-width", t.pane?.divider_width],
+    ["--ui-font-size", t.window?.font_size],
+  ];
+  for (const [k, v] of sizes) {
+    const p = px(v);
+    if (p) out[k] = p;
+  }
+  if (t.window?.font?.trim()) out["--ui-font"] = t.window.font;
+  return out;
+}
+
 export function applyUiTheme(cfg: Config, dark: boolean): UiLook {
   const t = findUiTheme(cfg);
   const root = document.documentElement;
   root.dataset.theme = dark ? "dark" : "light";
-  const set = (name: string, v: string | null | undefined) => {
-    const c = cssColor(v ?? undefined);
-    if (c && c !== "terminal") root.style.setProperty(name, c);
-    else root.style.removeProperty(name);
-  };
-  set("--chrome-custom", t.tab_row?.background);
-  set("--chrome-unfocused-custom", t.tab_row?.unfocused_background);
-  set("--frame-custom", t.window?.unfocused_frame ?? t.window?.frame);
-  set("--frame-focus-custom", t.window?.frame);
+  const vars = uiThemeVars(t);
+  for (const k of UI_THEME_VARS) {
+    if (vars[k]) root.style.setProperty(k, vars[k]);
+    else root.style.removeProperty(k);
+  }
+  root.dataset.tabIndicator = tabIndicator(t);
   root.classList.toggle("no-animations", !!cfg.disable_animations);
   const close = norm(t.tab?.show_close_button);
   const icon = norm(t.tab?.icon_style);
@@ -76,5 +133,7 @@ export function applyUiTheme(cfg: Config, dark: boolean): UiLook {
     closeButton: close === "always" || close === "never" || close === "activeonly" ? close : "hover",
     iconStyle: icon === "hidden" || icon === "monochrome" ? icon : "default",
     rainbowFrame: !!t.window?.rainbow_frame,
+    tabFg: cssColor(t.tab?.foreground),
+    tabFgInactive: cssColor(t.tab?.unfocused_foreground),
   };
 }

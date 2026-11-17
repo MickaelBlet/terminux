@@ -43,7 +43,9 @@
   src: url("/fonts/NotoSansMath-Regular.ttf") format("truetype");
 }
 
-:root {
+/* Base palettes; .theme-dark / .theme-light apply them to a subtree (UI theme preview). */
+:root,
+.theme-dark {
   --term-bg: #14161b;
   --chrome-default: #0f1115;
   --chrome: var(--chrome-custom, var(--chrome-default));
@@ -64,7 +66,8 @@
   color-scheme: dark;
 }
 
-:root[data-theme="light"] {
+:root[data-theme="light"],
+.theme-light {
   --term-bg: #fafafa;
   --chrome-default: #e8e9ec;
   --panel: #ffffff;
@@ -94,7 +97,9 @@ body {
   overflow: hidden;
   background: var(--body-bg, var(--term-bg));
   color: var(--fg);
-  font: 12.5px/1.4 "JetBrains Mono", system-ui, sans-serif;
+  font-size: var(--ui-font-size, 12.5px);
+  line-height: 1.4;
+  font-family: var(--ui-font, "JetBrains Mono", system-ui, sans-serif);
 }
 
 html.framed body {
@@ -120,6 +125,19 @@ html.rainbow body {
 html.transparent,
 html.transparent body {
   --body-bg: transparent;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 1px solid var(--accent);
+}
+button:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
 }
 
 body.dragging-col,

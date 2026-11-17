@@ -77,28 +77,10 @@
       query = "";
       return;
     }
-    if (it.keepOpen && root.refresh && stack.length === 1) {
-      it.run?.();
-      refresh(it);
-      return;
-    }
     done = true;
     app.palette = null;
     app.focusCurrent();
     it.run?.();
-  }
-  /** Rebuild the list and keep `it` selected. */
-  function refresh(it: PaletteItem) {
-    if (!root.refresh) return;
-    stack[0] = { title: "", items: root.refresh() };
-    const i = filtered.findIndex((x) => (it.id ? x.id === it.id : x.label === it.label));
-    if (i >= 0) sel = i;
-    input.focus();
-  }
-  function move(it: PaletteItem | undefined, delta: -1 | 1) {
-    if (!it?.move) return;
-    it.move(delta);
-    refresh(it);
   }
   function submit() {
     if (lineMode) {
@@ -116,8 +98,7 @@
     query = root.commandline && stack.length === 1 ? ">" : "";
   }
   function onkeydown(e: KeyboardEvent) {
-    if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) move(filtered[sel], e.key === "ArrowUp" ? -1 : 1);
-    else if (e.key === "ArrowDown") sel = Math.min(sel + 1, filtered.length - 1);
+    if (e.key === "ArrowDown") sel = Math.min(sel + 1, filtered.length - 1);
     else if (e.key === "ArrowUp") sel = Math.max(sel - 1, 0);
     else if (e.key === "PageDown") sel = Math.min(sel + 10, filtered.length - 1);
     else if (e.key === "PageUp") sel = Math.max(sel - 10, 0);
@@ -148,19 +129,13 @@
         <li class="empty">{query.trim() ? `Enter: run "${query.trim()}"` : "Type a command line: new-tab -p shell ; split-pane -V -p python"}</li>
       {:else}
         {#each filtered as it, i ((it.id ?? it.label) + i)}
-          <li class:sel={i === sel} class:movable={!!it.move} use:scrollIntoView={i === sel}>
+          <li class:sel={i === sel} use:scrollIntoView={i === sel}>
             <button onclick={() => exec(it)} onmousemove={() => (sel = i)}>
               {#if it.icon}<span class="icon"><ProfileIcon icon={it.icon} /></span>{/if}
               <span class="label">{it.label}{#if it.detail}<span class="detail">{it.detail}</span>{/if}</span>
               {#if it.hint}<kbd>{it.hint}</kbd>{/if}
               {#if it.children}<span class="more"><Icon name="right" size={11} /></span>{/if}
             </button>
-            {#if it.move}
-              <span class="moves">
-                <button title="Move up (Alt+Up)" tabindex="-1" onclick={() => move(it, -1)}><Icon name="up" size={12} /></button>
-                <button title="Move down (Alt+Down)" tabindex="-1" onclick={() => move(it, 1)}><Icon name="down" size={12} /></button>
-              </span>
-            {/if}
           </li>
         {:else}
           <li class="empty">No match</li>
@@ -243,29 +218,6 @@
   }
   li.sel > button {
     background: var(--hover);
-  }
-  li.movable > button {
-    padding-right: 64px;
-  }
-  .moves {
-    position: absolute;
-    right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: none;
-    gap: 2px;
-  }
-  li.sel .moves {
-    display: flex;
-  }
-  .moves button {
-    width: auto;
-    padding: 3px;
-    color: var(--muted);
-  }
-  .moves button:hover {
-    color: var(--fg);
-    background: var(--panel);
   }
   .icon {
     display: grid;

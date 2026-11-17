@@ -17,7 +17,7 @@ export function tabInfo(app: App, t: Tab, i: number) {
     count: ids.length,
     readOnly: panes.some((p) => p.readOnly),
     progress: active?.progress ?? panes.find((p) => p.progress)?.progress ?? null,
-    icon: active?.kind === "file" ? "📝" : (active?.look?.icon ?? findProfile(app.config, active?.spec.profileId)?.icon ?? null),
+    icon: active?.kind === "file" ? "📝" : active?.kind === "config" || active?.kind === "defaults" ? "gear" : (active?.look?.icon ?? findProfile(app.config, active?.spec.profileId)?.icon ?? null),
     background: active?.look?.background ?? null,
   };
 }
@@ -27,14 +27,16 @@ export function tabStyle(app: App, t: Tab, active: boolean, bg: string | null): 
   const color = app.tabColor(t);
   if (color) return `--tab-bg:${color};background:${color};color:${contrastText(color)}`;
   const ui = app.ui;
-  if (active) return filled(ui?.tabActive === "terminal" || !ui ? (bg ?? "var(--tab-active)") : ui.tabActive);
-  return ui?.tabInactive && ui.tabInactive !== "terminal" ? filled(ui.tabInactive) : "";
+  if (active) return filled(ui?.tabActive === "terminal" || !ui ? (bg ?? "var(--tab-active)") : ui.tabActive, ui?.tabFg);
+  if (ui?.tabInactive && ui.tabInactive !== "terminal") return filled(ui.tabInactive, ui.tabFgInactive);
+  return ui?.tabFgInactive ? `color:${ui.tabFgInactive}` : "";
 }
 
 const contrastText = (hex: string) => (luminance(hex) > 0.55 ? "#111" : "#fff");
 
 /** Background plus a readable text color when the background is a concrete color
  *  (e.g. a dark terminal background under a light theme). */
-function filled(bg: string): string {
+function filled(bg: string, fg?: string | null): string {
+  if (fg) return `background:${bg};color:${fg}`;
   return parseHex(bg) ? `background:${bg};color:${contrastText(bg)}` : `background:${bg}`;
 }

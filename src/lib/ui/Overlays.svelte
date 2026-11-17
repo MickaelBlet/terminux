@@ -187,7 +187,7 @@
     outline: none;
   }
   input:focus {
-    border-color: var(--accent-dim);
+    border-color: var(--accent);
   }
   .buttons {
     display: flex;
@@ -206,7 +206,9 @@
   button:hover,
   button:focus-visible {
     background: var(--hover);
-    outline: none;
+  }
+  button:focus-visible {
+    outline: 1px solid var(--accent);
   }
   button.ok {
     border-color: var(--accent-dim);

@@ -240,7 +240,7 @@ Rules:
 - `keys` accepts the same combos (`ctrl+shift+t`); case is ignored. A list of combos works.
 - Rebind or unbind built-in commands in `[keys]`: `find = "F3"`, `new_window = ""`.
 - Nested palette entries built with `iterateOn` / nested `commands` are not implemented; use [`[[new_tab_menu]]`](../reference/configuration.md#new_tab_menu) for the new-tab dropdown and plain `[[action]]`s for the palette.
-- Action `id` is used to refer to an action from `[keys]`, `toolbar` and `new_tab_menu` (`type = "action"`).
+- Action `id` is used to refer to an action from `[keys]`, `toolbar` and `new_tab_menu` (`type = "action"`). In `new_tab_menu`, built-in command names (`open_settings`, …) work too, in place of WT's `Terminal.*` ids.
 - Extra Terminux commands: `show_suggestions`, `save_snippet`, `toggle_vertical_tabs`, `customize_toolbar`, `toggle_snippets_pane`, `open_cwd`, ... see [actions](../reference/actions.md).
 - Old Terminux names (`split_right`, `zoom`, `tab_1`, ...) predating the Windows Terminal parity are still accepted in `[keys]`.
 

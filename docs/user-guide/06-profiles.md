@@ -220,7 +220,7 @@ type = "action"
 id = "dev-layout"
 ```
 
-(`id` refers to an `[[action]]` that has `id = "dev-layout"`.) Profiles in the menu show their `Ctrl+Shift+1..9` hint for the first nine (in file order, hidden profiles excluded).
+(`id` refers to an `[[action]]` that has `id = "dev-layout"`, or to a built-in [command name](../reference/actions.md#named-commands) such as `open_settings`.) Profiles in the menu show their `Ctrl+Shift+1..9` hint for the first nine (in file order, hidden profiles excluded).
 
 ## Icons
 

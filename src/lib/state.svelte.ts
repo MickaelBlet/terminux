@@ -8,7 +8,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { ACTIONS, GLOBAL_COMMANDS, type ActionContext } from "./actions";
 import { playBell } from "./audio";
 import { COMMANDS, commandName, parseUserActions, type ActionSpec, type UserAction } from "./commands";
-import { DEFAULT_SEARCH_URL, FALLBACK_CONFIG, findProfile, visibleProfiles, type Config } from "./config";
+import { DEFAULT_SEARCH_URL, FALLBACK_CONFIG, findProfile, visibleProfiles, type Config, type UiTheme } from "./config";
 import { eventKey, Keymap } from "./keys";
 import * as tree from "./layout/tree";
 import type { Dir, Direction, LayoutNode } from "./layout/tree";
@@ -147,6 +147,8 @@ export class App {
   renamingPane = $state<string | null>(null);
   about = $state(false);
   configDirty = $state(false);
+  /** Set while the settings UI records a key combo: bindings don't run. */
+  keyCapture = false;
   searchPane = $state<string | null>(null);
   search = $state({ query: "", regex: false, caseSensitive: false, wholeWord: false });
   /** Global font zoom in px, added to every profile's font size. */
@@ -154,6 +156,8 @@ export class App {
   /** Effective UI brightness. */
   dark = $state(true);
   ui = $state.raw<UiLook | null>(null);
+  /** UI theme tried from the settings UI (not saved), shown instead of app_theme. */
+  private uiPreview: UiTheme | null = null;
   fullscreen = $state(false);
   focusMode = $state(false);
   /** Tab position set by toggle_vertical_tabs / the tab bar menu (null: follow config). Persisted per machine. */
@@ -350,7 +354,7 @@ export class App {
   }
 
   tabTitle(t: Tab): string {
-    if (t.kind === "config") return "config.toml" + (this.configDirty ? " ●" : "");
+    if (t.kind === "config") return "Settings" + (this.configDirty ? " ●" : "");
     if (t.kind === "defaults") return "Default settings";
     if (t.name) return t.name;
     return this.paneTitle(t.active);
@@ -361,7 +365,9 @@ export class App {
     if (!p) return "";
     if (p.name) return p.name;
     if (p.kind === "snippets") return "Snippets";
-    if (p.kind === "file") return baseName(p.spec.file ?? "") + (p.dirty ? " ●" : "");
+    if (p.kind === "config") return "Settings" + (this.configDirty ? " ●" : "");
+    if (p.kind === "defaults") return "Default settings";
+    if (p.kind === "file") return baseName(p.spec.remoteLabel ?? p.spec.file ?? "") + (p.dirty ? " ●" : "");
     return p.title || p.look?.tabTitle || this.profileName(p.spec.profileId);
   }
 
@@ -413,11 +419,20 @@ export class App {
     windows.configChanged(this);
   }
 
+  /** Show `t` as the UI theme of this window until called with null (settings "Try"). */
+  previewUiTheme(t: UiTheme | null) {
+    if (!t && !this.uiPreview) return;
+    this.uiPreview = t;
+    this.refreshTheme();
+  }
+
   private refreshTheme() {
-    const dark = isDarkTheme(this.config);
+    const p = this.uiPreview;
+    const cfg = p ? { ...this.config, app_theme: p.name, ui_themes: [p, ...(this.config.ui_themes ?? [])] } : this.config;
+    const dark = isDarkTheme(cfg);
     const changed = dark !== this.dark;
     this.dark = dark;
-    this.ui = applyUiTheme(this.config, dark);
+    this.ui = applyUiTheme(cfg, dark);
     if (changed) this.updateSessions();
   }
 
@@ -534,9 +549,9 @@ export class App {
 
   /** Ask before dropping unsaved file editor changes. */
   private async confirmUnsaved(ids: string[]): Promise<boolean> {
-    const dirty = ids.map((id) => this.panes[id]).filter((p) => p?.kind === "file" && p.dirty);
+    const dirty = ids.map((id) => this.panes[id]).filter((p) => (p?.kind === "file" && p.dirty) || (p?.kind === "config" && this.configDirty));
     if (!dirty.length) return true;
-    const names = dirty.map((p) => baseName(p.spec.file ?? "")).join(", ");
+    const names = dirty.map((p) => (p.kind === "config" ? "Settings" : baseName(p.spec.remoteLabel ?? p.spec.file ?? ""))).join(", ");
     return this.confirm("Discard unsaved changes?", names, { ok: "Discard", danger: true });
   }
 
@@ -769,6 +784,11 @@ export class App {
 
   /** Open (or focus) the settings editor, or the read-only default settings. */
   openEditor(kind: "config" | "defaults" = "config", at = this.tabs.length, focus = true) {
+    const pane = this.editorPane(kind);
+    if (pane) {
+      if (focus) this.focusPane(pane);
+      return;
+    }
     let i = this.tabs.findIndex((t) => t.kind === kind);
     if (i < 0) {
       const pane = EDITOR_PANES[kind];
@@ -779,6 +799,46 @@ export class App {
       });
     }
     if (focus) this.gotoTab(i);
+  }
+
+  /** Most recently used terminal tab. */
+  recentTermTab(): Tab | undefined {
+    return this.tabMru.map((id) => this.tabs.find((t) => t.id === id)).find((t) => t?.kind === "term");
+  }
+
+  /** Pane showing the settings editor `kind`, if any. */
+  editorPane(kind: "config" | "defaults"): string | undefined {
+    return Object.values(this.panes).find((p) => p.kind === kind && this.tabOf(p.id))?.id;
+  }
+
+  /**
+   * Show the settings editor `kind` as a pane, moving it out of its tab: next to `target` on `side`
+   * (default: beside the active pane of the current or most recent terminal tab).
+   */
+  openEditorPane(kind: "config" | "defaults" = "config", at?: { tab: Tab; target: string; side: Direction | "center" | "auto" }): boolean {
+    const existing = this.editorPane(kind);
+    if (existing) {
+      if (at) return this.dockPane(existing, at.tab, at.target, at.side === "center" ? "auto" : at.side);
+      this.focusPane(existing);
+      return true;
+    }
+    const host = at?.tab ?? (this.tab?.kind === "term" ? this.tab : this.recentTermTab());
+    const id = this.addPaneInfo(kind, { profileId: this.config.default_profile }).id;
+    if (host) {
+      const target = at?.target ?? host.active;
+      const side = at?.side ?? "auto";
+      const { dir, before } = side === "auto" || side === "center" ? this.splitSide("auto", target) : tree.sideOf(side);
+      host.zoom = null;
+      host.root = tree.insert(host.root, target, dir, tree.pane(id), { before });
+    } else {
+      this.tabs.push({
+        id: tree.newId("t"), kind: "term", root: tree.pane(id), active: id, zoom: null, name: null, color: null, broadcast: false, mru: [id], group: null,
+      });
+    }
+    const i = this.tabs.findIndex((t) => t.kind === kind);
+    if (i >= 0) this.dropTab(i); // the editor (and its unsaved draft) remounts in the pane
+    this.focusPane(id);
+    return true;
   }
 
   gotoTab(i: number): boolean {
@@ -836,7 +896,7 @@ export class App {
     const t = this.tabs[i];
     if (!t) return false;
     if (!opts.force) {
-      if (t.kind === "config" && this.configDirty && !(await this.confirm("Discard unsaved changes?", "config.toml has unsaved changes.", { ok: "Discard", danger: true }))) return false;
+      if (t.kind === "config" && this.configDirty && !(await this.confirm("Discard unsaved changes?", "Settings have unsaved changes.", { ok: "Discard", danger: true }))) return false;
       if (tree.paneIds(t.root).some((id) => this.panes[id]?.readOnly) && !(await this.confirm("Close read-only pane?", "This tab contains a read-only pane.", { ok: "Close", danger: true }))) return false;
       if (!(await this.confirmUnsaved(tree.paneIds(t.root)))) return false;
     }
@@ -1006,6 +1066,7 @@ export class App {
 
   private disposePane(id: string, kill = true) {
     sessions.get(id)?.dispose(kill);
+    if (this.panes[id]?.kind === "config") this.configDirty = false; // edits are discarded (confirmed by the caller)
     delete this.panes[id];
     if (this.searchPane === id) this.searchPane = null;
     windows.syncProgress(this);
@@ -1070,8 +1131,9 @@ export class App {
   async captureNode(t: Tab, id: string): Promise<TabSnapshot | null> {
     const node = tree.find(t.root, id);
     if (!node) return null;
-    const root = $state.snapshot(node) as LayoutNode;
     const ids = tree.paneIds(node);
+    if (!(await this.confirmUnsaved(ids))) return null; // editors reload from disk in the other window
+    const root = $state.snapshot(node) as LayoutNode;
     const panes = (await Promise.all(ids.map((p) => this.capturePane(p, true)))).filter((p) => !!p);
     const active = ids.includes(t.active) ? t.active : ids[0];
     this.removeNode(t, id, "detach");
@@ -1150,6 +1212,14 @@ export class App {
     const node = tree.find(from.root, id);
     if (!node) return false;
     const target = index >= 0 ? this.tabs[index] : undefined;
+    const kind = this.panes[id]?.kind;
+    if (!target && isEditorPane(kind)) {
+      // The settings editor goes back to its own tab (its unsaved draft follows the remount).
+      delete this.panes[id];
+      this.openEditor(kind, this.tabs.indexOf(from) + 1, false);
+      this.removeNode(from, id, "keep");
+      return this.gotoTab(this.tabs.findIndex((t) => t.kind === kind));
+    }
     if (target === from || (target && target.kind !== "term")) return false;
     if (!target && node === from.root) return false; // already alone in its tab
     if (target) return this.dockPane(id, target, target.active, "auto");
@@ -1403,6 +1473,7 @@ export class App {
   }
 
   private onKeyDown(e: KeyboardEvent) {
+    if (this.keyCapture) return; // a key binding is being recorded (settings UI)
     if (this.tabSwitcher) {
       if (e.key === "Escape") this.commitTabSwitcher(true);
       else if (e.key === "Enter") this.commitTabSwitcher();

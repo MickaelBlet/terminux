@@ -572,7 +572,7 @@ open_new_tab_dropdown = "Ctrl+Shift+Space"
 
 ### open_settings
 
-Open the built-in settings editor (toggles it closed when it is the active tab). `target` selects another destination, see the arguments below.
+Open the settings tab on the settings UI (forms; toggles it closed when it is the active tab or the focused pane; focuses it when it is shown in a pane). The tab switches between the settings UI and the TOML editor (**TOML** / **Settings UI** buttons); both edit the same unsaved draft. `target` selects another destination, see the arguments below.
 
 - Action: `open_settings`, `target = "settings_ui"`
 - Label: Open settings
@@ -581,13 +581,26 @@ Open the built-in settings editor (toggles it closed when it is the active tab).
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
-| `target` | string | `settings_ui` | `settings_ui` (built-in editor, toggles), `settings_file` or `all_files` (external editor), `defaults_file` (read-only defaults in the built-in editor), `directory` (file manager). Case and `_`/`-` are ignored. |
+| `target` | string | `settings_ui` | `settings_ui` (settings tab on the settings UI, toggles), `settings_toml` (settings tab on the TOML editor, toggles), no target (settings tab on the view used last), `settings_file` or `all_files` (external editor), `defaults_file` (read-only defaults in the built-in editor), `settings_pane` / `defaults_pane` (the built-in editor, or the defaults, as a pane beside the active terminal, moved out of its tab), `directory` (file manager). Case and `_`/`-` are ignored. |
 
 ```toml
 [[action]]
 name = "Edit config externally"
 command = "open_settings"
 target = "settings_file"
+```
+
+### open_settings_toml
+
+Open the settings tab on the TOML editor of `config.toml` (completion, hover documentation, lint).
+
+- Action: `open_settings`, `target = "settings_toml"` ([parameters](#open_settings))
+- Label: Open settings file (TOML editor)
+- Default keys: none
+
+```toml
+[keys]
+open_settings_toml = "Ctrl+Alt+S"   # example binding
 ```
 
 ### open_settings_file
@@ -615,6 +628,19 @@ Open the read-only default configuration in the built-in editor.
 ```toml
 [keys]
 open_default_settings = "Ctrl+Alt+,"
+```
+
+### open_settings_pane
+
+Show the built-in settings editor as a pane beside the active pane of the current (or most recent) terminal tab. An open settings tab moves into the pane, unsaved edits included. "Move pane to new tab" turns it back into the settings tab.
+
+- Action: `open_settings`, `target = "settings_pane"` ([parameters](#open_settings))
+- Label: Open settings in a pane
+- Default keys: none
+
+```toml
+[keys]
+open_settings_pane = "Ctrl+Alt+X"   # example binding
 ```
 
 ### open_settings_directory
@@ -915,7 +941,7 @@ open_cwd = "Ctrl+Alt+X"   # example binding
 
 ### customize_toolbar
 
-Open the toolbar editor palette (add, remove and reorder title-bar buttons; saved to [`toolbar`](configuration.md#toolbar)).
+Open the **Toolbar** page of the settings UI (add, remove and reorder title-bar buttons; saved to [`toolbar`](configuration.md#toolbar)).
 
 - Action: `customize_toolbar`
 - Label: Customize toolbar…

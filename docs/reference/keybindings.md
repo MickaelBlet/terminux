@@ -98,7 +98,7 @@ Names from before Windows Terminal parity are still accepted in `[keys]` and map
 
 ## Default keymap
 
-Every command with default keys. All other commands (`toggle_focus_mode`, `toggle_vertical_tabs`, `toggle_vertical_tabs_collapsed`, `toggle_always_on_top`, `open_settings_directory`, `find_next`, `find_prev`, `toggle_shader_effects`, ...) have no default binding: see [actions.md](actions.md) for the complete list.
+Every command with default keys. All other commands (`toggle_focus_mode`, `toggle_vertical_tabs`, `toggle_vertical_tabs_collapsed`, `toggle_always_on_top`, `open_settings_directory`, `open_settings_toml`, `find_next`, `find_prev`, `toggle_shader_effects`, ...) have no default binding: see [actions.md](actions.md) for the complete list.
 
 ### Application and windows
 
@@ -210,8 +210,7 @@ Mouse wheel (not rebindable, toggled by [`scroll_to_zoom`](configuration.md#scro
 | Tab switcher overlay (`tab_switcher_mode = "mru"`) | `Tab` / `Shift+Tab` / `Down` / `Up` move, `Enter` or releasing the modifier selects, `Escape` cancels |
 | Exited pane | `Enter` restarts the process, `Ctrl+D` closes the pane |
 | Mouse | `Alt+drag` rectangular selection, `Ctrl`/`Shift`+right click opens the pane menu, `Shift` held bypasses applications that grab the mouse |
-| Settings editor | `Ctrl+S` save, `Ctrl+F` find, `Ctrl+A` select all, `Ctrl+Space` completion |
-| Palette | `Alt+Up` / `Alt+Down` reorder in the toolbar editor |
+| Settings (UI or TOML editor) | `Ctrl+S` save, `Ctrl+F` find, `Ctrl+A` select all, `Ctrl+Space` completion |
 
 ## Global (OS-level) shortcuts
 

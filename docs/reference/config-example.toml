@@ -25,6 +25,7 @@ screen_reader = false                 # accessible text buffer for screen reader
 # ---------------------------------------------------------------------------
 app_theme = "midnight"                # "dark" | "light" | "system" | "legacyDark" | "legacyLight" | "legacySystem" | a [[ui_theme]] name
 tab_width_mode = "equal"              # "equal" | "title_length" | "compact"
+tab_title_ellipsis = "end"            # "end" | "start" (keep the end of long titles)
 tab_position = "top"                  # "top" | "left" | "right" (vertical tabs)
 vertical_tab_width = 200              # px, 120-480 (vertical tab panel)
 vertical_tabs_collapsed = false       # start the vertical panel collapsed to icons
@@ -241,6 +242,11 @@ background = "accent"                 # a color, "terminalBackground" or "accent
 unfocused_background = "#101522"
 show_close_button = "hover"           # "always" | "hover" | "never" | "active_only"
 icon_style = "monochrome"             # "default" | "hidden" | "monochrome"
+foreground = "#ffffff"                # active tab text
+unfocused_foreground = "#8b93a7"      # inactive tabs text
+indicator = "outline"                 # "outline" | "underline" | "filled" | "none"
+radius = 6                            # px
+height = 34                           # tab row height, px
 
 [ui_theme.tab_row]
 background = "#0b0f19"
@@ -252,6 +258,24 @@ frame = "#58a6ff"
 unfocused_frame = "#2a3350"
 use_mica = false                      # Windows 11
 rainbow_frame = false
+font = "JetBrains Mono"               # interface font (not terminals)
+font_size = 12.5                      # px
+
+[ui_theme.colors]                     # interface palette; unset keys keep the dark / light defaults
+accent = "#58a6ff"
+background = "#0d1117"                # settings, editors
+foreground = "#e6edf3"
+muted = "#8b93a7"
+panel = "#161b22"                     # menus, dialogs, buttons
+border = "#21262d"
+hover = "#ffffff12"
+warning = "#d29922"
+danger = "#f85149"
+
+[ui_theme.pane]
+divider = "#21262d"                   # split divider
+divider_width = 4                     # px
+active_border = "#58a6ff"             # active pane outline (several panes)
 
 # ---------------------------------------------------------------------------
 # Custom actions: shown in the command palette, bindable, usable on the toolbar

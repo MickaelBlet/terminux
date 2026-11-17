@@ -14,6 +14,7 @@ notifications = true
 # --- Appearance ---
 # app_theme = "dark"             # "dark" | "light" | "system" | name of a [[ui_theme]]
 # tab_width_mode = "equal"       # "equal" | "title_length" | "compact"
+# tab_title_ellipsis = "end"     # "end" | "start" (truncate on the left, keep the end of the title)
 # tab_position = "top"           # "top" | "left" | "right" (vertical tabs)
 # vertical_tab_width = 200       # initial width of the vertical tab panel (px)
 # vertical_tabs_collapsed = false

@@ -14,15 +14,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pane title bar (`show_pane_title_bar`): icon, title, zoom and close buttons; double-click or `open_pane_renamer` to rename a pane, `reset_pane_title` / `rename_pane` action
 - Drag panes by their title bar: dock on a side of another pane, swap, move to another tab, a new tab or another window
 - `move_pane_left` / `_right` / `_up` / `_down` (`Ctrl+Alt+Shift+Arrow`): move the active pane next to its neighbour or along the tab edge
+- Settings UI: forms for global settings, profiles (generated ones too), color schemes, color overrides, UI themes (live preview, Try), key bindings, custom actions, new tab menu and toolbar; search, auto-save or draft with Save/Discard; edits keep `config.toml` comments and layout
+- `open_settings_toml`, `open_settings_pane`: settings tab on the TOML editor, or the settings editor as a pane (also by dragging its tab onto a pane, or tab menu > Show in a pane)
+- `[ui_theme]`: `colors` (interface palette), `pane` (divider, active border), `tab.foreground` / `unfocused_foreground` / `indicator` / `radius` / `height`, `window.font` / `font_size`
+- `tab_title_ellipsis = "start"`: cut long tab titles on the left
+- `[[new_tab_menu]]` `type = "action"` accepts built-in command names
+- Color schemes: `cursor_accent`, `selection_foreground` in completion
 
 ### Changed
 
+- `customize_toolbar` opens Settings → Toolbar instead of the palette editor
 - `open_snippets_pane` renamed `toggle_snippets_pane` (old name still accepted): a tab has at most one snippets pane, running the action again closes it; it opens at 20% width (`size` overrides) and has a close button in its header
 
 ### Fixed
 
 - Reloading the page (e.g. F5 / devtools) keeps the window's tabs and their running shells instead of losing them
 - The webview's native context menu no longer appears on right-click (still available in text fields)
+- Maximized / fullscreen windows: no frame, and a pointer at the screen's top edge hits the tabs
 
 ## [0.1.5] - 2026-11-16
 

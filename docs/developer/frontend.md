@@ -293,7 +293,7 @@ Components in `src/lib/ui/` (Svelte 5):
 | `ResizeHandles.svelte` | Edge handles for the frameless window |
 | `Icon.svelte`, `ProfileIcon.svelte`, `icons.ts` | Built-in 16x16 stroke icons; profile icon (emoji, image path or built-in name) |
 | `menus.ts` | Builders: `paneMenu`, `tabMenu`, `tabBarMenu`, `toolbarMenu`, `newTabMenu` (expands `new_tab_menu`), `editorMenu` |
-| `palettes.ts` | Builders: `commandPalette`, `colorSchemePalette`, `suggestionsPalette`, `tabSearchPalette`, `toolbarPalette` |
+| `palettes.ts` | Builders: `commandPalette`, `colorSchemePalette`, `suggestionsPalette`, `tabSearchPalette` |
 | `types.ts` | `PaletteItem`, `PaletteView`, `MenuItem`, `MenuRequest`, `DialogRequest`, `Toast` |
 | `tab-drag.svelte.ts`, `tab-shift.ts`, `tab-baseline.ts`, `flip.svelte.ts`, `tab-info.ts` | Tab dragging (reorder, tear-out, drop on another window), pure slot geometry (tested), FLIP animation, shared per-tab display data |
 

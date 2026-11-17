@@ -163,6 +163,8 @@ With the [pane title bar](#pane-title-bar) shown, drag a pane by its title bar:
 
 `Escape` cancels the drag. Processes keep running.
 
+The settings tab (`config.toml`, or the default settings) can be dragged the same way from the tab bar onto a pane: the last terminal tab is shown while dragging over the content area, and the settings editor docks there as a pane.
+
 ### With the keyboard
 
 `Ctrl+Alt+Shift+Arrow` ([`move_pane_left`](../reference/actions.md#move_pane_left) / `_right` / `_up` / `_down`) moves the active pane (or selected group) to that side of its neighbour, or along that edge of the tab when there is no neighbour, like VS Code's "Move editor group". `swap_pane_*` exchanges two panes instead.

@@ -140,6 +140,18 @@ How tab widths are computed: `equal` gives every tab the same width, `title_leng
 tab_width_mode = "compact"
 ```
 
+### tab_title_ellipsis
+
+**Type:** string | **Default:** `"end"`
+
+**Values:** `end`, `start`
+
+Where a tab title that does not fit is cut. `end` shows the beginning of the title (`~/projects/termi…`), `start` shows its right part (`…/terminux/src`), useful when the title is a path or ends with the running command.
+
+```toml
+tab_title_ellipsis = "start"
+```
+
 ### tab_position
 
 **Type:** string | **Default:** `"top"`
@@ -695,7 +707,7 @@ env = { PYTHONDONTWRITEBYTECODE = "1" }
 
 **Windows Terminal:** `schemes`
 
-`[[scheme]]` defines a color scheme: `name` plus colors (`background`, `foreground`, `cursor_color`, `selection_background`, `black` ... `bright_white`). Referenced by [`color_scheme`](profile-settings.md#color_scheme). The 17 built-in schemes, all color keys and the light/dark pair syntax are in [color-schemes.md](color-schemes.md).
+`[[scheme]]` defines a color scheme: `name` plus colors (`background`, `foreground`, `cursor_color`, `cursor_accent`, `selection_background`, `selection_foreground`, `black` ... `bright_white`). Referenced by [`color_scheme`](profile-settings.md#color_scheme). The 17 built-in schemes, all color keys and the light/dark pair syntax are in [color-schemes.md](color-schemes.md).
 
 ```toml
 [[scheme]]
@@ -732,6 +744,11 @@ selection_background = "#2f3b54"
 | `tab.unfocused_background` | string | Inactive tabs. |
 | `tab.show_close_button` | string | `always`, `hover` (default), `never`, `active_only` (aliases: `activeOnly`). |
 | `tab.icon_style` | string | `default`, `hidden`, `monochrome`. |
+| `tab.foreground` | string | Active tab text color (default: readable on the tab background). |
+| `tab.unfocused_foreground` | string | Inactive tabs text color. |
+| `tab.indicator` | string | Active tab marker: `outline` (default, joins the terminal), `underline` (bar on the terminal side), `filled` (accent tint), `none`. |
+| `tab.radius` | number | Tab corner radius in px (default 6; vertical tabs 5). |
+| `tab.height` | number | Tab row height in px (default 34; vertical tab items are 2 px shorter). |
 | `tab_row.background` | string | Tab row (title bar) color. |
 | `tab_row.unfocused_background` | string | Tab row color while the window is unfocused. |
 | `window.application_theme` | string | Chrome brightness: `dark`, `light`, `system` (default `system` when omitted). |
@@ -739,6 +756,22 @@ selection_background = "#2f3b54"
 | `window.unfocused_frame` | string | Window border color when unfocused. |
 | `window.use_mica` | boolean | Mica backdrop (Windows 11). |
 | `window.rainbow_frame` | boolean | Animated rainbow window border. |
+| `window.font` | string | Interface font family, CSS list (tabs, menus, settings). Terminals keep their profile font. |
+| `window.font_size` | number | Interface font size in px (default 12.5). |
+| `colors.accent` | string | Accent: active tab outline, focus rings, highlights. |
+| `colors.background` | string | Background of settings, editors and other non-terminal panes. |
+| `colors.foreground` | string | Interface text. |
+| `colors.muted` | string | Secondary text (inactive tabs, descriptions). |
+| `colors.panel` | string | Menus, dialogs and buttons. |
+| `colors.border` | string | Borders and separators. |
+| `colors.hover` | string | Hovered items; a translucent color works best (`#ffffff12`). |
+| `colors.warning` | string | Warnings. |
+| `colors.danger` | string | Errors and destructive actions. |
+| `pane.divider` | string | Split divider color (default: `colors.border`). |
+| `pane.divider_width` | number | Split divider thickness in px (default 4). |
+| `pane.active_border` | string | Active pane outline when the tab shows several panes (default: dimmed accent). |
+
+Unset `colors` keep the `dark` or `light` palette chosen by `window.application_theme`. The settings UI (UI themes page) shows a live preview and a **Try** button that applies the edited theme to the window without saving.
 
 ```toml
 app_theme = "midnight"
@@ -758,6 +791,14 @@ background = "#0b0f19"
 application_theme = "dark"
 frame = "#58a6ff"
 rainbow_frame = false
+font = "Inter, system-ui, sans-serif"
+
+[ui_theme.colors]
+accent = "#58a6ff"
+border = "#1f2937"
+
+[ui_theme.pane]
+divider_width = 2
 ```
 
 Inline tables work too: `tab = { background = "terminalBackground" }`.
@@ -812,7 +853,7 @@ clear_buffer = ""
 | `separator` | none | A separator line. |
 | `match_profiles` | `name`, `source`, `commandline` | Every visible profile matching **all** given fields: exact display `name`, `source` (`wsl`, `ssh`, `powershell`, `windows`, or `fragment:<file>`), exact `commandline` (command and arguments joined with spaces). |
 | `remaining_profiles` | none | Every visible profile not already placed by a `profile`, `match_profiles` or folder entry. |
-| `action` | `id`, `icon` | An `[[action]]` by its `id`. |
+| `action` | `id`, `icon` | An `[[action]]` by its `id`, or a built-in [command name](actions.md#named-commands) (legacy names accepted). Label, icon and key hint come from the action/command; `icon` overrides the icon. Unknown ids are skipped. |
 
 ```toml
 [[new_tab_menu]]
@@ -836,6 +877,10 @@ type = "remaining_profiles"
 [[new_tab_menu]]
 type = "action"
 id = "git_status"
+
+[[new_tab_menu]]
+type = "action"
+id = "open_settings"
 ```
 
 Folder entries can also be written as `[[new_tab_menu.entries]]` sub-tables.
@@ -846,7 +891,7 @@ Folder entries can also be written as `[[new_tab_menu.entries]]` sub-tables.
 
 Buttons in the title-bar toolbar, left to right. Each entry is a [command name](actions.md#named-commands) (legacy names accepted), the `id` of an [`[[action]]`](#action), or `"separator"`. Unknown entries are skipped and kept in the file. Consecutive separators collapse into one. `toolbar = []` shows no buttons; deleting the key restores the default.
 
-Right-click the toolbar (or run [`customize_toolbar`](actions.md#customize_toolbar)) to add, remove, reorder (`Alt+Up` / `Alt+Down` in the editor palette) or reset buttons: the result is written back to this key of `config.toml`.
+Right-click the toolbar (or run [`customize_toolbar`](actions.md#customize_toolbar)) to add, remove, reorder (Settings → Toolbar) or reset buttons: the result is written back to this key of `config.toml`.
 
 ```toml
 toolbar = ["new_tab", "duplicate_pane_right", "separator", "git_status", "open_settings"]

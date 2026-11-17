@@ -68,6 +68,9 @@
     font: inherit;
     outline: none;
   }
+  input:focus {
+    border-color: var(--accent);
+  }
   ul {
     flex: 1;
     overflow-y: auto;

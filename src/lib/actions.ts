@@ -4,10 +4,11 @@ import type { ActionSpec } from "./commands";
 import type { App, NewPaneArgs, SplitArgs } from "./state.svelte";
 import type { Direction } from "./layout/tree";
 import type { MarkDirection } from "./term/marks";
-import { commandPalette, colorSchemePalette, suggestionsPalette, tabSearchPalette, toolbarPalette } from "./ui/palettes";
+import { commandPalette, colorSchemePalette, suggestionsPalette, tabSearchPalette } from "./ui/palettes";
 import { newTabMenu } from "./ui/menus";
 import { saveSnippet } from "./snippets";
 import * as windows from "./windows";
+import { settingsDoc } from "./settings/doc.svelte";
 
 export interface ActionContext {
   event?: KeyboardEvent;
@@ -80,12 +81,26 @@ export const ACTIONS: Record<string, Handler> = {
       case "defaultsfile":
         app.openEditor("defaults");
         break;
+      case "settingspane":
+        app.openEditorPane("config");
+        break;
+      case "defaultspane":
+        app.openEditorPane("defaults");
+        break;
       case "directory":
         invoke("open_path", { path: "." }).catch(console.error);
         break;
-      default:
-        if (app.tab?.kind === "config") app.closeTab();
-        else app.openEditor("config");
+      default: {
+        // settings_ui / settings_toml pick the view; no target: the last one used.
+        const t = norm(spec.target);
+        const view = t === "settingstoml" ? "toml" : t === "settingsui" ? "ui" : settingsDoc.view;
+        if (app.tab?.kind === "config" && settingsDoc.view === view) app.closeTab();
+        else if (app.activePane && app.activePane === app.editorPane("config")) app.closePane(app.activePane);
+        else {
+          settingsDoc.setView(view);
+          app.openEditor("config");
+        }
+      }
     }
   },
   find: (app) => {
@@ -99,7 +114,10 @@ export const ACTIONS: Record<string, Handler> = {
     if (!app.palette) app.focusCurrent();
   },
   customize_toolbar: (app) => {
-    app.palette = toolbarPalette(app);
+    // Settings UI, Toolbar page.
+    settingsDoc.page = "toolbar";
+    settingsDoc.setView("ui");
+    if (app.tab?.kind !== "config") app.openEditor("config");
   },
   identify_window: (app) => windows.identify(app, false),
   identify_windows: (app) => windows.identify(app, true),

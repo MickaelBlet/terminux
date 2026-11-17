@@ -12,6 +12,7 @@
   import Icon from "./Icon.svelte";
   import TabItem from "./TabItem.svelte";
   import { trackActiveTab } from "./tab-baseline";
+  import { settingsDoc } from "../settings/doc.svelte";
 
   const win = getCurrentWindow();
   let maximized = $state(false);
@@ -69,7 +70,10 @@
       case "toggle_pane_zoom":
         return !!app.tab?.zoom;
       case "open_settings":
-        return !spec.target || spec.target === "settings_ui" ? app.tab?.kind === "config" : false;
+        if (app.tab?.kind !== "config") return false;
+        if (spec.target === "settings_ui") return settingsDoc.view === "ui";
+        if (spec.target === "settings_toml") return settingsDoc.view === "toml";
+        return !spec.target;
       case "find":
         return !!app.searchPane && app.searchPane === app.activePane;
       case "toggle_broadcast_input":
@@ -220,7 +224,7 @@
     position: relative;
     display: flex;
     align-items: stretch;
-    height: 34px;
+    height: var(--tab-height, 34px);
     background: var(--chrome);
     /* Inset line instead of a border: the active tab paints over it and joins the terminal. */
     box-shadow: inset 0 -1px 0 var(--border);
@@ -257,7 +261,8 @@
       var(--ind-bg) 100%
     );
   }
-  .bar:not([style*="--a0"])::after {
+  .bar:not([style*="--a0"])::after,
+  :global(html[data-tab-indicator]:not([data-tab-indicator="outline"])) .bar::after {
     display: none;
   }
   .tabs {

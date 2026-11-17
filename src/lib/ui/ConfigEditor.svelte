@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
-  import { listen } from "@tauri-apps/api/event";
   import { Compartment, EditorState, RangeSetBuilder } from "@codemirror/state";
   import {
     Decoration,
@@ -42,6 +41,8 @@
   import { BASE_RULES, fontTheme as sharedFontTheme } from "./editor-theme";
   import { completions, keyInfoAt, unknownKeys } from "../config-schema";
   import { findHexColors, fromPickerHex, toPickerHex } from "../color-swatch";
+  import { settingsDoc } from "../settings/doc.svelte";
+  import { locate } from "../settings/value";
 
   interface ConfigError {
     message: string;
@@ -49,14 +50,11 @@
     to: number;
   }
 
-  let { readonly = false }: { readonly?: boolean } = $props();
+  /** `paneId`: shown as a pane (else as the settings tab). */
+  let { readonly = false, paneId }: { readonly?: boolean; paneId?: string } = $props();
   let host: HTMLDivElement;
   let view: EditorView | undefined;
-  let saved = "";
-  let status = $state("");
-  let statusError = $state(false);
-  let changedOnDisk = $state(false);
-  let path = $state("config.toml");
+  let readError = $state("");
   const font = new Compartment();
 
   const c = DEFAULT_THEME;
@@ -252,58 +250,20 @@
     { delay: 300 },
   );
 
-  function setStatus(msg: string, error = false) {
-    status = msg;
-    statusError = error;
-  }
-
   async function save() {
-    if (!view || readonly) return true;
-    const src = view.state.doc.toString();
-    try {
-      await invoke("write_config", { src });
-      saved = src;
-      app.configDirty = false;
-      changedOnDisk = false;
-      setStatus("Saved");
-    } catch (e) {
-      setStatus(`Not saved: ${e}`, true);
-    }
+    if (!readonly) await settingsDoc.save();
     return true;
   }
 
-  function setDoc(text: string) {
-    if (!view) return;
-    saved = text;
-    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } });
-    app.configDirty = false;
-    changedOnDisk = false;
-  }
-
-  async function reload() {
-    setDoc(await invoke<string>("read_config"));
-    setStatus("Reloaded from disk");
-  }
-
-  async function onDiskChange() {
-    if (!view || readonly) return;
-    const text = await invoke<string>("read_config").catch(() => null);
-    if (text === null || text === view.state.doc.toString()) {
-      if (text !== null) saved = text;
-      return;
-    }
-    if (app.configDirty) changedOnDisk = true;
-    else setDoc(text);
-  }
+  /** The draft (shared with the settings UI), or the default settings. */
+  const loadDoc = (): Promise<string> =>
+    readonly ? invoke<string>("default_config") : settingsDoc.load().then(() => settingsDoc.text ?? Promise.reject(settingsDoc.status));
 
   onMount(() => {
     let disposed = false;
-    const unlisten = listen("config-changed", onDiskChange);
-    if (!readonly) invoke<string>("config_path").then((p) => (path = p)).catch(() => {});
-    invoke<string>(readonly ? "default_config" : "read_config")
+    loadDoc()
       .then((doc) => {
         if (disposed) return;
-        saved = doc;
         view = new EditorView({
           parent: host,
           state: EditorState.create({
@@ -341,22 +301,41 @@
                 indentWithTab,
               ]),
               EditorView.updateListener.of((u) => {
-                if (u.docChanged && !readonly) app.configDirty = u.state.doc.toString() !== saved;
+                if (u.docChanged && !readonly) settingsDoc.setText(u.state.doc.toString(), false);
               }),
             ],
           }),
         });
-        app.editors.set(readonly ? "defaults" : "config", () => view?.focus());
-        if (app.tab?.kind === (readonly ? "defaults" : "config")) view.focus();
+        if (paneId) {
+          app.paneEditors.set(paneId, { focus: () => view?.focus(), goto: () => {} });
+          if (app.activePane === paneId) view.focus();
+        } else {
+          app.editors.set(readonly ? "defaults" : "config", () => view?.focus());
+          if (app.tab?.kind === (readonly ? "defaults" : "config")) view.focus();
+        }
+        const at = settingsDoc.reveal && !readonly ? locate(doc, settingsDoc.reveal) : -1;
+        settingsDoc.reveal = null;
+        if (at >= 0) {
+          const line = view.state.doc.lineAt(at);
+          view.dispatch({ selection: { anchor: line.from, head: line.to }, scrollIntoView: true });
+          view.focus();
+        }
       })
-      .catch((e) => setStatus(`Cannot read config: ${e}`, true));
+      .catch((e) => (readError = `Cannot read config: ${e}`));
 
     return () => {
       disposed = true;
-      app.editors.delete(readonly ? "defaults" : "config");
+      if (paneId) app.paneEditors.delete(paneId);
+      else app.editors.delete(readonly ? "defaults" : "config");
       view?.destroy();
-      unlisten.then((f) => f());
     };
+  });
+
+  // Draft replaced from elsewhere (settings UI, reload, discard): show it.
+  $effect(() => {
+    const text = settingsDoc.text;
+    if (readonly || !view || text === null || text === view.state.doc.toString()) return;
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } });
   });
 
   function selectedText(v: EditorView): string {
@@ -431,17 +410,20 @@
 <div class="editor">
   <div class="host" role="presentation" bind:this={host} oncontextmenu={onContextMenu}></div>
   <footer>
-    <span class="file" title={readonly ? undefined : path}>{readonly ? "Default settings (read-only) — copy what you need into config.toml" : `${path}${app.configDirty ? " ●" : ""}`}</span>
-    {#if readonly}
+    <span class="file" title={readonly ? undefined : settingsDoc.path}>{readonly ? "Default settings (read-only) — copy what you need into config.toml" : `${settingsDoc.path}${app.configDirty ? " ●" : ""}`}</span>
+    {#if readError}
+      <span class="err">{readError}</span>
+    {:else if readonly}
       <span class="hint">Ctrl+F find</span>
-    {:else if changedOnDisk}
+    {:else if settingsDoc.changedOnDisk}
       <span class="err">Changed on disk</span>
-      <button onclick={reload}>Reload</button>
-    {:else if status}
-      <span class:err={statusError}>{status}</span>
+      <button onclick={() => settingsDoc.reload()}>Reload</button>
+    {:else if settingsDoc.status}
+      <span class:err={settingsDoc.statusError}>{settingsDoc.status}</span>
     {/if}
     {#if !readonly}
       <span class="hint">Ctrl+S save · Ctrl+Space complete · Ctrl+F find</span>
+      {#if !paneId}<button title="Edit with forms" onclick={() => settingsDoc.setView("ui")}>Settings UI</button>{/if}
       <button title="Open in external editor" onclick={() => app.run("open_settings_file")}>External…</button>
     {/if}
   </footer>

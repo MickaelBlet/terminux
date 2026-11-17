@@ -36,6 +36,7 @@ export const ROOT_FIELDS: Record<string, Field> = {
   // Appearance
   app_theme: str("Application theme: dark, light, system or a [[ui_theme]] name.", ["dark", "light", "system", "legacyDark", "legacyLight", "legacySystem"]),
   tab_width_mode: str("Tab width.", ["equal", "title_length", "compact"]),
+  tab_title_ellipsis: str("Side where a truncated tab title is cut: \"start\" keeps the right part visible.", ["end", "start"]),
   tab_position: str("Where the tabs are shown: top bar or a vertical side panel.", ["top", "left", "right"]),
   vertical_tab_width: num("Initial width in px of the vertical tab panel (it can be resized by dragging its edge)."),
   vertical_tabs_collapsed: bool("Start with the vertical tab panel collapsed to icons."),
@@ -156,13 +157,13 @@ const FONT_FIELDS: Record<string, Field> = {
 
 /** Color keys of [[scheme]] and [theme] (Windows Terminal names). */
 const COLOR_NAMES = [
-  "background", "foreground", "cursor_color", "selection_background",
+  "background", "foreground", "cursor_color", "cursor_accent", "selection_background", "selection_foreground",
   "black", "red", "green", "yellow", "blue", "purple", "cyan", "white",
   "bright_black", "bright_red", "bright_green", "bright_yellow", "bright_blue", "bright_purple", "bright_cyan", "bright_white",
 ];
 const camel = (s: string) => s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-const XTERM_KEY: Record<string, string> = { cursor_color: "cursor", purple: "magenta", bright_purple: "brightMagenta" };
-const defaultColor = (k: string) => (DEFAULT_THEME as Record<string, string | undefined>)[XTERM_KEY[k] ?? camel(k)] ?? (DEFAULT_THEME as Record<string, string | undefined>)[k];
+const XTERM_KEY: Record<string, string> = { cursor_color: "cursor", cursor_accent: "cursorAccent", purple: "magenta", bright_purple: "brightMagenta" };
+export const defaultColor = (k: string) => (DEFAULT_THEME as Record<string, string | undefined>)[XTERM_KEY[k] ?? camel(k)] ?? (DEFAULT_THEME as Record<string, string | undefined>)[k];
 const COLOR_FIELDS: Record<string, Field> = Object.fromEntries(COLOR_NAMES.map((k) => [k, str("Color")]));
 /** Also accepted (xterm.js names). */
 const XTERM_COLOR_KEYS = new Set([...Object.keys(DEFAULT_THEME), "selectionForeground", "selectionInactiveBackground", "cursor_accent", "selection_foreground", "magenta", "bright_magenta"]);
@@ -171,15 +172,38 @@ const SCHEME_FIELDS: Record<string, Field> = { name: str("Scheme name (used by c
 
 const UI_THEME_FIELDS: Record<string, Field> = {
   name: str("Theme name (used by app_theme)."),
-  tab: f("table", "{ background, unfocused_background, show_close_button, icon_style }"),
+  window: f("table", "{ application_theme, frame, unfocused_frame, use_mica, rainbow_frame, font, font_size }"),
+  colors: f("table", "{ accent, background, foreground, muted, panel, border, hover, warning, danger }"),
+  tab: f("table", "{ background, unfocused_background, foreground, unfocused_foreground, indicator, radius, height, show_close_button, icon_style }"),
   tab_row: f("table", "{ background, unfocused_background }"),
-  window: f("table", "{ application_theme, frame, unfocused_frame, use_mica, rainbow_frame }"),
+  pane: f("table", "{ divider, divider_width, active_border }"),
 };
 const UI_TAB_FIELDS: Record<string, Field> = {
   background: str('Active tab: a color, "terminalBackground" or "accent".', ["terminalBackground", "accent"]),
   unfocused_background: str("Inactive tabs background."),
+  foreground: str("Active tab text color."),
+  unfocused_foreground: str("Inactive tabs text color."),
+  indicator: str("Active tab marker.", ["outline", "underline", "filled", "none"]),
+  radius: num("Tab corner radius in px (default 6)."),
+  height: num("Tab row height in px (default 34)."),
   show_close_button: str("Tab close button.", ["always", "hover", "never", "active_only"]),
   icon_style: str("Tab icons.", ["default", "hidden", "monochrome"]),
+};
+const UI_COLORS_FIELDS: Record<string, Field> = {
+  accent: str("Accent: active tab outline, focus rings, highlights."),
+  background: str("Background of settings, editors and other non-terminal panes."),
+  foreground: str("Interface text."),
+  muted: str("Secondary text (inactive tabs, descriptions)."),
+  panel: str("Menus, dialogs and buttons."),
+  border: str("Borders and separators."),
+  hover: str("Hovered items (a translucent color works best, e.g. #ffffff12)."),
+  warning: str("Warnings."),
+  danger: str("Errors and destructive actions."),
+};
+const UI_PANE_FIELDS: Record<string, Field> = {
+  divider: str("Split divider color."),
+  divider_width: num("Split divider thickness in px (default 4)."),
+  active_border: str("Active pane outline when the tab shows several panes."),
 };
 const UI_ROW_FIELDS: Record<string, Field> = { background: str("Tab row color."), unfocused_background: str("Tab row color when the window is unfocused.") };
 const UI_WINDOW_FIELDS: Record<string, Field> = {
@@ -188,6 +212,8 @@ const UI_WINDOW_FIELDS: Record<string, Field> = {
   unfocused_frame: str("Window border color when unfocused."),
   use_mica: bool("Mica backdrop (Windows 11)."),
   rainbow_frame: bool("Animated rainbow border."),
+  font: str("Interface font family (tabs, menus, settings; terminals keep their profile font)."),
+  font_size: num("Interface font size in px (default 12.5)."),
 };
 
 /** Commands accepted by [[action]] `command` (named commands use these with arguments). */
@@ -226,16 +252,23 @@ const MENU_FIELDS: Record<string, Field> = {
   inline: bool("A folder with one entry shows the entry directly."),
   source: str("Match generated profiles by source.", ["wsl", "ssh", "powershell", "windows"]),
   commandline: str("Match profiles by command line."),
-  id: str("Action id."),
+  id: str("[[action]] id or command name (e.g. open_settings)."),
 };
 
 export const KEY_ACTIONS: string[] = Object.keys(COMMANDS);
 export const THEME_KEYS: string[] = COLOR_NAMES;
+/** THEME_KEYS grouped by pair for display: background/foreground, cursor, selection, then each normal/bright ANSI color. */
+export const THEME_KEY_PAIRS: [string, string][] = [
+  ["background", "foreground"],
+  ["cursor_color", "cursor_accent"],
+  ["selection_background", "selection_foreground"],
+  ...COLOR_NAMES.slice(6, 14).map((c): [string, string] => [c, `bright_${c}`]),
+];
 
 export const HEADERS = [
   "[defaults]", "[defaults.font]", "[defaults.unfocused_appearance]", "[defaults.env]",
   "[[profile]]", "[profile.font]", "[profile.unfocused_appearance]", "[profile.env]",
-  "[[scheme]]", "[[ui_theme]]", "[ui_theme.tab]", "[ui_theme.tab_row]", "[ui_theme.window]",
+  "[[scheme]]", "[[ui_theme]]", "[ui_theme.tab]", "[ui_theme.tab_row]", "[ui_theme.window]", "[ui_theme.colors]", "[ui_theme.pane]",
   "[[action]]", "[[new_tab_menu]]", "[[new_tab_menu.entries]]", "[keys]", "[theme]",
 ];
 
@@ -348,7 +381,7 @@ export function profileIds(text: string): string[] {
   return [...new Set(["shell", ...valuesIn(text, "profile", "id")])];
 }
 
-function fieldsOf(section: string): Record<string, Field> | null {
+export function fieldsOf(section: string): Record<string, Field> | null {
   switch (section) {
     case "":
       return ROOT_FIELDS;
@@ -372,6 +405,10 @@ function fieldsOf(section: string): Record<string, Field> | null {
       return UI_ROW_FIELDS;
     case "ui_theme.window":
       return UI_WINDOW_FIELDS;
+    case "ui_theme.colors":
+      return UI_COLORS_FIELDS;
+    case "ui_theme.pane":
+      return UI_PANE_FIELDS;
     case "action":
       return ACTION_FIELDS;
     case "new_tab_menu":

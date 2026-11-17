@@ -118,7 +118,9 @@ The command line follows `wt.exe` syntax; see the [command-line reference](../re
 
 ![Built-in configuration editor with key completion](../images/config-editor.png)
 
-- `Ctrl+,` opens the built-in editor in a tab. `Ctrl+Space` completes keys and values; unknown keys are underlined; click the swatch before a `"#rrggbb"` value to pick a color; saving applies instantly.
+- `Ctrl+,` opens the settings tab on the **settings UI**: pages for general, appearance, startup and interaction settings, `[defaults]` and each profile (generated WSL/SSH/PowerShell profiles too: changes become a `[[profile]]` with the same id), color schemes, color overrides, UI themes, keyboard (click **+** and press a combo; conflicts are flagged), custom actions, the new tab menu and the toolbar. The search box filters settings by name and description. A dot marks values set in `config.toml`; the reset button removes them (back to the default shown as placeholder). With **Auto-save** (bottom bar, on by default) each change is written to `config.toml` right away; turn it off to keep edits in a draft until **Save** (`Ctrl+S`) or **Discard**. Comments and layout of `config.toml` are kept. Settings without a form (lists of tables, `commands`, ...) have an **Edit in TOML** link.
+- **TOML** in the settings UI switches the same tab to the built-in text editor (and **Settings UI** back), with the same unsaved draft; the TOML editor always saves manually. `open_settings_toml` opens it directly.
+- The TOML editor can also be shown as a pane. To keep it next to a terminal, drag its tab onto a pane (the highlighted zone shows where it docks), right-click the tab > **Show in a pane**, or run **Open settings in a pane**; "Move pane to new tab" (or dropping its title bar on the tab bar) brings it back to a tab. `Ctrl+Space` completes keys and values; unknown keys are underlined; click the swatch before a `"#rrggbb"` value to pick a color; saving applies instantly.
 - `Ctrl+Alt+,` opens the read-only defaults, a good place to discover keys.
 - A config file with a syntax error is ignored (defaults are used) and a banner shows the error, so a typo never locks you out.
 

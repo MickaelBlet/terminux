@@ -73,7 +73,7 @@ The same widget powers a few focused pickers:
 | --- | --- |
 | [`tab_search`](../reference/actions.md#tab_search) | open tabs; `Enter` switches. |
 | `set_color_scheme` action without argument (use it from an [`[[action]]`](12-custom-actions.md)) | scheme picker with live preview. With `color_scheme = "Name"` it applies the scheme directly. |
-| [`customize_toolbar`](../reference/actions.md#customize_toolbar) | toolbar editor, see [Toolbar](13-toolbar.md). |
+| [`customize_toolbar`](../reference/actions.md#customize_toolbar) | Settings → Toolbar, see [Toolbar](13-toolbar.md). |
 | [`show_suggestions`](../reference/actions.md#show_suggestions), [`show_recent_commands`](../reference/actions.md#show_recent_commands) | see below. |
 
 ## Suggestions
@@ -129,7 +129,6 @@ input = "make deploy ENV=staging"
 | `Enter` | run, open the nested list, or run the typed command line |
 | `Escape` | up one level, or close |
 | `Backspace` (empty input, nested) | up one level |
-| `Alt+Up` / `Alt+Down` | move the row (toolbar editor only) |
 
 A click outside the palette closes it.
 

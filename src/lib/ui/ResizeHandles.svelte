@@ -2,6 +2,7 @@
   // Edge/corner grips for undecorated windows on Linux, where GTK provides no
   // native resize borders once decorations are disabled.
   import { getCurrentWindow } from "@tauri-apps/api/window";
+  import { app } from "../state.svelte";
 
   type Dir = "North" | "South" | "East" | "West" | "NorthEast" | "NorthWest" | "SouthEast" | "SouthWest";
   const win = getCurrentWindow();
@@ -16,9 +17,11 @@
     const un = win.onResized(sync);
     return () => void un.then((f) => f());
   });
+  // Maximized/fullscreen windows have no frame or grips: the top edge must reach the tabs.
+  const framed = $derived(enabled && !maximized && !app.fullscreen);
   // Visible 1px frame: undecorated windows have no border on Linux.
   $effect(() => {
-    document.documentElement.classList.toggle("framed", enabled && !maximized);
+    document.documentElement.classList.toggle("framed", framed);
   });
   $effect(() => {
     if (!enabled) return;
@@ -35,7 +38,7 @@
   }
 </script>
 
-{#if enabled && !maximized}
+{#if framed}
   {#each dirs as d (d)}
     <div class="grip {d}" role="presentation" onpointerdown={(e) => start(e, d)}></div>
   {/each}

@@ -75,7 +75,22 @@ export interface Profile extends ProfileSettings {
 
 export interface UiTheme {
   name: string;
-  tab?: { background?: string; unfocused_background?: string; icon_style?: string; show_close_button?: string };
+  tab?: {
+    background?: string;
+    unfocused_background?: string;
+    icon_style?: string;
+    show_close_button?: string;
+    /** Active tab text color. */
+    foreground?: string;
+    /** Inactive tabs text color. */
+    unfocused_foreground?: string;
+    /** Active tab marker: "outline" (default) | "underline" | "filled" | "none". */
+    indicator?: string;
+    /** Corner radius in px. */
+    radius?: number;
+    /** Tab row height in px (vertical tabs: item height + 2). */
+    height?: number;
+  };
   tab_row?: { background?: string; unfocused_background?: string };
   window?: {
     application_theme?: string;
@@ -83,6 +98,30 @@ export interface UiTheme {
     unfocused_frame?: string;
     use_mica?: boolean;
     rainbow_frame?: boolean;
+    /** Interface font family (tabs, menus, settings; not terminals). */
+    font?: string;
+    /** Interface font size in px. */
+    font_size?: number;
+  };
+  /** Interface colors replacing the dark / light defaults. */
+  colors?: {
+    accent?: string;
+    background?: string;
+    foreground?: string;
+    muted?: string;
+    panel?: string;
+    border?: string;
+    hover?: string;
+    warning?: string;
+    danger?: string;
+  };
+  pane?: {
+    /** Split divider color. */
+    divider?: string;
+    /** Split divider thickness in px. */
+    divider_width?: number;
+    /** Outline of the active pane when the tab shows several panes. */
+    active_border?: string;
   };
 }
 
@@ -126,6 +165,8 @@ export interface Config {
   // Appearance
   app_theme?: string;
   tab_width_mode?: string;
+  /** Where a truncated tab title is cut: "end" (default) | "start" (keeps the right part). */
+  tab_title_ellipsis?: string;
   tab_position?: string;
   vertical_tab_width?: number;
   vertical_tabs_collapsed?: boolean;

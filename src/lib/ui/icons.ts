@@ -63,6 +63,7 @@ export const ICONS: Record<string, string> = {
   "block-select": "M2.5 2.5h11v11h-11zM5 5.5h6M5 8h6M5 10.5h6",
   swap: "M3 5.5h10M10.5 3L13 5.5 10.5 8M13 10.5H3M5.5 8L3 10.5 5.5 13",
   menu: "M3 4.5h10M3 8h10M3 11.5h10",
+  grip: "M6 4h.01M10 4h.01M6 8h.01M10 8h.01M6 12h.01M10 12h.01",
   globe: "M8 13.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zM2.5 8h11M8 2.5c-2 2-2 9 0 11M8 2.5c2 2 2 9 0 11",
   highlight: "M9.5 3L13 6.5l-5 5H4.5V8zM3 13.5h10",
   eraser: "M9.5 3L13 6.5l-6 6H4.5L3 11zM6.5 5.5l4 4M7 13.5h6.5",

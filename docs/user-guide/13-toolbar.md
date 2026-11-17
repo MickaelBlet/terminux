@@ -46,7 +46,7 @@ Right-click the toolbar (a button or the empty area) to open its menu:
 
 | Menu item | Effect |
 | --- | --- |
-| Customize toolbar… | Opens the toolbar editor palette (also [`customize_toolbar`](../reference/actions.md#customize_toolbar) from the command palette). |
+| Customize toolbar… | Opens the **Toolbar** page of the settings UI (also [`customize_toolbar`](../reference/actions.md#customize_toolbar) from the command palette). |
 | Move left / Move right | Reorders the button you right-clicked (only on a button). |
 | Remove from toolbar | Removes the button you right-clicked. |
 | Add separator | Inserts a separator after the clicked button, or at the end. |
@@ -55,7 +55,7 @@ Right-click the toolbar (a button or the empty area) to open its menu:
 Other gestures:
 
 - **Drag a button** left or right to reorder it (a small movement threshold avoids accidental drags). Dropping saves the new order.
-- **Customize toolbar…** shows a palette: the buttons currently on the toolbar first (marked "on toolbar" with a check mark), then *Add separator*, your custom actions that have an `id`, then every other command that can be added. `Enter` toggles the highlighted entry (it stays open so you can add several), `Alt+Up` / `Alt+Down` moves a selected entry within the toolbar. See [Command palette](11-command-palette.md).
+- **Customize toolbar…** opens Settings → **Toolbar**: the current buttons with their icons, drag a row to reorder it, remove it with its × button, add a separator, a custom action with an `id` or any command from the list, or restore the default buttons.
 
 ## How edits are saved
 

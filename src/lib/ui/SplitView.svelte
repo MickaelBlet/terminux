@@ -80,8 +80,8 @@
     overflow: hidden;
   }
   .divider {
-    flex: 0 0 4px;
-    background: var(--border);
+    flex: 0 0 var(--pane-divider-width, 4px);
+    background: var(--pane-divider, var(--border));
     transition: background 0.1s;
   }
   .row > .divider {
