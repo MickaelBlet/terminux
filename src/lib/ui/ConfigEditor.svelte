@@ -39,6 +39,7 @@
   import { editorMenu } from "./menus";
   import { DEFAULT_THEME } from "../config";
   import { BASE_RULES, fontTheme as sharedFontTheme } from "./editor-theme";
+  import { editorSearch } from "./editor-search";
   import { completions, keyInfoAt, unknownKeys } from "../config-schema";
   import { findHexColors, fromPickerHex, toPickerHex } from "../color-swatch";
   import { settingsDoc } from "../settings/doc.svelte";
@@ -278,6 +279,7 @@
               bracketMatching(),
               closeBrackets(),
               highlightSelectionMatches(),
+              editorSearch,
               StreamLanguage.define(toml),
               syntaxHighlighting(highlight),
               autocompletion({ override: [source] }),

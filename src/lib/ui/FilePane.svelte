@@ -11,6 +11,7 @@
   import { app } from "../state.svelte";
   import { langOf, type LangId } from "../file-langs";
   import { BASE_RULES, codeHighlight, fontTheme } from "./editor-theme";
+  import { editorSearch } from "./editor-search";
 
   let { paneId }: { paneId: string } = $props();
   const info = $derived(app.panes[paneId]);
@@ -129,6 +130,7 @@
             bracketMatching(),
             closeBrackets(),
             highlightSelectionMatches(),
+            editorSearch,
             language.of([]),
             syntaxHighlighting(codeHighlight),
             theme,

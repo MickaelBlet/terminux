@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `customize_toolbar` opens Settings → Toolbar instead of the palette editor
 - Default `config.toml` lists every setting: UI themes, new tab menu, all key bindings with their defaults, full scheme / color overrides
+- Config and file editors: find / replace panel styled like the terminal search bar (match count, case / word / regex toggles, Ctrl+H for replace)
 - `open_snippets_pane` renamed `toggle_snippets_pane` (old name still accepted): a tab has at most one snippets pane, running the action again closes it; it opens at 20% width (`size` overrides) and has a close button in its header
 
 ### Fixed
