@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `customize_toolbar` opens Settings → Toolbar instead of the palette editor
+- Default `config.toml` lists every setting: UI themes, new tab menu, all key bindings with their defaults, full scheme / color overrides
 - `open_snippets_pane` renamed `toggle_snippets_pane` (old name still accepted): a tab has at most one snippets pane, running the action again closes it; it opens at 20% width (`size` overrides) and has a close button in its header
 
 ### Fixed
@@ -31,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reloading the page (e.g. F5 / devtools) keeps the window's tabs and their running shells instead of losing them
 - The webview's native context menu no longer appears on right-click (still available in text fields)
 - Maximized / fullscreen windows: no frame, and a pointer at the screen's top edge hits the tabs
+- Vertical tabs: a pointer at the screen's side edge hits the tabs (maximized / fullscreen)
+- Default `config.toml`: wrong default key bindings in comments
 
 ## [0.1.5] - 2026-11-16
 

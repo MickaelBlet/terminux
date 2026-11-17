@@ -255,15 +255,29 @@
   .tab.vertical {
     flex: 0 0 auto;
     height: calc(var(--tab-height, 34px) - 2px);
-    /* Flush with the inner edge so the active tab joins the terminal. */
-    margin: 1px 0 1px 4px;
+    /* Flush with the inner edge so the active tab joins the terminal. The outer gap is a
+       transparent border, not a margin: a pointer at the screen's side edge hits the tab
+       (fullscreen/maximized). */
+    margin: 1px 0;
+    border-left: 4px solid transparent;
+    background-clip: padding-box !important;
     min-width: 0;
     max-width: none;
-    border-radius: var(--tab-radius, 5px) 0 0 var(--tab-radius, 5px);
+    /* Outer radius widened by the border so the visible (padding-box) corners stay round. */
+    --r: var(--tab-radius, 5px);
+    --rb: calc(var(--r) + 4px);
+    border-radius: var(--rb) 0 0 var(--rb) / var(--r) 0 0 var(--r);
   }
   .tab.vertical.right {
-    margin: 1px 4px 1px 0;
-    border-radius: 0 var(--tab-radius, 5px) var(--tab-radius, 5px) 0;
+    border-left: none;
+    border-right: 4px solid transparent;
+    border-radius: 0 var(--rb) var(--rb) 0 / 0 var(--r) var(--r) 0;
+  }
+  .tab.vertical::before {
+    border-radius: var(--r) 0 0 var(--r);
+  }
+  .tab.vertical.right::before {
+    border-radius: 0 var(--r) var(--r) 0;
   }
   .tab.collapsed {
     justify-content: center;
