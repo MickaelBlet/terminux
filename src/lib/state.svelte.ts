@@ -176,7 +176,7 @@ export class App {
   /** Text of the "identify window" overlay. */
   identify = $state<string | null>(null);
   keymap = $state.raw(new Keymap());
-  userActions: UserAction[] = [];
+  userActions = $state.raw<UserAction[]>([]);
   /** Focus callbacks of the mounted editors, by tab kind. */
   editors = new Map<string, () => void>();
   /** Mounted file editor panes, by pane id. */
