@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Terminal and built-in file editor tabs can be moved into a pane of another tab: drag the tab onto a pane or right-click the tab > Show in a pane (unsaved editor edits follow)
 - Command palette: "Recently used" section on top of the list, and an A–Z toggle (`Alt+S`) to sort commands alphabetically
+- `open_file` action (palette: **Open file…**): open a typed `path[:line[:col]]` like a Ctrl+clicked file link, relative to the active pane's directory; `path` / `mode` arguments for `[[action]]`
 - `file_link_open = "builtin_pane"`: Ctrl+clicked file paths (SSH ones too) open in the built-in editor as a split next to the clicked pane
+- Built-in file editor: Markdown highlighting (with highlighted fenced code blocks), PHP, and ~30 more languages (Scala, Dart, R, Julia, Erlang, Clojure, OCaml, F#, LaTeX, Protobuf, Gherkin, Jinja…)
 
 ### Changed
 

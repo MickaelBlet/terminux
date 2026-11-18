@@ -230,7 +230,7 @@ const ACTION_ARGS = [
   "suppress_application_title", "split", "split_mode", "size", "type", "direction", "target", "title", "color", "window",
   "rows_to_scroll", "clear", "path", "delta", "opacity", "relative", "source", "use_commandline", "query_url", "name",
   "monitor", "desktop", "dropdown_duration", "toggle_visibility", "single_line", "with_control_sequences",
-  "copy_formatting", "dismiss_selection", "tab_switcher_mode", "background", "foreground", "match_mode",
+  "copy_formatting", "dismiss_selection", "tab_switcher_mode", "background", "foreground", "match_mode", "mode",
 ];
 const ACTION_FIELDS: Record<string, Field> = {
   id: str("Id, usable in [keys] and new_tab_menu."),

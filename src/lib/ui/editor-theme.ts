@@ -31,7 +31,7 @@ export const fontTheme = (cfg: Config, size: number) =>
     ".cm-scroller, .cm-tooltip, .cm-tooltip.cm-tooltip-autocomplete > ul": { fontFamily: fontFamilyOf(cfg) },
   });
 
-/** Highlighting for general source code (legacy stream modes). */
+/** Highlighting for source code and Markdown. */
 export const codeHighlight = HighlightStyle.define([
   { tag: t.comment, color: c.brightBlack, fontStyle: "italic" },
   { tag: [t.keyword, t.controlKeyword, t.moduleKeyword, t.operatorKeyword], color: c.magenta },
@@ -46,4 +46,12 @@ export const codeHighlight = HighlightStyle.define([
   { tag: [t.inserted], color: c.green },
   { tag: [t.deleted], color: c.red },
   { tag: t.invalid, color: c.brightRed },
+  { tag: t.strong, fontWeight: "bold" },
+  { tag: t.emphasis, fontStyle: "italic" },
+  { tag: t.strikethrough, textDecoration: "line-through" },
+  { tag: t.link, color: c.blue },
+  { tag: t.url, color: c.cyan, textDecoration: "underline" },
+  { tag: t.monospace, color: c.green },
+  { tag: t.quote, color: c.brightBlack, fontStyle: "italic" },
+  { tag: [t.list, t.contentSeparator], color: c.yellow },
 ]);

@@ -67,6 +67,7 @@ export const COMMANDS: Record<string, NamedCommand> = {
   show_recent_commands: n("Show recent commands", "show_suggestions", { source: "recent_commands" }),
   save_snippet: n("Save selection or command line as snippet", "save_snippet"),
   open_cwd: n("Open current directory in file manager", "open_cwd"),
+  open_file: n("Open file…", "open_file"),
   customize_toolbar: n("Customize toolbar…", "customize_toolbar"),
 
   // Tabs

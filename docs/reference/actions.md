@@ -43,7 +43,7 @@ commands = [
 - A handler that cannot act returns "not handled" and the key press then reaches the terminal (for example `copy` without a selection sends `Ctrl+C` to the program).
 - While text is being edited (settings editor, palette, dialogs) only window-level commands stay active: `new_tab`, `new_window`, `close_tab`, `close_pane`, `close_window`, `next_tab`, `prev_tab`, `switch_to_tab`, `command_palette`, `open_settings`, `toggle_fullscreen`, `toggle_focus_mode`, `toggle_vertical_tabs`, `toggle_always_on_top`, `adjust_font_size`, `reset_font_size`, `quit`, `open_new_tab_dropdown`, `tab_search`, `restore_last_closed`, `quake_mode`, `global_summon`, `minimize_to_tray`, `identify_window`, `identify_windows`, `customize_toolbar`.
 - In `[keys]`, old pre-parity names are still accepted (listed under each command as *Legacy names*).
-- Terminux-specific additions with no Windows Terminal counterpart: `toggle_vertical_tabs`, `toggle_vertical_tabs_collapsed`, `save_snippet`, `open_cwd`, `customize_toolbar`, `toggle_snippets_pane`, `equalize_panes`, `show_recent_commands`.
+- Terminux-specific additions with no Windows Terminal counterpart: `toggle_vertical_tabs`, `toggle_vertical_tabs_collapsed`, `save_snippet`, `open_cwd`, `open_file`, `customize_toolbar`, `toggle_snippets_pane`, `equalize_panes`, `show_recent_commands`.
 
 ## Parameterised actions
 
@@ -937,6 +937,27 @@ Open the pane's current directory in the system file manager.
 ```toml
 [keys]
 open_cwd = "Ctrl+Alt+X"   # example binding
+```
+
+### open_file
+
+Open a file by path, like a Ctrl+clicked [file link](../user-guide/08-text-and-clipboard.md#links): `path[:line[:col]]`, relative paths resolve against the active pane's directory (the remote directory in an ssh pane, which opens the remote file; the file's directory when a built-in editor pane is active). Without `path`, a dialog asks for it.
+
+- Action: `open_file`
+- Label: Open file…
+- Default keys: none
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `path` | string | prompt | File to open, `~` allowed, optional `:line[:col]` suffix. |
+| `mode` | string | [`file_link_open`](configuration.md#file_link_open) | `builtin`, `builtin_pane`, `external`, `tab` or `pane`. |
+
+```toml
+[[action]]
+name = "Edit hosts"
+command = "open_file"
+path = "/etc/hosts"
+mode = "builtin_pane"
 ```
 
 ### customize_toolbar

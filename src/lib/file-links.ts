@@ -56,6 +56,18 @@ export function resolveFilePath(path: string, cwd: string | null): string | null
   return cwd.replace(/[\\/]+$/, "") + sep + rel;
 }
 
+/** Typed path (open_file prompt): surrounding quotes dropped, `:line[:col]` suffix split off. */
+export function parseFileArg(text: string): Omit<FileLink, "start" | "end"> | null {
+  let s = text.trim();
+  if (/^(["']).*\1$/.test(s) && s.length >= 2) s = s.slice(1, -1).trim();
+  const m = /^(.*?)(?::(\d+)(?::(\d+))?)?$/.exec(s)!;
+  const path = m[1];
+  if (!path) return null;
+  const line = m[2] ? Number(m[2]) : undefined;
+  const col = m[3] ? Number(m[3]) : undefined;
+  return { path, ...(line && { line }), ...(line && col && { col }) };
+}
+
 /** Parent directory of a resolved path (starting directory of a fallback editor tab). */
 export function dirOf(path: string): string {
   const i = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));

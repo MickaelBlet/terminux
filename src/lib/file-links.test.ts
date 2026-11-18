@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dirOf, findFileLinks, resolveFilePath } from "./file-links";
+import { dirOf, findFileLinks, parseFileArg, resolveFilePath } from "./file-links";
 
 const paths = (s: string) => findFileLinks(s).map((l) => [l.path, l.line, l.col]);
 
@@ -54,5 +54,15 @@ describe("dirOf", () => {
     expect(dirOf("/a/b.ts")).toBe("/a");
     expect(dirOf("/b.ts")).toBe("/");
     expect(dirOf("C:\\a\\b.ts")).toBe("C:\\a");
+  });
+});
+
+describe("parseFileArg", () => {
+  it("splits the location suffix and drops quotes", () => {
+    expect(parseFileArg(" src/a.ts:12:5 ")).toEqual({ path: "src/a.ts", line: 12, col: 5 });
+    expect(parseFileArg('"/a b/c.rs:3"')).toEqual({ path: "/a b/c.rs", line: 3 });
+    expect(parseFileArg("C:\\x\\y.txt")).toEqual({ path: "C:\\x\\y.txt" });
+    expect(parseFileArg("~/notes")).toEqual({ path: "~/notes" });
+    expect(parseFileArg("  ")).toBeNull();
   });
 });

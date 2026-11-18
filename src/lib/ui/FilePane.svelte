@@ -10,11 +10,12 @@
   import { Compartment, EditorSelection, EditorState } from "@codemirror/state";
   import { EditorView, drawSelection, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from "@codemirror/view";
   import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
-  import { StreamLanguage, bracketMatching, indentOnInput, syntaxHighlighting, type StreamParser } from "@codemirror/language";
+  import { bracketMatching, indentOnInput, syntaxHighlighting } from "@codemirror/language";
   import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
   import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
   import { app } from "../state.svelte";
-  import { langOf, type LangId } from "../file-langs";
+  import { langOf } from "../file-langs";
+  import { loadLanguage } from "./editor-langs";
   import { BASE_RULES, codeHighlight, fontTheme } from "./editor-theme";
   import { editorSearch } from "./editor-search";
 
@@ -29,38 +30,6 @@
   let statusError = $state(false);
   const font = new Compartment();
   const language = new Compartment();
-
-  const LANGS: Record<LangId, () => Promise<StreamParser<unknown>>> = {
-    javascript: () => import("@codemirror/legacy-modes/mode/javascript").then((m) => m.javascript),
-    typescript: () => import("@codemirror/legacy-modes/mode/javascript").then((m) => m.typescript),
-    json: () => import("@codemirror/legacy-modes/mode/javascript").then((m) => m.json),
-    python: () => import("@codemirror/legacy-modes/mode/python").then((m) => m.python),
-    rust: () => import("@codemirror/legacy-modes/mode/rust").then((m) => m.rust),
-    shell: () => import("@codemirror/legacy-modes/mode/shell").then((m) => m.shell),
-    toml: () => import("@codemirror/legacy-modes/mode/toml").then((m) => m.toml),
-    yaml: () => import("@codemirror/legacy-modes/mode/yaml").then((m) => m.yaml),
-    go: () => import("@codemirror/legacy-modes/mode/go").then((m) => m.go),
-    c: () => import("@codemirror/legacy-modes/mode/clike").then((m) => m.c),
-    cpp: () => import("@codemirror/legacy-modes/mode/clike").then((m) => m.cpp),
-    java: () => import("@codemirror/legacy-modes/mode/clike").then((m) => m.java),
-    csharp: () => import("@codemirror/legacy-modes/mode/clike").then((m) => m.csharp),
-    kotlin: () => import("@codemirror/legacy-modes/mode/clike").then((m) => m.kotlin),
-    css: () => import("@codemirror/legacy-modes/mode/css").then((m) => m.css),
-    html: () => import("@codemirror/legacy-modes/mode/xml").then((m) => m.html),
-    xml: () => import("@codemirror/legacy-modes/mode/xml").then((m) => m.xml),
-    sql: () => import("@codemirror/legacy-modes/mode/sql").then((m) => m.standardSQL),
-    lua: () => import("@codemirror/legacy-modes/mode/lua").then((m) => m.lua),
-    ruby: () => import("@codemirror/legacy-modes/mode/ruby").then((m) => m.ruby),
-    perl: () => import("@codemirror/legacy-modes/mode/perl").then((m) => m.perl),
-    diff: () => import("@codemirror/legacy-modes/mode/diff").then((m) => m.diff),
-    dockerfile: () => import("@codemirror/legacy-modes/mode/dockerfile").then((m) => m.dockerFile),
-    properties: () => import("@codemirror/legacy-modes/mode/properties").then((m) => m.properties),
-    powershell: () => import("@codemirror/legacy-modes/mode/powershell").then((m) => m.powerShell),
-    swift: () => import("@codemirror/legacy-modes/mode/swift").then((m) => m.swift),
-    haskell: () => import("@codemirror/legacy-modes/mode/haskell").then((m) => m.haskell),
-    cmake: () => import("@codemirror/legacy-modes/mode/cmake").then((m) => m.cmake),
-    nginx: () => import("@codemirror/legacy-modes/mode/nginx").then((m) => m.nginx),
-  };
 
   const theme = EditorView.theme(BASE_RULES, { dark: true });
 
@@ -167,8 +136,8 @@
       if (app.tab?.active === paneId) view.focus();
       const lang = langOf(path);
       if (lang) {
-        const parser = await LANGS[lang]().catch(() => null);
-        if (parser && !disposed) view.dispatch({ effects: language.reconfigure(StreamLanguage.define(parser)) });
+        const support = await loadLanguage(lang).catch(() => null);
+        if (support && !disposed) view.dispatch({ effects: language.reconfigure(support) });
       }
     });
     return () => {

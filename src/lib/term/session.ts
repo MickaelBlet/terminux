@@ -45,7 +45,7 @@ export interface SessionHooks {
   onCopy(paneId: string): void;
   openLink(uri: string): void;
   /** Ctrl+click on a file path; `path` is absolute or `~`-relative. `remote`: on the pane's ssh host. */
-  openFile(paneId: string, path: string, line?: number, col?: number, remote?: boolean): void;
+  openFile(paneId: string, path: string, line?: number, col?: number, remote?: boolean, mode?: string): void;
 }
 
 /** Buffer (and optionally a live pty) a session starts from: restored session, moved tab. */
@@ -287,22 +287,24 @@ export class TermSession {
   private setFileLinks(on: boolean) {
     if (on === !!this.fileLinks) return;
     if (on) {
-      this.fileLinks = this.term.registerLinkProvider(fileLinkProvider(this.term, (l) => void this.openFile(l)));
+      this.fileLinks = this.term.registerLinkProvider(fileLinkProvider(this.term, (l) => void this.openFile(l).catch(() => {})));
     } else {
       this.fileLinks?.dispose();
       this.fileLinks = null;
     }
   }
 
-  private async openFile(l: FileLink) {
+  /** Open a file path relative to this pane (its directory, or the ssh host it is connected to). */
+  async openFile(l: Pick<FileLink, "path" | "line" | "col">, mode?: string) {
     if (await this.isSsh()) {
       // Relative to the remote directory reported by the shell, else to the remote home.
       const path = resolveFilePath(l.path, this.reportedCwd) ?? l.path;
-      this.hooks.openFile(this.paneId, path, l.line, l.col, true);
+      this.hooks.openFile(this.paneId, path, l.line, l.col, true, mode);
       return;
     }
     const path = resolveFilePath(l.path, await this.cwdNow());
-    if (path) this.hooks.openFile(this.paneId, path, l.line, l.col);
+    if (path) this.hooks.openFile(this.paneId, path, l.line, l.col, false, mode);
+    else throw new Error(`${l.path}: relative path and the pane directory is unknown`);
   }
 
   private setCwd(cwd: string) {

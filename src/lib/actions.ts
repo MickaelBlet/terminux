@@ -146,6 +146,7 @@ export const ACTIONS: Record<string, Handler> = {
     const cwd = await s.cwdNow();
     if (cwd) await invoke("open_path", { path: cwd }).catch(console.error);
   }),
+  open_file: (app, spec) => app.openFileAt(str(spec.path), str(spec.mode)),
   send_input: withTerm((s, _app, spec) => {
     const input = str(spec.input);
     if (!input) return false;

@@ -15,7 +15,7 @@ import type { Dir, Direction, LayoutNode } from "./layout/tree";
 import type { Progress } from "./osc";
 import { pasteWarning, sanitizePaste } from "./paste";
 import { droppedPaths } from "./paths";
-import { dirOf } from "./file-links";
+import { dirOf, parseFileArg, resolveFilePath } from "./file-links";
 import { baseName } from "./file-langs";
 import type { PaneSnapshot, TabSnapshot } from "./snapshot";
 import type { PaneSpec, Resolved } from "./term/appearance";
@@ -499,7 +499,7 @@ export class App {
     requestPaste: (id) => this.paste({}, id),
     onCopy: () => this.copied(),
     openLink: (uri) => void openUrl(uri).catch(console.error),
-    openFile: (id, path, line, col, remote) => void this.openFile(id, path, line, col, remote),
+    openFile: (id, path, line, col, remote, mode) => void this.openFile(id, path, line, col, remote, mode),
   };
 
   /** Commandline reopening the ssh session of pane `id` in its remote directory (`ssh_follow_directory`). */
@@ -509,8 +509,8 @@ export class App {
   }
 
   /** Ctrl+click on a file path, per `file_link_open`. A file on the pane's ssh host is copied with scp and always opens in the built-in editor (saving uploads it back). */
-  private async openFile(from: string, path: string, line?: number, col?: number, remote = false) {
-    const mode = norm(this.config.file_link_open) || "builtin";
+  private async openFile(from: string, path: string, line?: number, col?: number, remote = false, modeArg?: string) {
+    const mode = norm(modeArg) || norm(this.config.file_link_open) || "builtin";
     // Built-in editor as a split next to the clicked pane, else in its own tab.
     const beside = mode === "builtinpane" ? from : undefined;
     try {
@@ -531,6 +531,26 @@ export class App {
       } else this.newTab(args);
     } catch (e) {
       this.toast(String(e), "error");
+    }
+  }
+
+  /** `open_file`: `input` is a path (`:line[:col]` allowed), relative to the active pane's directory
+   * (or its ssh host, or the directory of the active editor's file); prompted for when empty. */
+  async openFileAt(input?: string, mode?: string) {
+    const from = this.activePane;
+    input ??= (await this.promptText("Open file", "", "path[:line[:col]]")) ?? "";
+    const arg = parseFileArg(input);
+    if (!arg) return;
+    try {
+      const s = from ? sessions.get(from) : undefined;
+      if (s) return await s.openFile(arg, mode);
+      const p = from ? this.panes[from] : undefined;
+      const dir = p?.kind === "file" && p.spec.file && !p.spec.remoteLabel ? dirOf(p.spec.file) : null;
+      const path = resolveFilePath(arg.path, dir);
+      if (!path) throw new Error(`${arg.path}: relative path and no pane directory to resolve it against`);
+      await this.openFile(from ?? "", path, arg.line, arg.col, false, mode);
+    } catch (e) {
+      this.toast(e instanceof Error ? e.message : String(e), "error");
     }
   }
 
