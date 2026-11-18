@@ -124,6 +124,16 @@ fn resolve_program(program: &str) -> PathBuf {
     PathBuf::from(program)
 }
 
+/// Drop the verbatim prefix `canonicalize` adds on Windows, keeping UNC shares valid:
+/// `\\?\C:\x` → `C:\x`, `\\?\UNC\server\share` → `\\server\share`.
+fn display_path(p: &str) -> String {
+    if let Some(rest) = p.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{rest}")
+    } else {
+        p.strip_prefix(r"\\?\").unwrap_or(p).to_string()
+    }
+}
+
 /// Largest file the built-in editor opens.
 const MAX_TEXT: u64 = 8 << 20;
 
@@ -150,7 +160,7 @@ impl OpenFiles {
         }
         let bytes = std::fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?;
         let text = String::from_utf8(bytes).map_err(|_| format!("{}: not a UTF-8 text file", path.display()))?;
-        let shown = path.to_string_lossy().trim_start_matches(r"\\?\").to_string();
+        let shown = display_path(&path.to_string_lossy());
         self.0.lock().unwrap().insert(path);
         Ok(TextFile { path: shown, text })
     }
@@ -186,6 +196,13 @@ mod tests {
             split_commandline(&line),
             ["sh", "-c", "${VISUAL:-${EDITOR:-vi}} +4 \"$1\"", "sh", "/a \"b\".rs"]
         );
+    }
+
+    #[test]
+    fn strips_verbatim_prefix() {
+        assert_eq!(display_path(r"\\?\C:\a"), r"C:\a");
+        assert_eq!(display_path(r"\\?\UNC\wsl.localhost\U\home"), r"\\wsl.localhost\U\home");
+        assert_eq!(display_path("/home/a"), "/home/a");
     }
 
     #[test]
