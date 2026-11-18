@@ -16,7 +16,7 @@
   const ls =
     [
       c("1;34", "docs") + "  " + c("1;34", "scripts") + "  " + c("1;34", "src") + "  " + c("1;34", "src-tauri") + "  " + c("1;34", "static"),
-      "CLAUDE.md  README.md  package.json  package-lock.json  svelte.config.js  tsconfig.json  vite.config.js",
+      "LICENSE  README.md  package.json  tsconfig.json  vite.config.js",
     ].join("\r\n") + "\r\n";
   const gitStatus =
     "On branch main\r\nChanges not staged for commit:\r\n" +
@@ -57,26 +57,40 @@
       return i === 0 ? c("1", line) : line;
     }).join("\r\n") + "\r\n";
 
-  const agent = (name, color) =>
-    c(color, "╭" + "─".repeat(58) + "╮") + "\r\n" +
-    c(color, "│") + " " + c("1", `${name} session`) + " ".repeat(49 - name.length) + c(color, "│") + "\r\n" +
-    c(color, "│") + c("2", `   cwd: ${CWD}`.padEnd(58)) + c(color, "│") + "\r\n" +
-    c(color, "╰" + "─".repeat(58) + "╯") + "\r\n\r\n" +
-    c("1", "> ") + "Add a screenshot section to the README\r\n\r\n" +
-    c(color, "●") + " Reading " + c("1", "README.md") + c("2", " (93 lines)") + "\r\n" +
-    c(color, "●") + " Reading " + c("1", "docs/user-guide/02-getting-started.md") + "\r\n" +
-    c(color, "●") + " Editing " + c("1", "README.md") + "\r\n" +
-    "  " + c("32", "+ ## Screenshots") + "\r\n" +
-    "  " + c("32", "+ ![Terminux](docs/images/hero.png)") + "\r\n\r\n" +
-    c(color, "●") + " Done. 1 file changed, 4 insertions.\r\n\r\n" +
-    c("2", "─".repeat(60)) + "\r\n" + c("1", "> ") + c("2", "Type a message…  (Shift+Enter for a newline)") + "\r\n";
+  const devServer =
+    cmd("npm run dev", "\r\n> terminux@0.1.6 dev\r\n> vite dev\r\n\r\n" +
+      "  " + c("1;32", "VITE v8.0.3") + "  " + c("2", "ready in 412 ms") + "\r\n\r\n" +
+      "  " + c("32", "➜") + "  " + c("1", "Local:") + "   " + c("36", "http://127.0.0.1:1420/") + "\r\n" +
+      "  " + c("32", "➜") + "  " + c("2", "Network: use --host to expose") + "\r\n\r\n" +
+      c("2", "12:04:52") + " " + c("1;36", "[vite]") + " " + c("32", "hmr update") + " " + c("2", "/src/lib/ui/TabBar.svelte") + "\r\n" +
+      c("2", "12:05:10") + " " + c("1;36", "[vite]") + " " + c("32", "hmr update") + " " + c("2", "/src/lib/state.svelte.ts") + "\r\n" +
+      c("2", "12:05:31") + " " + c("1;36", "[vite]") + " " + c("32", "page reload") + " " + c("2", "src/routes/+page.svelte") + "\r\n");
+  const python =
+    c("2", "Python 3.13.1 (main, Dec  4 2026, 09:12:44) [GCC 14.2.0] on linux") + "\r\n" +
+    ">>> " + c("1", "import json, pathlib") + "\r\n" +
+    ">>> " + c("1", 'cfg = json.loads(pathlib.Path("package.json").read_text())') + "\r\n" +
+    ">>> " + c("1", 'cfg["version"], len(cfg["dependencies"])') + "\r\n" +
+    "(" + c("32", "'0.1.6'") + ", " + c("33", "23") + ")\r\n" +
+    ">>> " + c("1", "sorted(p.name for p in pathlib.Path('src/lib').glob('*.test.ts'))[:3]") + "\r\n" +
+    "[" + c("32", "'commands.test.ts'") + ", " + c("32", "'config-schema.test.ts'") + ", " + c("32", "'helpers.test.ts'") + "]\r\n" +
+    ">>> ";
+  const psql =
+    c("2", "psql (17.2)") + "\r\nType \"help\" for help.\r\n\r\n" +
+    "app=# " + c("1", "SELECT name, region, uptime FROM hosts ORDER BY uptime DESC LIMIT 4;") + "\r\n" +
+    "   name    | region  | uptime\r\n" +
+    "-----------+---------+---------\r\n" +
+    " prod-01   | eu-west | 41 days\r\n" +
+    " prod-02   | eu-west | 41 days\r\n" +
+    " staging   | us-east | 12 days\r\n" +
+    " ci-runner | us-east | 3 days\r\n" +
+    "(4 rows)\r\n\r\napp=# ";
 
   const logs = [
     ["12:04:31", "INFO ", "32", "vite v8 dev server running at http://127.0.0.1:1420"],
     ["12:04:33", "INFO ", "32", "tauri: watching src-tauri for changes"],
     ["12:04:40", "WARN ", "33", "config: unknown key `tab_widht_mode` (line 12)"],
     ["12:04:41", "INFO ", "32", "config: reloaded ~/.config/terminux/config.toml"],
-    ["12:05:02", "ERROR", "31", "pty 7: spawn failed: No such file or directory (cmd: opencode)"],
+    ["12:05:02", "ERROR", "31", "pty 7: spawn failed: No such file or directory (cmd: nvim)"],
     ["12:05:05", "INFO ", "32", "pty 8: spawned zsh (pid 41544)"],
     ["12:05:09", "DEBUG", "36", "window 1: session saved (3 tabs, 6 panes)"],
   ].map(([t, l, col, m]) => c("2", t) + " " + c(`1;${col}`, l) + " " + m).join("\r\n") + "\r\n";
@@ -185,9 +199,9 @@
     build,
     top: () => top,
     logs: () => cmd("tail -f /tmp/terminux-dev.log", logs, 0),
-    claude: () => agent("claude", "38;5;173"),
-    opencode: () => agent("opencode", "36"),
-    agent: () => agent("docker agent", "34"),
+    dev: () => devServer,
+    python: () => python,
+    db: () => psql,
     ssh: () => c("2", "Last login: Fri Nov 13 18:22:41 2026 from 10.0.0.12") + "\r\n" + prompt("~", "") .replace("dev@workstation", "deploy@prod-01") + "",
     colors: (name) => {
       let s = name ? c("1", name) + "\r\n" : "";
@@ -229,6 +243,13 @@
         return structuredClone(cfg());
       case "read_config":
         return window.__mockConfigText ?? "";
+      case "default_config":
+        return window.__mockDefaultConfig ?? "";
+      case "config_parse":
+        // Only the screenshot config is ever parsed (no TOML parser in the page).
+        return structuredClone(window.__mockConfigJson ?? {});
+      case "config_patch":
+        return args.src;
       case "validate_config":
         return null;
       case "config_path":

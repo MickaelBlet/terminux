@@ -26,9 +26,9 @@ The directories come from the platform's standard locations (the `dirs` crate): 
 
 - `config.toml` is created on first run. Its content is the default configuration (the same text as `src-tauri/src/default_config.toml` in the repository; open it read-only with `Ctrl+Alt+,`) with, when any were found, the generated profiles of this machine (WSL distributions, SSH hosts, PowerShell, Windows shells) written out as `[[profile]]` blocks just before the `# Color schemes.` comment.
 - The file is **hot-reloaded**: Terminux watches the config directory (recursively) and reloads when `config.toml` or a file in `fragments/` is created, modified or removed. Open windows re-apply appearance, keys, actions, toolbar and the new tab menu without restart. A few settings are read once at window creation (transparency, acrylic/Mica, `always_on_top`, launch mode) or at startup.
-- A TOML syntax or type error does not crash anything: the built-in defaults are used and the error is shown (with the file path). The built-in editor (`Ctrl+,`) validates before saving and refuses to write an invalid file.
+- A TOML syntax or type error does not crash anything: the built-in defaults are used and the error is shown (with the file path). The built-in settings tab (`Ctrl+,`) validates before saving and refuses to write an invalid file.
 - Generated profiles are computed **once per run**: changes to `~/.ssh/config` or new WSL distributions are picked up at the next start, not on hot reload.
-- Open the file: `Ctrl+,` (built-in editor), `Ctrl+Shift+,` (external editor), or the [`open_settings_directory`](actions.md#open_settings_directory) action.
+- Open the file: `Ctrl+,` (built-in settings tab), `Ctrl+Shift+,` (external editor), or the [`open_settings_directory`](actions.md#open_settings_directory) action.
 
 ## Fragments
 
@@ -94,13 +94,16 @@ For safety the backend only reads image, sound and icon files whose path appears
 
 ## Per-machine UI state
 
-Three view settings changed from the UI are remembered in the web view's local storage rather than in `config.toml`, and then take precedence over the config keys of the same name:
+Some view settings changed from the UI are remembered in the web view's local storage rather than in `config.toml`. The first three take precedence over the config keys of the same name:
 
 | Local storage key | Overrides | Set by |
 | --- | --- | --- |
 | `terminux.tabPosition` | [`tab_position`](configuration.md#tab_position) | the tab bar menu, `toggle_vertical_tabs` |
 | `terminux.verticalTabWidth` | [`vertical_tab_width`](configuration.md#vertical_tab_width) | dragging the panel edge (double-click resets to the configured width) |
 | `terminux.verticalTabsCollapsed` | [`vertical_tabs_collapsed`](configuration.md#vertical_tabs_collapsed) | `toggle_vertical_tabs_collapsed` |
+| `terminux.settingsView` | none | the **TOML** / **Settings UI** switch of the settings tab (the view `open_settings` opens without a target) |
+| `terminux.settingsAutoSave` | none | the auto-save toggle of the settings UI (default on) |
+| `terminux.settingsNavWidth` | none | dragging the edge of the settings page list |
 
 The location of web view storage is decided by the platform web view (WebKitGTK, WebView2) and the application identifier `com.terminux.app`. Toolbar edits are different: they are written to the [`toolbar`](configuration.md#toolbar) key of `config.toml`.
 

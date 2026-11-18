@@ -42,7 +42,7 @@ input = "git status\r"
 
 Right-click the toolbar (a button or the empty area) to open its menu:
 
-![Toolbar button context menu](../images/toolbar-menu.png)
+![Toolbar button context menu](../images/toolbar-menu.svg)
 
 | Menu item | Effect |
 | --- | --- |

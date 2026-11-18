@@ -34,15 +34,23 @@ src/
     keys.ts                  Keymap: combo parsing and matching
     actions.ts               ACTIONS: command name -> handler
     layout/tree.ts           pure split-tree operations
-    term/                    session.ts, appearance.ts, marks.ts, markmode.ts, shell-integration.ts
+    term/                    session.ts, appearance.ts, marks.ts, markmode.ts, shell-integration.ts,
+                             file-link-provider.ts, link-tooltip.ts
     osc.ts                   pure OSC parsers
+    file-links.ts            file path detection in terminal output (Ctrl+click)
+    file-langs.ts            syntax mode of the built-in file editor, from the file name
     windows.ts, snapshot.ts  multi-window, persistence, closing
     config.ts                Config types, defaults, fonts, profile lookup
     config-schema.ts         schema for completion/lint in the editor
     config-edit.ts           targeted TOML edits (setRootKey)
+    color-swatch.ts          hex color detection for the TOML editor swatches
+    emoji-icons.ts           emoji suggestions for `icon` keys
+    settings/                settings UI model: doc.svelte.ts (shared config.toml draft), pages.ts
+                             (which fields go on which page), value.ts (paths, controls, PatchOp)
     schemes.ts, ui-theme.ts  color schemes, application themes
     toolbar.ts, snippets.ts, paste.ts, paths.ts, audio.ts
     ui/                      Svelte components and UI helpers
+      settings/              settings UI components (SettingsView, Field, KeysEditor, ...)
 ```
 
 ## The App store
@@ -54,29 +62,30 @@ Core state:
 | Field | Meaning |
 | --- | --- |
 | `config` | Current `Config` (from `get_config`, replaced on `config-changed`) |
-| `tabs: Tab[]`, `activeTab` | Tab list (`kind` is `"term"`, `"config"` or `"defaults"`; the last two are editor tabs) |
-| `panes: Record<string, PaneInfo>` | Per-pane UI state: spec, title, bell/activity flags, read-only, progress, cwd, resolved `look`, mark mode |
+| `tabs: Tab[]`, `activeTab` | Tab list (`kind` is `"term"`, `"config"` (settings tab) or `"defaults"` (read-only defaults); the last two are editor tabs) |
+| `panes: Record<string, PaneInfo>` | Per-pane UI state: `kind` (`"term"`, `"snippets"`, `"file"`, `"config"`, `"defaults"`), spec, title, user `name`, bell/activity flags, read-only, progress, cwd, resolved `look`, mark mode, visual-bell `flash`, `dirty` (file pane) |
 | `keymap`, `userActions` | Rebuilt from the config (`setConfig`) |
-| `palette`, `menu`, `dialog`, `toasts`, `tabSwitcher`, `colorPicker`, `renaming`, `about`, `identify` | Overlays and transient UI |
+| `palette`, `menu`, `dialog`, `toasts`, `tabSwitcher`, `colorPicker`, `renaming`, `renamingPane`, `about`, `identify` | Overlays and transient UI |
+| `configDirty`, `keyCapture`, `editors`, `paneEditors` | Unsaved settings draft flag, "settings UI is recording a key combo" (bindings do not run), focus callbacks of mounted editors and file editor panes |
 | `searchPane`, `search` | Find bar target and options (`regex`, `caseSensitive`, `wholeWord`) |
 | `fontDelta` | Global font zoom (clamped to -8..40) added to every profile's font size |
 | `dark`, `ui` | Effective brightness and the resolved `UiLook` |
 | `fullscreen`, `focusMode`, `alwaysOnTop`, `windowFocused`, `windowName`, `windowId` | Window state |
 
-`Tab` fields: `id`, `kind`, `root` (layout tree), `active` (focused pane id), `zoom` (node shown alone), `name`, `color`, `broadcast`, `mru` (pane ids by recency), `group` (split selected with "move focus to parent").
+A pane is usually a terminal, but `PaneKind` also covers the snippets pane, a file editor pane (`FilePane.svelte`, `spec.file`) and the settings editor shown as a pane (`config` / `defaults`, see `open_settings_pane`). `Tab` fields: `id`, `kind`, `root` (layout tree), `active` (focused pane id), `zoom` (node shown alone), `name`, `color`, `broadcast`, `mru` (pane ids by recency), `group` (split selected with "move focus to parent").
 
 Responsibilities, grouped as in the file:
 
 - **Lifecycle**: `init()` loads the config, subscribes to `config-changed` and `pty-exit`, installs the drag-and-drop handler (dropped paths are pasted through `droppedPaths`), capture-phase `keydown`/`keyup` listeners, window focus/blur and the system color scheme listener, migrates the legacy toolbar, then calls `windows.init(app)` and opens a first tab if none exists. `setConfig()` rebuilds `userActions` and `keymap`, refreshes the theme, calls `applyConfig` on every `TermSession`, and runs `windows.configChanged` (global shortcuts, title).
 - **Session hooks**: a private `hooks: SessionHooks` object connects every `TermSession` back to the store (title, bell, output activity, notifications, input filtering for read-only/broadcast, exit handling, context menu, progress, cwd, look, wheel zoom/opacity, mark mode, paste requests, links). See [TermSession and SessionHooks](#termsession-and-sessionhooks).
-- **Panes**: `specFrom`, `createPane`, `splitPane`, `closePane`, `closeOtherPanes`, `focusPane`, `moveFocus`, `swapPane`, `movePane`, `resizePane`, `setSizes`, `equalize`, `toggleZoom`, `toggleSplitOrientation`, `setReadOnly`, `toggleBroadcast`. `split` accepts `left`/`right`/`up`/`down`/`auto` (auto picks the direction with the most room); a split continues the source pane unless a profile/index is given.
+- **Panes**: `specFrom`, `createPane`, `splitPane`, `closePane`, `closeOtherPanes`, `focusPane`, `moveFocus`, `swapPane`, `movePane`, `movePaneDir`, `renamePane`, `openEditorPane`, `resizePane`, `setSizes`, `equalize`, `toggleZoom`, `toggleSplitOrientation`, `setReadOnly`, `toggleBroadcast`. `split` accepts `left`/`right`/`up`/`down`/`auto` (auto picks the direction with the most room); a split continues the source pane unless a profile/index is given.
 - **Tabs**: `newTab`, `insertTab` (honours `new_tab_position`), `openEditor`, `gotoTab`, `cycleTab` (direct, or the MRU overlay depending on `tab_switcher_mode`), `commitTabSwitcher`, `closeTab(s)`, `moveTab`, `renameTab`, `setTabColor`, `duplicateTab`, `detachTab`. Closing the last tab calls `windows.lastTabClosed` (the window closes).
 - **Snapshots**: `capturePane`, `captureTab`, `captureNode`, `adoptPane`, `adoptTab`, plus the closed history (`remember`, `restoreLastClosed`, at most `MAX_CLOSED = 20` entries).
 - **Appearance**: `adjustFont`, `resetFont`, `adjustOpacity`, `setColorScheme`, `toggleRetro` (per-pane overrides live in `PaneInfo.spec`).
 - **Clipboard**: `copy` (`single_line`, `with_control_sequences`, `copy_formatting`, `dismiss_selection`), `paste` (sanitizes, applies `trim_paste`, shows the large/multi-line confirmation, passes a literal `Ctrl+V` through when the clipboard holds no text), `searchWeb`.
 - **Toolbar**: `toolbar`, `toolbarItems`, `setToolbar`, `addToToolbar`, `removeFromToolbar`, `moveToolbarItem(To)`, `resetToolbar`. Edits are written back to `config.toml` (`read_config` -> `setRootKey` -> `write_config`) through a serialized queue, with an optimistic `toolbarPending`.
 - **Dialogs**: `confirm(title, message, opts)` and `promptText(title, value, placeholder)` return promises; `toast(message, kind)`.
-- **Per-machine UI preferences** (tab position, vertical tab width/collapsed) live in `localStorage` (`terminux.tabPosition`, `terminux.verticalTabWidth`, `terminux.verticalTabsCollapsed`) through guarded `lsGet`/`lsSet`.
+- **Per-machine UI preferences** (tab position, vertical tab width/collapsed) live in `localStorage` (`terminux.tabPosition`, `terminux.verticalTabWidth`, `terminux.verticalTabsCollapsed`) through guarded `lsGet`/`lsSet`. The settings tab keeps its own (`terminux.settingsView`, `terminux.settingsAutoSave`, `terminux.settingsNavWidth`); see [file-locations](../reference/file-locations.md#per-machine-ui-state).
 - **Actions**: `run(action)` and the key handlers (next section).
 
 `App` imports `actions.ts` and `actions.ts` imports the `App` type only, which keeps the dependency one-directional at runtime.
@@ -121,7 +130,7 @@ flowchart LR
 - A handler returning `false` means "not handled": the key is not consumed and reaches the terminal (for example `copy` with no selection, `find` on an editor tab). Any other return value (including `undefined` and promises) counts as handled.
 - `withTerm(f)` wraps handlers that need the active terminal session and returns `false` when there is none.
 - `GLOBAL_COMMANDS` is the set of commands that stay active while text is being edited (settings editor, palette, inputs); other commands are ignored in that situation.
-- Besides the named commands, `ACTIONS` also holds command names that only exist as `[[action]]`/CLI commands: `send_input`, `multiple_actions`, `wt`, `global_summon`, `set_color_scheme`, `rename_window`, `rename_tab`, `set_tab_color`, `unbound`.
+- Besides the named commands, `ACTIONS` also holds command names that only exist as `[[action]]`/CLI commands: `send_input`, `multiple_actions`, `wt`, `global_summon`, `set_color_scheme`, `rename_window`, `rename_tab`, `rename_pane`, `set_tab_color`, `unbound`.
 
 ### Key handling
 
@@ -165,7 +174,7 @@ interface SplitNode { kind: "split"; id: string; dir: Dir; sizes: number[]; chil
 
 `src/lib/term/session.ts` defines `TermSession`, one per terminal pane (kept in the module-level `sessions` map keyed by pane id, and `byPty` by PTY id; `sessionByPty(id)` is used for the `pty-exit` event). It wraps an xterm.js `Terminal` and a backend PTY.
 
-Addons loaded: `FitAddon`, `SearchAddon`, `SerializeAddon`, `Unicode11Addon` (active version 11), `WebLinksAddon` (when `detect_urls` is not `false`), `ImageAddon` (inline images; guarded by try/catch), and one renderer addon, `WebglAddon` or `CanvasAddon`, chosen by `rendererOf(config)`: the `renderer` setting, else `canvas` on Linux and `webgl` elsewhere. A WebGL context loss falls back to canvas. A DOM renderer is opt-in.
+Addons loaded: `FitAddon`, `SearchAddon`, `SerializeAddon`, `Unicode11Addon` (active version 11), `WebLinksAddon` (when `detect_urls` is not `false`; with `detect_file_paths`, `file-link-provider.ts` adds a link provider for file paths using `findFileLinks`), `ImageAddon` (inline images; guarded by try/catch), and one renderer addon, `WebglAddon` or `CanvasAddon`, chosen by `rendererOf(config)`: the `renderer` setting, else `canvas` on Linux and `webgl` elsewhere. A WebGL context loss falls back to canvas. A DOM renderer is opt-in.
 
 Lifecycle:
 
@@ -200,7 +209,9 @@ interface SessionHooks {
   onWheel(paneId, kind: "zoom" | "opacity", delta): void;
   onMarkMode(paneId, active, block): void;
   requestPaste(paneId): void;                            // mouse paste goes through App.paste
+  onCopy(paneId): void;                                  // selection copied (copy_on_select, right click): toast
   openLink(uri): void;
+  openFile(paneId, path, line?, col?, remote?): void;    // Ctrl+click on a file path
 }
 ```
 
@@ -260,7 +271,10 @@ Sequences are registered in `TermSession.createTerminal` and parsed by pure func
 
 - `config.ts`: TypeScript types mirroring what the backend serializes (`Config`, `Profile`, `ProfileSettings`, `Appearance`, `FontConfig`, `UiTheme`, `MenuEntry`), `FALLBACK_CONFIG` (used before `get_config` resolves), font constants (`FONT_FAMILIES`: JetBrains Mono, Symbols Nerd Font Mono, Twemoji Mozilla, Noto Sans Symbols 2, Noto Sans Symbols, Noto Sans Math, served from `static/fonts`), `DEFAULT_THEME` (the "Terminux" scheme), and helpers `findProfile`, `visibleProfiles`, `wordSeparatorOf`.
 - `config-schema.ts`: the schema that powers the in-app editor. It exports `ROOT_FIELDS`, `SETTINGS_FIELDS` (accepted in `[defaults]` and each profile), `PROFILE_FIELDS`, the field tables of `[[scheme]]`, `[theme]`, `[[ui_theme]]`, `[[action]]`, `new_tab_menu` entries and `[keys]` (generated from `COMMANDS`), the list `HEADERS` offered for table completion, `ACTION_COMMANDS` and the argument list `ACTION_ARGS`. Pure functions: `contextAt` (where the cursor is), `completions`, `unknownKeys` (keys/sections serde would silently ignore), `keyInfoAt` (hover docs), `profileIds`.
-- `ui/ConfigEditor.svelte`: a CodeMirror 6 editor (TOML via `@codemirror/legacy-modes`). It reads with `read_config` (or `default_config` for the read-only "Default settings" tab), lints with `validate_config` (backend parse errors, UTF-16 offsets) plus `unknownKeys` warnings, offers `completions` and hover docs from the schema, and saves with `write_config`. `app.configDirty` drives the unsaved-changes dot and the confirmation on close.
+- `settings/doc.svelte.ts` (`settingsDoc`): the `config.toml` draft shared by both views of the settings tab (`kind: "config"`, rendered by `ui/settings/SettingsTab.svelte`): text, last saved text, parsed JSON (`config_parse`), current view (`ui` or `toml`), current page, auto-save, `changedOnDisk`. `patch(ops)` sends `PatchOp`s to `config_patch` and replaces the draft text, so UI edits keep comments and layout. Auto-save (on by default, 400 ms debounce) applies only to settings UI edits; the TOML view saves with `Ctrl+S`.
+- `settings/pages.ts` decides which schema fields appear on which settings page (root groups, profile / `[defaults]` sub-pages); `settings/value.ts` has the pure helpers (paths, control choice per field, default values, key-binding values) and is tested.
+- `ui/settings/`: `SettingsView.svelte` (page list, search, page routing), `Fields.svelte` / `Field.svelte` (one control per schema field), `ProfileEditor`, `KeysEditor` (key capture sets `app.keyCapture`), `ActionsEditor`, `SchemesEditor`, `UiThemesEditor` (+ `UiThemePreview`, **Try** applies a theme with `app.previewUiTheme` without saving), `ToolbarEditor`, `MenuEntries` (new tab menu), `ListPicker`, `SideTabs`.
+- `ui/ConfigEditor.svelte`: a CodeMirror 6 editor (TOML via `@codemirror/legacy-modes`), used as the settings TOML view, the read-only "Default settings" tab and the settings pane. It reads with `read_config` (or `default_config`), lints with `validate_config` (backend parse errors, UTF-16 offsets) plus `unknownKeys` warnings, offers `completions` and hover docs from the schema, shows color swatches (`color-swatch.ts`) and saves with `write_config`. `ui/editor-theme.ts` (styling) and `ui/editor-search.ts` (find / replace panel styled like `SearchBar`) are shared with `FilePane.svelte`. `app.configDirty` drives the unsaved-changes dot and the confirmation on close.
 - `config-edit.ts` (`setRootKey`, `tomlStringArray`): comment- and layout-preserving edit of one root key; used by the toolbar. Note that `snippets.ts` has its own, simpler `setRootKey` used by `windows.ts` (`confirm_close_all_tabs`) and snippet saving (`insertBlock`, `snippetToml`).
 
 Keeping the schema in sync is a manual step: see [adding-features.md](adding-features.md#add-a-config-key).
@@ -279,22 +293,26 @@ Components in `src/lib/ui/` (Svelte 5):
 
 | File | Role |
 | --- | --- |
-| `routes/+page.svelte` | Root: tab bar, optional vertical tab panel (left/right), one `<section>` per tab (terminal tabs render `SplitView`; editor tabs render `ConfigEditor`), `Palette`, `Menu`, `Overlays`, `ResizeHandles`, config-error banner, window background image |
+| `routes/+page.svelte` | Root: tab bar, optional vertical tab panel (left/right), one `<section>` per tab (terminal tabs render `SplitView`; the settings tab renders `SettingsTab`, the defaults tab a read-only `ConfigEditor`), `Palette`, `Menu`, `Overlays`, `ResizeHandles`, config-error banner, window background image |
 | `TabBar.svelte` / `TabItem.svelte` | Top tab bar with the title-bar toolbar, window controls, new-tab dropdown; a tab (title, icon, progress ring, bell/activity, close, color, drag) |
 | `VerticalTabs.svelte` | Vertical tab panel (resizable, collapsible to icons) |
 | `SplitView.svelte` | Recursive split rendering with draggable separators |
-| `TerminalPane.svelte` | A pane: attaches `TermSession` to the DOM, background image, zoom badge, search bar, snippets pane |
+| `TerminalPane.svelte` | A pane leaf: by `PaneInfo.kind` it renders a terminal (attaches `TermSession` to the DOM, background image, zoom badge, search bar), the snippets pane, `FilePane` or `ConfigEditor` |
 | `SearchBar.svelte` | Find UI (regex, case, whole word, match count) |
 | `SnippetsPane.svelte` | Snippets (saved `send_input` actions) as a pane type |
-| `Palette.svelte` | Command palette, tab search, scheme picker, suggestions, toolbar editor; nested items, live preview, command-line mode |
+| `Palette.svelte` | Command palette, tab search, scheme picker, suggestions; nested items, live preview, command-line mode |
 | `Menu.svelte` | Context menus (pane, tab, tab bar, toolbar, new-tab dropdown) |
 | `Overlays.svelte` | Confirm/prompt dialog, toasts, MRU tab switcher, tab color picker, About, window identification |
-| `ConfigEditor.svelte` | CodeMirror settings editor |
+| `ConfigEditor.svelte` | CodeMirror TOML editor (settings TOML view, defaults, settings pane) |
+| `settings/*.svelte` | Settings UI (see [Config, schema and the editor](#config-schema-and-the-editor)); `SettingsTab.svelte` hosts the UI / TOML switch |
+| `FilePane.svelte` | Built-in file editor pane (CodeMirror; Ctrl+click on a file path with `file_link_open = "builtin"`; local files via `file_read` / `file_write`, ssh files via `remote_file_fetch`) |
+| `PaneTitleBar.svelte` | Optional bar above a pane (`show_pane_title_bar`): icon, title, flags, zoom / close; double-click renames, dragging it starts a pane drag |
 | `ResizeHandles.svelte` | Edge handles for the frameless window |
 | `Icon.svelte`, `ProfileIcon.svelte`, `icons.ts` | Built-in 16x16 stroke icons; profile icon (emoji, image path or built-in name) |
 | `menus.ts` | Builders: `paneMenu`, `tabMenu`, `tabBarMenu`, `toolbarMenu`, `newTabMenu` (expands `new_tab_menu`), `editorMenu` |
 | `palettes.ts` | Builders: `commandPalette`, `colorSchemePalette`, `suggestionsPalette`, `tabSearchPalette` |
 | `types.ts` | `PaletteItem`, `PaletteView`, `MenuItem`, `MenuRequest`, `DialogRequest`, `Toast` |
+| `pane-drag.svelte.ts`, `pane-drag.ts`, `pane-title.ts` | Pane drag by its title bar (dock beside / swap with another pane, drop on a tab, as a new tab, or outside the window); `pane-drag.ts` is the pure drop-zone geometry and `pane-title.ts` the pure `show_pane_title_bar` rule (both tested) |
 | `tab-drag.svelte.ts`, `tab-shift.ts`, `tab-baseline.ts`, `flip.svelte.ts`, `tab-info.ts` | Tab dragging (reorder, tear-out, drop on another window), pure slot geometry (tested), FLIP animation, shared per-tab display data |
 
 ## Frontend conventions

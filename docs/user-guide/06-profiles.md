@@ -16,6 +16,10 @@ A profile says what a pane runs and how it looks. This guide explains `[defaults
 
 ## Defining a profile
 
+Profiles can be edited in the settings UI (`Ctrl+,`, **Profiles** > the profile; generated WSL / SSH / PowerShell profiles too: edits become a `[[profile]]` with the same id) or in `config.toml`. The UI keeps the file's comments and layout.
+
+![Settings UI on the "Dev server" profile page](../images/settings-profile.svg)
+
 ```toml
 default_profile = "shell"
 
@@ -182,7 +186,7 @@ Rules:
 
 [`new_tab_menu`](../reference/configuration.md#new_tab_menu) controls the new tab dropdown (the `v` button, `Ctrl+Shift+Space`, right-click on the tab bar then "New tab with profile"). Without it, the dropdown lists every non-hidden profile. The menu always ends with Settings, Command palette and About.
 
-![New tab dropdown listing profiles](../images/new-tab-menu.png)
+![New tab dropdown listing profiles](../images/new-tab-menu.svg)
 
 Entry types (Windows Terminal semantics):
 
@@ -220,7 +224,7 @@ type = "action"
 id = "dev-layout"
 ```
 
-(`id` refers to an `[[action]]` that has `id = "dev-layout"`, or to a built-in [command name](../reference/actions.md#named-commands) such as `open_settings`.) Profiles in the menu show their `Ctrl+Shift+1..9` hint for the first nine (in file order, hidden profiles excluded).
+(`id` refers to an `[[action]]` that has `id = "dev-layout"`, or to a built-in [command name](../reference/actions.md#named-commands) such as `open_settings`; `icon` overrides the command's icon.) Profiles in the menu show their `Ctrl+Shift+1..9` hint for the first nine (in file order, hidden profiles excluded).
 
 ## Icons
 
@@ -230,9 +234,9 @@ id = "dev-layout"
 - a path to an image (`png`, `jpg`, `gif`, `svg`, `ico`, `webp`, `bmp`; relative paths resolve against the config directory),
 - an emoji or short text.
 
-In the built-in editor (`Ctrl+,`), completion on any `icon` key (profiles, `[[action]]`, `new_tab_menu`) lists the built-in icon names and a selection of emoji searchable by name: typing `"pengu` and accepting inserts `"🐧"`.
+In the built-in TOML editor (`open_settings_toml`), completion on any `icon` key (profiles, `[[action]]`, `new_tab_menu`) lists the built-in icon names and a selection of emoji searchable by name: typing `"pengu` and accepting inserts `"🐧"`.
 
-![Emoji completion on an icon key in the config editor](../images/icon-completion.png)
+![Emoji completion on an icon key in the config editor](../images/icon-completion.svg)
 
 Icons appear in tabs, menus and the palette. Tabs can hide or monochrome them with `icon_style` in a UI theme (see [Appearance](07-appearance.md#app-theme-and-ui_theme)).
 

@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Terminal and built-in file editor tabs can be moved into a pane of another tab: drag the tab onto a pane or right-click the tab > Show in a pane (unsaved editor edits follow)
 
+### Changed
+
+- Settings shown as a pane use the settings UI too (not only the TOML editor), with the same Settings UI / TOML switch as the settings tab
+- Documentation: screenshots are vector SVG (text stays sharp at any zoom, fonts embedded), regenerated with the 0.1.6 UI; new images for the settings UI, pane title bar, pane drag and the editor find panel
+- Documentation: user guide, reference and developer docs checked against the code and brought up to date with 0.1.6
+
+### Fixed
+
+- Pane drop zone hint no longer clipped under the pane border on its right / bottom edge
+
 ## [0.1.6] - 2026-11-18
 
 ### Added

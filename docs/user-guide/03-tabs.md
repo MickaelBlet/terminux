@@ -38,7 +38,7 @@ The arguments of `new_tab` (`profile`, `index`, `commandline`, `starting_directo
 
 ## Switching tabs
 
-![MRU tab switcher overlay](../images/tab-switcher.png)
+![MRU tab switcher overlay](../images/tab-switcher.svg)
 
 | Goal | Key |
 | --- | --- |
@@ -140,7 +140,7 @@ The settings tabs (built-in config editor, read-only defaults) always show their
 
 Give tabs a color to tell them apart at a glance.
 
-![Tab bar with colored, renamed tabs and a progress ring](../images/tabs.png)
+![Tab bar with colored, renamed tabs and a progress ring](../images/tabs.svg)
 
 - Tab menu "Color..." (or `open_tab_color_picker`) opens a picker with preset swatches (grouped for dark and light themes, ordered by hue), a custom color input and a Reset button.
 - `reset_tab_color` clears it.
@@ -189,11 +189,17 @@ tab_width_mode = "compact"
 
 The mode does not apply to vertical tabs.
 
+A title too long for its tab is cut with an ellipsis on the right; `tab_title_ellipsis = "start"` cuts it on the left instead, keeping the end (useful for paths):
+
+```toml
+tab_title_ellipsis = "start"
+```
+
 ## Vertical tabs
 
 Put the tab list in a side panel with [`tab_position`](../reference/configuration.md#tab_position) = `"left"` or `"right"`. The title bar stays on top (new-tab buttons, toolbar, window buttons) while tabs stack vertically.
 
-![Vertical tabs on the left](../images/vertical-tabs.png)
+![Vertical tabs on the left](../images/vertical-tabs.svg)
 
 ```toml
 tab_position = "left"
@@ -241,7 +247,7 @@ printf '\e]9;4;0\a'      # clear
 
 Right-click a tab:
 
-![Tab context menu](../images/tab-context-menu.png)
+![Tab context menu](../images/tab-context-menu.svg)
 
 | Group | Items |
 | --- | --- |
@@ -250,7 +256,7 @@ Right-click a tab:
 | Close | Close tabs to the right, Close other tabs, Close tab |
 | Layout | Reopen closed tab, Tab position (Top / Left / Right), Collapse vertical tabs |
 
-"Show in a pane" moves the tab's panes (terminal or built-in file editor) beside the active pane of the most recent other terminal tab; dragging the tab onto a pane does the same at the highlighted spot. Settings tabs only get the Close and Layout groups. Right-clicking empty tab-bar space shows a smaller menu: New tab, New tab with profile, the layout group, Focus mode, Always on top, Fullscreen, Customize toolbar..., Settings and Command palette.
+"Show in a pane" moves the tab's panes (terminal or built-in file editor) beside the active pane of the most recent other terminal tab; dragging the tab onto a pane does the same at the highlighted spot. Settings tabs get "Show in a pane" (`open_settings_pane` for that tab; disabled without a terminal tab), "Move tab to new window", and the Close and Layout groups. Right-clicking empty tab-bar space shows a smaller menu: New tab, New tab with profile, the layout group, Focus mode, Always on top, Fullscreen, Customize toolbar..., Settings and Command palette.
 
 ## Tab-related settings
 
@@ -259,6 +265,7 @@ Right-click a tab:
 | [`new_tab_position`](../reference/configuration.md#new_tab_position) | `after_last_tab` or `after_current_tab` |
 | [`tab_switcher_mode`](../reference/configuration.md#tab_switcher_mode) | `in_order`, `mru`, `disabled` |
 | [`tab_width_mode`](../reference/configuration.md#tab_width_mode) | `equal`, `title_length`, `compact` |
+| [`tab_title_ellipsis`](../reference/configuration.md#tab_title_ellipsis) | `end` (default) or `start`: which side a long title is cut on |
 | [`tab_position`](../reference/configuration.md#tab_position) | `top`, `left`, `right` |
 | [`vertical_tab_width`](../reference/configuration.md#vertical_tab_width), [`vertical_tabs_collapsed`](../reference/configuration.md#vertical_tabs_collapsed) | Vertical panel defaults |
 | [`show_tabs_fullscreen`](../reference/configuration.md#show_tabs_fullscreen) | Keep the tab bar visible in fullscreen |

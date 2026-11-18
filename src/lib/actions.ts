@@ -95,7 +95,10 @@ export const ACTIONS: Record<string, Handler> = {
         const t = norm(spec.target);
         const view = t === "settingstoml" ? "toml" : t === "settingsui" ? "ui" : settingsDoc.view;
         if (app.tab?.kind === "config" && settingsDoc.view === view) app.closeTab();
-        else if (app.activePane && app.activePane === app.editorPane("config")) app.closePane(app.activePane);
+        else if (app.activePane && app.activePane === app.editorPane("config")) {
+          if (settingsDoc.view === view) app.closePane(app.activePane);
+          else settingsDoc.setView(view);
+        }
         else {
           settingsDoc.setView(view);
           app.openEditor("config");

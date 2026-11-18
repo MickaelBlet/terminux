@@ -63,7 +63,11 @@ input = "git status\r"
 gs = "Ctrl+Shift+G"          # an action id works like a command name
 ```
 
-- The settings editor only knows command names inside `[keys]`: an action id there is underlined as an unknown key unless it contains a dot (`user.gs`). The binding works either way; putting `keys` in the `[[action]]` avoids the warning.
+- Easiest of all: **Settings** > **Keyboard** (`Ctrl+,`) lists every built-in command and your `[[action]]` entries with their key combos. Click `+` and press a combo to add it, `x` on a combo to remove it, the reset button to go back to the default keys. Conflicting combos are flagged, "Only customized" filters to what you changed, and the search box matches names and combos. Edits are written to `[keys]` (named commands) or to the action's `keys`, keeping the comments of `config.toml`. The **Actions** page edits the `[[action]]` tables themselves (name, id, icon, keys, command and arguments).
+
+![Settings Keyboard page: actions and their key combos, with add / remove / reset controls](../images/settings-keys.svg)
+
+- The TOML editor only knows command names inside `[keys]`: an action id there is underlined as an unknown key unless it contains a dot (`user.gs`). The binding works either way; putting `keys` in the `[[action]]` avoids the warning.
 - Several combos: `keys = ["Ctrl+Shift+G", "F9"]`.
 - Combos are case-insensitive: `ctrl+shift+g` works, as do `Win`, `Super`, `Meta`, `Cmd` for the logo key. See [keybindings](../reference/keybindings.md) for the grammar (`Plus`, `Period`, `Space`, `PgUp`, ...).
 - Precedence: built-in defaults < `[keys]` overrides of named commands < `[[action]]` bindings. A combo bound by an action therefore **replaces** a default binding of the same combo, without having to unbind it.
@@ -240,7 +244,7 @@ command = "toggle_broadcast_input"
 
 - `[[action]]` blocks must come **before** `[keys]` and `[theme]` in the file, or the tables are parsed inside them. Terminux inserts saved snippets before these tables for that reason.
 - A TOML basic string treats `\` as an escape: write `\\` for backslashes (Windows paths). Use single quotes for literal strings.
-- `name`, `id`, `icon` and `keys` are metadata of the entry and are never passed to the command. An argument that is itself called `name` (for example the window name of `rename_window` or `global_summon`) therefore cannot be set from an `[[action]]`; use the real [command line](../reference/command-line.md) or the dedicated palette entries. <!-- TODO verify -->
+- `name`, `id`, `icon` and `keys` are metadata of the entry and are never passed to the command. An argument that is itself called `name` (for example the window name of `rename_window` or `global_summon`) therefore cannot be set from an `[[action]]`; use the real [command line](../reference/command-line.md) or the dedicated palette entries.
 - `id` is a plain string; it is also what the toolbar stores. Renaming an `id` removes the action from the toolbar silently (unknown entries are skipped, not deleted).
 - Bindings that conflict with the shell (`Ctrl+R`, `Ctrl+A`, ...) steal the key from programs. Prefer `Alt+` / `Ctrl+Alt+` / `Ctrl+Shift+` combos.
 - Global shortcuts (`quake_mode`, `global_summon`) are registered with the OS; an unsupported or already-taken combo is not registered (only a log warning).

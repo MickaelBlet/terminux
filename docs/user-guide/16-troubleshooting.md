@@ -23,7 +23,7 @@ Symptom-first fixes: rendering, WSL and WebKitGTK problems, fonts, keys that do 
 
 1. Run Terminux from another terminal so you can see its log (`terminux 2>&1 | tee terminux.log`). See [Logs](#logs).
 2. Look at the top of the window: a red `Config error, using defaults - ...` bar means your `config.toml` does not parse.
-3. Open the built-in editor with `Ctrl+,` (settings): it underlines unknown keys (warnings) and syntax errors.
+3. Open the settings with `Ctrl+,` and switch to the **TOML** view (or run "Open settings file (TOML editor)" from the palette): it underlines unknown keys (warnings) and syntax errors. If the file does not parse, the settings UI shows the error and a button to open the TOML view.
 4. Try a clean profile: rename `config.toml` (a default one is regenerated) and relaunch.
 
 ## Rendering
@@ -91,7 +91,7 @@ Using **WSL from Terminux on Windows**: generated profiles `wsl-<distro>` start 
 
 Terminux handles a key as an *action* when it is bound; when the action cannot apply it returns "not handled" and the key reaches the program. That is why `Ctrl+C` copies only when there is a selection and otherwise interrupts the program, and why `Ctrl+Shift+F` does nothing special in a settings tab.
 
-**A key does not reach my program (vim, tmux, emacs, htop).** It is bound to an action. Find out which: open the command palette, every command shows its key. Then rebind or unbind:
+**A key does not reach my program (vim, tmux, emacs, htop).** It is bound to an action. Find out which: open the command palette (every command shows its key) or **Settings** > **Keyboard**, which lists every binding, flags conflicting combos and lets you remove or re-record a combo. Or edit `[keys]`:
 
 ```toml
 [keys]
@@ -125,14 +125,14 @@ Common collisions: `Alt+Arrows` (move focus), `Alt+Shift+Arrows` (resize), `Ctrl
 - **Paste**: `Ctrl+V`, `Ctrl+Shift+V`, `Shift+Insert`, middle/right click. Control characters (except tab, CR, LF) are stripped from pasted text; trailing whitespace is trimmed unless `trim_paste = false`.
 - **Paste confirmation dialogs**: shown for pastes over 5 KiB (`large_paste_warning`) and for several lines (`multi_line_paste_warning`), by default only when the application did not enable bracketed paste. Set to `"always"` / `"never"` / `false` as needed.
 - **A remote program (vim over ssh, tmux) cannot set my clipboard**: OSC 52 is **off** by default. Enable with `osc52_clipboard = true` (also `set -g set-clipboard on` in tmux and OSC 52 support in the program). Only **writes** are honored; read requests (`?`) are ignored, and payloads above about 768 KB of text are dropped. It is off by default because any output (a `cat`ed file) could silently replace your clipboard.
-- **Clipboard empty on Wayland / headless Linux**: the clipboard backend needs a running display session; check that a clipboard manager works in other apps. <!-- TODO verify Wayland clipboard backend requirements -->
+- **Clipboard empty on Wayland / headless Linux**: the clipboard backend needs a running display session; check that a clipboard manager works in other apps.
 - **Dropped files**: dropping a file pastes its path; for WSL / Cygwin targets set `path_translation_style`.
 
 ## Configuration errors and hot reload
 
 - Terminux watches `config.toml` **and** `fragments/*.toml`. A save applies immediately in every window; no restart is needed (exceptions: first-time transparency, `start_on_user_login` and tray settings take effect through the OS; global shortcuts are re-registered).
 - **Config error bar**: if the file is not valid TOML (or a value has the wrong type), Terminux uses the built-in defaults for that load and shows `Config error, using defaults - <path>: <message>` at the top. Your file is untouched. Fix it and save; it reloads by itself.
-- **Built-in editor** (`Ctrl+,`): `Ctrl+Space` completes keys and values, `Ctrl+S` saves, `Ctrl+F` finds. Red = parse error (saving is refused with the message), yellow = unknown key or section (the app ignores it silently, usually a typo). Hover a key for its documentation. Click the swatch before a hex color (`"#rgb"`, `"#rrggbb"`, with optional alpha) to pick it with the system color picker. A "changed on disk" notice appears if the file was edited elsewhere. The read-only defaults are at `Ctrl+Alt+,`; edit in an external editor with `Ctrl+Shift+,`.
+- **TOML editor** (`open_settings_toml`, or the **TOML** button of the settings UI opened with `Ctrl+,`): `Ctrl+Space` completes keys and values, `Ctrl+S` saves, `Ctrl+F` finds, `Ctrl+H` replaces. Red = parse error (saving is refused with the message), yellow = unknown key or section (the app ignores it silently, usually a typo). Hover a key for its documentation. Click the swatch before a hex color (`"#rgb"`, `"#rrggbb"`, with optional alpha) to pick it with the system color picker. A "changed on disk" notice appears if the file was edited elsewhere. The read-only defaults are at `Ctrl+Alt+,`; edit in an external editor with `Ctrl+Shift+,`.
 - Typical mistakes:
   - A root key placed **after** a `[table]` becomes a key of that table: put `toolbar`, `startup_actions`, `default_profile`, ... at the top.
   - `[[action]]` placed after `[keys]` or `[theme]` is parsed in the wrong context; put actions earlier.
@@ -164,7 +164,7 @@ There is no log file: Terminux writes diagnostics to **stderr**, including the m
 terminux 2>&1 | tee terminux.log
 ```
 
-On Windows release builds there is no console window; run a debug build or start from a console build to see output. <!-- TODO verify: how to get logs from the Windows installer build -->
+On Windows release builds there is no console window; run a debug build or start from a console build to see output.
 
 What you may see: `pane <id> opened renderer=...`, `config watcher disabled: ...` (the file watcher could not start: edits are then not hot-reloaded), `ignored invalid fragment <path>`, `startup_actions: <error>`, `terminux: <error>` for bad command lines, `global shortcuts` warnings.
 

@@ -46,7 +46,7 @@ Vitest runs with its defaults (there is no `vitest.config`; `vite.config.js` onl
 
 ## Frontend tests (Vitest)
 
-Seven files, all under `src/lib/`:
+Seventeen files, all under `src/lib/`:
 
 | File | Covers |
 | --- | --- |
@@ -55,8 +55,18 @@ Seven files, all under `src/lib/`:
 | `config-schema.test.ts` | `contextAt` (root key, section/value, header, comments), `completions` (root keys skip already-set ones, profile keys per block, key actions and theme colors, enum/bool/default values, `default_profile`, `icon` built-in names and emoji, headers, new sections), `profileIds`, `unknownKeys` (unknown keys and sections, legacy names, free sections, xterm color names, multi-line arrays), `keyInfoAt` (hover docs, default bindings) |
 | `config-edit.test.ts` | `setRootKey` / `tomlStringArray` from `config-edit.ts`: replace single and multi-line values keeping comments, ignore keys in sections, insert after a commented example / last root key / before the first section, remove a key |
 | `toolbar.test.ts` | Every command has a built-in icon; `commandIcon` by name, legacy name and spec; default toolbar resolution; legacy names, action ids and unknown entries; collapsing separators; `toolbarEntries`/`canonicalEntry`; `moveEntry` |
+| `keys.test.ts` | `eventKey` / `eventKeys`: physical position for letters and digits, numpad digits, keysym for named keys (legacy X keycodes), `NumpadEnter` |
+| `ui-theme.test.ts` | `[[ui_theme]]` to CSS variables, invalid values ignored |
+| `color-swatch.test.ts` | `findHexColors` (editor color swatches), `toPickerHex` / `fromPickerHex` |
+| `file-links.test.ts` | `findFileLinks` (location suffixes, prefixes, Windows paths, punctuation, URLs and versions skipped), `resolveFilePath`, `dirOf` |
+| `file-langs.test.ts` | `langOf` (syntax mode by file name), `baseName` |
+| `settings/pages.test.ts` | Settings UI page layout: every visible root key on exactly one page, profile field split, fresh ids and names |
+| `settings/value.test.ts` | Settings UI helpers: paths and `PatchOp`s, list moves, control choice per field, literal parsing, defaults read from the commented examples, key bindings, `locate` |
+| `term/marks.test.ts` | `referenceLine` and `targetLine` (scroll mark navigation) |
 | `ui/tab-shift.test.ts` | Pure drag geometry: `slotAt`, `shiftFor` |
-| `helpers.test.ts` | Grab bag of pure helpers: `paths` (quoting, WSL/Cygwin/MSYS2/MinGW translation, dropped paths); `osc` (progress, cwd 7 / 9;9, 133/633 shell integration, OSC 52, `OSC52_MAX`); `paste` (sanitize, warnings); `snippets` (`insertBlock`, `snippetToml`, and the `snippets.ts` `setRootKey`); `snapshot` (`sanitizeTab`); schemes and appearance (`findScheme`, `schemeName`, `toTheme`, `parseHex`, `withAlpha`, `parsePadding`, `fontWeightOf`, `resolve` for defaults/profile/overrides); `markmode` `move`/`wordAt`, `marks` `targetLine`, shell-integration `recent`; `hasVisibleText` |
+| `ui/pane-drag.test.ts` | Pane drop zones (`dropZone`, `zoneBox`) |
+| `ui/pane-title.test.ts` | `show_pane_title_bar` mode parsing and visibility |
+| `helpers.test.ts` | Grab bag of pure helpers: `paths` (quoting, WSL/Cygwin/MSYS2/MinGW translation, dropped paths); `osc` (progress, cwd 7 / 9;9, 133/633 shell integration, OSC 52, `OSC52_MAX`); `paste` (sanitize, warnings); `snippets` (`insertBlock`, `snippetToml`, and the `snippets.ts` `setRootKey`); `snapshot` (`sanitizeTab`); schemes and appearance (`findScheme`, `schemeName`, `toTheme`, `parseHex`, `withAlpha`, `parsePadding`, `fontWeightOf`, `resolve` for defaults/profile/overrides); `markmode` `move`/`wordAt`, `marks` `targetLine`, shell-integration `recent`; `fontFamilyOf` (emoji font placement); `setRootKey` of `snippets.ts`; `hasVisibleText` |
 
 ## Backend tests (cargo)
 
@@ -67,7 +77,10 @@ Tests live in `#[cfg(test)] mod tests` blocks at the bottom of each module.
 | `config.rs` | `default_config_parses`, `shell_profile_always_present`, `invalid_config_errors`, `validate_ok`, `validate_span_is_utf16`, `legacy_config_still_parses`, `passthrough_and_sections`, `commandline_splitting`, `generated_profile_is_overridable`, `initial_config_lists_generated_profiles`, `profile_example_is_valid` | Embedded default config is valid; `shell` profile always exists; type errors; UTF-16 error spans for CodeMirror; old config files; typed fields vs pass-through, `[defaults]` merging (cwd, env, login shell), `commandline` splitting, `[[scheme]]`/`[[ui_theme]]`/`[[action]]`/`[keys]`, JSON shape sent to the frontend; `Profile::inherit`; first-run file listing generated profiles; the commented profile example in `default_config.toml` |
 | `cli.rs` | `options_and_commands`, `implicit_new_tab`, `separators`, `errors_and_dirs` | Global options plus chained subcommands, implicit `new-tab`, `;` handling (standalone, glued, escaped), error cases, `resolve_dirs`, `snake()` |
 | `dynamic_profiles.rs` | `wsl_list_utf16`, `ssh_hosts`, `slugs` | `wsl.exe -l -q` UTF-16 output, `~/.ssh/config` host extraction, slugging |
-| `pty.rs` (not on Windows) | `quoting`, `agent_runs_through_login_shell`, `backlog_is_bounded` | `sh_quote`; a non-shell profile runs as `$SHELL -lic "exec ..."`; the 8 MiB backlog cap keeps the newest bytes |
+| `pty.rs` (not on Windows) | `wsl_cd_replaces_existing`, `quoting`, `program_runs_through_login_shell`, `backlog_is_bounded` | WSL `--cd` handling; `sh_quote`; a non-shell profile runs as `$SHELL -lic "exec ..."`; the 8 MiB backlog cap keeps the newest bytes |
+| `toml_patch.rs` | `set_root_key_keeps_comments`, `add_root_key_before_tables`, `nested_profile_key`, `remove_prunes_empty_tables`, `create_section`, `quoted_keys`, `insert_remove_move_profiles`, `insert_new_array_of_tables_and_values`, `inline_tables_stay_inline`, `replace_table_with_object`, `errors` | Comment-preserving settings UI edits: set, remove, insert and move operations, layout and inline tables kept, error cases |
+| `editor.rs` | `expands_template`, `fallback_quotes_the_file`, `rejects_missing_files`, `terminal_commandline_round_trips`, `writes_only_opened_files` | `file_link_editor` template substitution, fallback command line, missing files, command line quoting, built-in editor writes limited to opened files |
+| `ssh.rs` | `parses_destinations`, `rejects_non_interactive`, `follow_round_trips_through_the_commandline`, `scp_mapping` | `ssh` argv detection, non-interactive sessions rejected, reopen-in-directory command line, `scp` arguments |
 | `windows.rs` | `accelerators` | `accelerator()` conversion (`Win+\``, `Ctrl+Shift+q`, `Alt+F12`, `Ctrl++`, unsupported modifier) and `parse_position` |
 | `session_store.rs` | `bounds_and_tabs` | `has_tabs`, `bounds` |
 | `lib.rs` (not on Windows) | `file_ipc_is_limited_to_config_paths` | `referenced_by_config` allow-list for `read_binary`/`save_text` |

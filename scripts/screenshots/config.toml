@@ -1,5 +1,5 @@
 # Terminux configuration. Edits are applied live.
-default_profile = "claude"
+default_profile = "shell"
 font_size = 14
 scrollback = 100000
 tab_position = "top"
@@ -13,16 +13,17 @@ cursor_shape = "bar"
 padding = 8
 
 [[profile]]
-id = "claude"
-name = "Claude"
-cmd = "claude"
-icon = "sparkle"
+id = "dev"
+name = "Dev server"
+cmd = "npm"
+args = ["run", "dev"]
+icon = "power"
 tab_color = "#d97757"
 
 [[profile]]
-id = "opencode"
-name = "OpenCode"
-cmd = "opencode"
+id = "python"
+name = "Python"
+cmd = "python3"
 icon = "command"
 
 [[action]]

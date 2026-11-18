@@ -27,11 +27,16 @@ flowchart LR
     pty["pty.rs<br/>PtyManager (portable-pty)"]
     win["windows.rs<br/>create, route, quake,<br/>tray, shortcuts"]
     store["session_store.rs<br/>session.json"]
+    patch["toml_patch.rs<br/>settings UI edits"]
+    files["editor.rs, ssh.rs,<br/>remote_files.rs<br/>file links, ssh panes"]
     lib --> cli
     lib --> config
     config --> dyn
     lib --> pty
     lib --> win
+    lib --> patch
+    lib --> files
+    files --> pty
     win --> store
   end
 
@@ -42,9 +47,11 @@ flowchart LR
     tree["layout/tree.ts"]
     term["term/session.ts<br/>TermSession (xterm.js)"]
     wins["windows.ts + snapshot.ts"]
+    settings["settings/*.ts<br/>ui/settings/*.svelte"]
     ui["ui/*.svelte"]
     page --> app
     page --> ui
+    ui --> settings
     app --> pipeline
     app --> tree
     app --> term
@@ -65,6 +72,8 @@ Division of labour:
 | Parsing `config.toml`, merging fragments and generated profiles, hot reload | Backend (`config.rs`, `dynamic_profiles.rs`, watcher in `lib.rs`) |
 | Interpreting appearance, keys, actions, menus, toolbar | Frontend (the backend passes unknown keys through untouched) |
 | Creating, routing and persisting windows | Backend (`windows.rs`, `session_store.rs`) |
+| Comment-preserving edits of `config.toml` for the settings UI | Backend (`toml_patch.rs`), driven by `src/lib/settings/` |
+| Opening Ctrl+clicked file paths, ssh pane detection, remote file copies | Backend (`editor.rs`, `ssh.rs`, `remote_files.rs`) |
 | Tabs, panes, focus, closed-tab history | Frontend (`App` in `state.svelte.ts`) |
 | Terminal emulation, selection, search, OSC handling | Frontend (xterm.js in `TermSession`) |
 | `wt`-style command line parsing | Backend (`cli.rs`), also exposed to the palette via `cli_parse` |
@@ -244,7 +253,7 @@ Points worth knowing:
 - Portable mode: `config_dir()` returns `<exe dir>/settings` if a `.portable` file sits next to the executable. `state_dir()` (the `session.json` location) follows the same directory in that case.
 - A fragment contributes profiles (only ids not already defined), `[[scheme]]` and `[[action]]` entries. Other fragment keys (root settings, `[defaults]`, `[keys]`) are parsed but ignored. An invalid fragment is skipped with a message on stderr.
 - The watcher is created in `setup` and kept alive via `app.manage(Mutex<RecommendedWatcher>)`. It creates `fragments/` if needed.
-- The editor flow (`read_config` -> edit -> `validate_config` -> `write_config`) goes through the same file; saving triggers the watcher like any external edit.
+- The settings tab has two views of one draft (`src/lib/settings/doc.svelte.ts`). The TOML editor uses `read_config` -> edit -> `validate_config` -> `write_config`. The settings UI reads the raw document with `config_parse`, turns each edit into `PatchOp`s and applies them to the draft text with `config_patch`, so comments survive; auto-save then calls `write_config`. Saving triggers the watcher like any external edit, and a change on disk while the draft is dirty is reported (`changedOnDisk`).
 - Some settings only take effect at window creation (transparency, `always_on_top`); the frontend warns with `transparencyHint`.
 
 ## Window routing
@@ -312,7 +321,7 @@ sequenceDiagram
 
 - **CSP** (`tauri.conf.json`): `default-src 'self'`; scripts from self only (dev CSP additionally allows inline scripts and `ws://localhost:1420`); `connect-src` limited to self and the Tauri IPC origins; no frames, objects or forms.
 - **Capabilities** (`src-tauri/capabilities/default.json`, applied to all windows): `core:default`, a hand-picked list of `core:window:*` permissions (dragging, resize dragging, minimize, maximize, close, destroy, show/hide, focus, fullscreen, always-on-top, size, position, center, title, progress bar, user attention), `opener:default`, `notification:default`, and clipboard `allow-read-text`, `allow-write-text`, `allow-write-html`. Dialog, global-shortcut and autostart are only driven from Rust and need no frontend permissions.
-- **File IPC is allow-listed**: `read_binary` and `save_text` (with an explicit path) only accept paths that appear as string values somewhere in the loaded config (`referenced_by_config`), so a compromised webview cannot read arbitrary files. `read_binary` also caps files at 64 MiB. `open_path` only opens directories.
+- **File IPC is allow-listed**: `read_binary` and `save_text` (with an explicit path) only accept paths that appear as string values somewhere in the loaded config (`referenced_by_config`), so a compromised webview cannot read arbitrary files. `read_binary` also caps files at 64 MiB. `open_path` only opens directories. The built-in editor can only write files it read first (`file_read` records them in `OpenFiles`, `file_write` refuses others), `open_in_editor` takes its program from `file_link_editor` in the config, and ssh and `scp` arguments are derived from a command the user launched in that pane, never from the webview.
 - **OSC 52** clipboard writes are off by default (`osc52_clipboard`) and reads are never answered.
 
 ## See also

@@ -18,7 +18,7 @@ Find text in the scrollback, jump between scroll marks and shell prompts, scroll
 
 Press `Ctrl+Shift+F` (`find`) to open the search bar in the top-right corner of the focused pane.
 
-![Find bar with match count](../images/find.png)
+![Find bar with match count](../images/find.svg)
 
 ```
 [ magnifier | Find ........... | 3/17 | Aa | ab | .* | ^ | v | x ]
@@ -42,7 +42,7 @@ Details:
 - The query and the three options are shared by all panes of the window and are kept while the window lives, so reopening the bar (or searching in another pane) starts from the same text.
 - Pressing `Ctrl+Shift+F` while the terminal has focus and the bar is open closes the bar.
 - The search covers the whole scrollback, not just the visible screen.
-- Find works on terminal panes; the settings editor has its own search (`Ctrl+F` inside the editor).
+- Find works on terminal panes; the built-in file and TOML editors have their own find / replace panel (`Ctrl+F`, `Ctrl+H`), see [Links](08-text-and-clipboard.md#links).
 - The search bar belongs to a pane: closing the pane closes its bar.
 
 ### Repeat the search without the bar
@@ -82,7 +82,7 @@ By default typing scrolls back to the bottom (`snap_on_input = true`, a profile 
 
 A scroll mark is a colored tick in the left gutter of a line (and, optionally, on the scrollbar). Marks let you jump around long output.
 
-![Command marks on the scrollbar and a selected command output](../images/shell-integration.png)
+![Command marks on the scrollbar and a selected command output](../images/shell-integration.svg)
 
 | Goal | Command | Default key |
 | --- | --- | --- |
@@ -92,7 +92,7 @@ A scroll mark is a colored tick in the left gutter of a line (and, optionally, o
 | Jump to the previous / next mark | `scroll_to_previous_mark`, `scroll_to_next_mark` | `Ctrl+Up` / `Ctrl+Down` |
 | Jump to the first / last mark | `scroll_to_first_mark`, `scroll_to_last_mark` | none |
 
-Previous/next are relative to the top line of the viewport, or to the cursor line when you are not scrolled back (so `Ctrl+Up` from the prompt jumps to the start of the last command, like VS Code); repeated presses keep walking even when the marks fit on the last screen. With no marks, or in the alternate screen (vim, less…), `Ctrl+Up` / `Ctrl+Down` are sent to the terminal. Pane menu: "Add scroll mark". One mark per line; a new mark replaces the old one. Marks live in the pane's buffer and are dropped with the text they annotate.
+Previous/next are relative to the top line of the viewport, or to the cursor line when you are not scrolled back (so `Ctrl+Up` from the prompt jumps to the start of the last command, like VS Code); repeated presses keep walking even when the marks fit on the last screen. With no marks, or in the alternate screen (vim, less…), `Ctrl+Up` / `Ctrl+Down` are sent to the terminal. Jumping to a mark briefly outlines its row in the mark's color (about 1 second). Pane menu: "Add scroll mark". One mark per line; a new mark replaces the old one. Marks live in the pane's buffer and are dropped with the text they annotate.
 
 ```toml
 [keys]

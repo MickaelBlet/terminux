@@ -111,8 +111,9 @@ args = ["-A", "-J", "jump.example.com", "ops@10.0.0.5"]
 
 Notes:
 
-- A split without `-p` **duplicates the profile** and so opens another `ssh` session; it does not share the connection of the original pane. To share it, enable `ControlMaster` in your `~/.ssh/config`.
-- Remote working directories are not inherited by splits (the reported path does not exist locally, see [Shell integration](10-shell-integration.md#current-directory-osc-7-vs-osc-99)).
+- A split or duplicate without `-p` **duplicates the profile** and so opens another `ssh` session; it does not share the connection of the original pane. To share it, enable `ControlMaster` in your `~/.ssh/config`.
+- If the remote shell reports its directory (OSC 7, see [SSH sessions](10-shell-integration.md#ssh-sessions)), splits, duplicates, reconnects and session restore resume in that remote directory (`ssh_follow_directory`, on by default). Without it they start in the remote home.
+- Ctrl+click on a file path in output opens it from the remote host in the built-in editor (copied with `scp`, uploaded back on save); use a key / `ssh-agent` or `ControlMaster` so `scp` needs no password.
 - `startup_timeout` / `startup_retries` restart a connection that stays silent at start.
 - When `ssh` exits, the pane closes on exit code 0; use `close_on_exit = "never"` to keep errors on screen, and **Enter** in a dead pane to reconnect ([`restart_connection`](../reference/actions.md#restart_connection)).
 
@@ -154,7 +155,7 @@ opacity = 90                     # needs a restart the first time (window transp
 ```
 
 - Bind more summons with an `[[action]]` of `command = "global_summon"` (`monitor = "toMouse"` moves the window to the monitor under the cursor; `toggle_visibility = true` hides it when already in front; `dropdown_duration` > 0 hides instead of minimizing). Without a window name, it summons the most recently used window.
-- Global shortcuts are registered with the OS: some desktops (for example Wayland compositors) restrict them. An unsupported or already-taken combo is not registered (a warning is written to the log, see [Troubleshooting](16-troubleshooting.md)). <!-- TODO verify global shortcut behavior on Wayland -->
+- Global shortcuts are registered with the OS: some desktops (for example Wayland compositors) restrict them. An unsupported or already-taken combo is not registered (a warning is written to the log, see [Troubleshooting](16-troubleshooting.md)).
 - Details in [Windows](05-windows.md).
 
 ## Kiosk, focus mode and dashboards
@@ -184,8 +185,8 @@ The default config ships a commented Terminator-like keymap (split with `Ctrl+Sh
 
 ```toml
 [keys]
-split_pane_down = "Ctrl+Shift+O"
-split_pane_right = "Ctrl+Shift+E"
+duplicate_pane_down = "Ctrl+Shift+O"
+duplicate_pane_right = "Ctrl+Shift+E"
 toggle_pane_zoom = "Ctrl+Shift+X"
 toggle_broadcast_input = "Alt+A"
 move_focus_up = "Alt+Up"
@@ -194,7 +195,7 @@ move_focus_left = "Alt+Left"
 move_focus_right = "Alt+Right"
 ```
 
-Because `Alt+Arrows` is also the default for `move_focus_*`, the example mostly matters for the split keys; remember that a combo claimed by a new binding is taken away from programs inside the terminal.
+Because `Alt+Arrows` is also the default for `move_focus_*`, the example mostly matters for the split and zoom keys; remember that a combo claimed by a new binding is taken away from programs inside the terminal.
 
 ## Always-on-top scratch terminal
 

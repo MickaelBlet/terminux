@@ -21,7 +21,7 @@ Shell integration is a handful of escape sequences that your shell prints around
 
 ## What you get
 
-![Command marks on the scrollbar and a selected command output](../images/shell-integration.png)
+![Command marks on the scrollbar and a selected command output](../images/shell-integration.svg)
 
 - **Command marks**: a thin bar in the left gutter of every prompt, gray while the command runs, green on exit code 0, red otherwise. They can also be shown on the scrollbar with [`show_marks_on_scrollbar`](../reference/profile-settings.md#show_marks_on_scrollbar).
 - **Select command / select output**: [`select_previous_command`](../reference/actions.md#select_previous_command), [`select_next_command`](../reference/actions.md#select_next_command), [`select_previous_output`](../reference/actions.md#select_previous_output), [`select_next_output`](../reference/actions.md#select_next_output).
@@ -92,7 +92,7 @@ Things to know:
 - The reported path is used as a directory on the machine running Terminux. If it does not exist there, Terminux silently falls back to the profile `cwd`, then the home directory. Panes running `ssh` are the exception: see [SSH sessions](#ssh-sessions).
 - An explicit `-d` / `starting_directory` always wins, and so does the profile's `cwd`: a profile with `cwd = "~/work"` always starts there, even for splits. Leave `cwd` unset on profiles where you want splits to inherit.
 - New tabs do **not** inherit the directory; they start in the profile `cwd` (or the home directory).
-- For WSL: the generated WSL profiles pass `--cd ~` to `wsl.exe`. A reported WSL path (`/home/me/src`) is not a Windows directory, so to inherit the directory a Windows path is needed, for example `wslpath -w "$PWD"` in an OSC 9;9. <!-- TODO verify: interaction between inherited cwd and the `--cd ~` argument of generated WSL profiles -->
+- For WSL: generated WSL profiles pass `--cd ~`; an inherited Linux directory (reported by the shell in WSL) replaces it, as described above.
 
 ## SSH sessions
 
@@ -100,7 +100,7 @@ When a pane runs an interactive `ssh` (an SSH profile, or `ssh host` typed in a 
 
 - **Split / duplicate** (split without a profile, `duplicate_tab`) reconnects with the same destination and connection options (`-p`, `-l`, `-i`, `-J`, `-F`, `-o`, ...; port forwards are not repeated) and runs `cd <dir>; exec $SHELL -l` on the host, `<dir>` being the last directory the **remote** shell reported with OSC 7. Disable with [`ssh_follow_directory = false`](../reference/configuration.md#ssh_follow_directory).
 - **Reconnect** (Enter after the connection dropped, `restart_connection`, startup retries) and **session restore** of a pane started with `ssh` (SSH profile) reconnect in the last remote directory, the same way.
-- **Ctrl+click a file path** copies the file from the host with `scp` (resolved against the remote directory) and opens it in the built-in editor, titled `host:path`. Ctrl+S saves the local copy and uploads it back. This ignores `file_link_open`.
+- **Ctrl+click a file path** copies the file from the host with `scp` (resolved against the remote directory) and opens it in the built-in editor, labeled `host:path`. Ctrl+S saves the local copy and uploads it back. This ignores `file_link_open`.
 
 Requirements:
 
@@ -424,9 +424,9 @@ Put it in the profile's `env` or set it in the `commandline` (`cmd.exe /k "set P
 
 ## Using the features
 
-None of the shell-integration actions is bound by default except `show_suggestions`. Bind what you use in [`[keys]`](../reference/configuration.md#keys):
+Of the shell-integration actions only `show_suggestions` (`Ctrl+Shift+Period`) and `scroll_to_previous_mark` / `scroll_to_next_mark` (`Ctrl+Up` / `Ctrl+Down`) have default keys. Bind what you use in [`[keys]`](../reference/configuration.md#keys):
 
-![Suggestions from recent commands and snippets](../images/suggestions.png)
+![Suggestions from recent commands and snippets](../images/suggestions.svg)
 
 ```toml
 [keys]
@@ -434,8 +434,8 @@ select_previous_command = "Ctrl+Alt+Up"
 select_next_command     = "Ctrl+Alt+Down"
 select_previous_output  = "Alt+PgUp"
 select_next_output      = "Alt+PgDn"
-scroll_to_previous_mark = "Ctrl+Alt+PgUp"
-scroll_to_next_mark     = "Ctrl+Alt+PgDn"
+scroll_to_previous_mark = "Ctrl+Alt+PgUp"   # default: Ctrl+Up
+scroll_to_next_mark     = "Ctrl+Alt+PgDn"   # default: Ctrl+Down
 show_recent_commands    = "Ctrl+Alt+R"
 ```
 

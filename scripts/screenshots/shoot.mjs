@@ -1,29 +1,55 @@
-// Regenerate the documentation screenshots in docs/images/.
+// Regenerate the documentation screenshots in docs/images/ as vector SVG.
 //
-//   npm run dev -- --port 1420 &          # Vite dev server (frontend only, no Tauri)
-//   PLAYWRIGHT_CORE=/path/to/node_modules/playwright-core node scripts/screenshots/shoot.mjs [name...]
+//   npx vite dev --port 1420 &            # Vite dev server (frontend only, no Tauri)
+//   SHOT_DEPS=/path/to/tools node scripts/screenshots/shoot.mjs [--png] [name...]
 //
+// SHOT_DEPS: a folder where `npm i playwright-core dom-to-svg subset-font svgo esbuild` was run.
+// PLAYWRIGHT_CORE / CHROMIUM override the playwright-core module and the browser executable.
 // The Tauri IPC is mocked in the page (mock.js), so the real frontend renders with fake PTYs.
 import { createRequire } from "node:module";
-import { readFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { loadTools, fontFaces, domSvg, finishSvg } from "./to-svg.mjs";
 
-const require = createRequire(import.meta.url);
+const require = createRequire(process.env.SHOT_DEPS ? path.join(path.resolve(process.env.SHOT_DEPS), "x.js") : import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_CORE ?? "playwright-core");
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../..");
 const out = path.join(root, "docs/images");
 const URL = process.env.TERMINUX_URL ?? "http://127.0.0.1:1420/";
+const args = process.argv.slice(2);
+const PNG = args.includes("--png");
+const tools = PNG ? null : await loadTools(require);
+const faces = fontFaces(root);
 mkdirSync(out, { recursive: true });
 
 const MOCK = readFileSync(path.join(here, "mock.js"), "utf8");
 const CONFIG_TEXT = readFileSync(path.join(here, "config.toml"), "utf8");
+const DEFAULT_TEXT = readFileSync(path.join(root, "src-tauri/src/default_config.toml"), "utf8");
+// config.toml as the backend's `config_parse` returns it (the settings UI reads this). Keep in sync.
+const CONFIG_JSON = {
+  default_profile: "shell",
+  font_size: 14,
+  scrollback: 100000,
+  tab_position: "top",
+  tab_switcher_mode: "mru",
+  toolbar: ["duplicate_pane_right", "duplicate_pane_down", "toggle_pane_zoom", "find", "separator", "open_settings"],
+  defaults: { color_scheme: "Terminux", font: { face: "JetBrains Mono", size: 14 }, cursor_shape: "bar", padding: 8 },
+  profile: [
+    { id: "dev", name: "Dev server", cmd: "npm", args: ["run", "dev"], icon: "power", tab_color: "#d97757" },
+    { id: "python", name: "Python", cmd: "python3", icon: "command" },
+  ],
+  action: [{ id: "user.git_status", name: "Git status", command: "send_input", input: "git status\r" }],
+  keys: { find: "F3" },
+};
 
 const profile = (id, name, extra = {}) => ({ id, name, cmd: "zsh", args: [], env: {}, hidden: false, ...extra });
 const baseConfig = () => ({
   default_profile: "shell",
+  // DOM renderer: terminal text stays text in the SVG (webgl/canvas would be bitmaps).
+  renderer: PNG ? "webgl" : "dom",
   font_size: 14,
   scrollback: 100000,
   notifications: true,
@@ -34,9 +60,9 @@ const baseConfig = () => ({
   defaults: {},
   profiles: [
     profile("shell", "Shell", { icon: "terminal" }),
-    profile("claude", "Claude", { icon: "sparkle", tab_color: "#d97757" }),
-    profile("opencode", "OpenCode", { icon: "command", tab_color: "#22d3ee" }),
-    profile("agent", "Docker Agent", { icon: "window", tab_color: "#3b82f6" }),
+    profile("dev", "Dev server", { icon: "power", tab_color: "#d97757" }),
+    profile("python", "Python", { icon: "command", tab_color: "#22d3ee" }),
+    profile("db", "psql", { icon: "window", tab_color: "#3b82f6" }),
     profile("ssh", "ssh prod-01", { icon: "globe", source: "ssh" }),
     profile("top", "htop", { icon: "sliders" }),
   ],
@@ -58,10 +84,10 @@ const baseConfig = () => ({
 /** Each scene builds UI state through the real App (`app.run(...)`), then returns the clip. */
 const SCENES = {
   async hero(p) {
-    await queue(p, ["claude", "shell", "opencode"]);
-    await run(p, { command: "new_tab", profile: "claude" });
+    await queue(p, ["dev", "shell", "python"]);
+    await run(p, { command: "new_tab", profile: "dev" });
     await run(p, { command: "split_pane", split: "right", size: 0.45, profile: "shell" });
-    await run(p, { command: "split_pane", split: "down", profile: "opencode" });
+    await run(p, { command: "split_pane", split: "down", profile: "python" });
     await extraTabs(p);
     await focusFirst(p);
   },
@@ -101,7 +127,7 @@ const SCENES = {
   async "palette-command-line"(p) {
     await run(p, { command: "command_palette" });
     await p.keyboard.press("Backspace");
-    await p.keyboard.type("nt -p claude ; sp -V -s .4 -p shell", { delay: 10 });
+    await p.keyboard.type("nt -p dev ; sp -V -s .4 -p shell", { delay: 10 });
   },
   async "new-tab-menu"(p) {
     const btn = p.locator("[title*='ew tab' i], .new-tab, button.dropdown").first();
@@ -150,7 +176,7 @@ const SCENES = {
     return "done";
   },
   async "config-editor"(p) {
-    await run(p, { command: "open_settings" });
+    await run(p, { command: "open_settings", target: "settings_toml" });
     await p.waitForTimeout(1500);
     const editor = p.locator(".cm-content").first();
     await editor.click();
@@ -234,7 +260,7 @@ const SCENES = {
     await p.waitForTimeout(300);
   },
   async "icon-completion"(p) {
-    await run(p, { command: "open_settings" });
+    await run(p, { command: "open_settings", target: "settings_toml" });
     await p.waitForTimeout(1500);
     await p.locator(".cm-content").first().click();
     // After the [defaults] table (line 13), so the completion list has room below.
@@ -251,6 +277,75 @@ const SCENES = {
     await run(p, { command: "new_tab" });
     await run(p, { command: "split_pane", split: "right" });
     await run(p, { command: "toggle_focus_mode" });
+  },
+  async "pane-title-bar"(p) {
+    await queue(p, ["dev", "logs", "db"]);
+    await run(p, { command: "new_tab", profile: "dev" });
+    await run(p, { command: "split_pane", split: "right", size: 0.5 });
+    await run(p, { command: "split_pane", split: "down", profile: "db" });
+    await evalApp(p, (app) => {
+      const ids = Object.keys(app.panes);
+      app.renamePane(ids.at(-2), "app logs");
+    });
+  },
+  async "pane-drag"(p) {
+    await queue(p, ["git", "tests", "logs"]);
+    await run(p, { command: "new_tab" });
+    await run(p, { command: "split_pane", split: "right" });
+    await run(p, { command: "split_pane", split: "down" });
+    await closeFirst(p);
+    // Drag the left pane's title bar onto the bottom of the top-right pane.
+    const bars = p.locator(".tab:not(.hidden) .bar");
+    const src = await bars.nth(0).boundingBox();
+    const dst = await p.locator(".tab:not(.hidden) [data-pane-id]").nth(1).boundingBox();
+    await p.mouse.move(src.x + 120, src.y + src.height / 2);
+    await p.mouse.down();
+    for (let i = 1; i <= 8; i++) await p.mouse.move(src.x + 120 + ((dst.x + dst.width / 2 - src.x - 120) * i) / 8, src.y + ((dst.y + dst.height - 30 - src.y) * i) / 8);
+    await p.waitForTimeout(300);
+    await shotNow(p, "pane-drag");
+    await p.mouse.up();
+    return "done";
+  },
+  async "settings-ui"(p) {
+    await run(p, { command: "open_settings" });
+    await p.waitForTimeout(1200);
+  },
+  async "settings-profile"(p) {
+    await run(p, { command: "open_settings" });
+    await p.waitForTimeout(1200);
+    await p.getByRole("button", { name: "Dev server", exact: true }).first().click();
+    await p.waitForTimeout(400);
+  },
+  async "settings-ui-themes"(p) {
+    await run(p, { command: "open_settings" });
+    await p.waitForTimeout(1200);
+    await p.getByRole("button", { name: "UI themes", exact: true }).first().click();
+    await p.waitForTimeout(400);
+  },
+  async "settings-keys"(p) {
+    await run(p, { command: "open_settings" });
+    await p.waitForTimeout(1200);
+    await p.getByRole("button", { name: "Keyboard", exact: true }).first().click();
+    await p.waitForTimeout(400);
+  },
+  async "settings-pane"(p) {
+    await queue(p, ["git"]);
+    await run(p, { command: "new_tab" });
+    await run(p, { command: "open_settings", target: "settings_pane" });
+    await p.waitForTimeout(1200);
+  },
+  async "editor-find"(p) {
+    await run(p, { command: "open_settings", target: "settings_toml" });
+    await p.waitForTimeout(1500);
+    await p.locator(".cm-content").first().click();
+    await p.keyboard.press("Control+h");
+    await p.waitForTimeout(200);
+    const fields = p.locator(".cm-panel input:not([type=checkbox]), .cm-search input:not([type=checkbox])");
+    await fields.nth(0).fill("profile");
+    await fields.nth(1).fill("profiles");
+    await fields.nth(0).focus();
+    await p.waitForTimeout(300);
+    return { height: 440 };
   },
 };
 
@@ -277,7 +372,7 @@ async function setConfig(p, patch) {
   await p.waitForTimeout(300);
 }
 async function extraTabs(p, n = 4) {
-  const order = ["claude", "opencode", "shell", "top", "ssh"];
+  const order = ["dev", "python", "shell", "top", "ssh"];
   const list = order.slice(0, n);
   await queue(p, list);
   for (const id of list) await run(p, { command: "new_tab", profile: id });
@@ -307,24 +402,34 @@ async function focusFirst(p) {
   await evalApp(p, (app) => app.gotoTab(0));
 }
 async function shotNow(p, name, clip) {
-  await p.screenshot({ path: path.join(out, `${name}.png`), clip: clip ? { x: 0, y: 0, ...clip, width: Math.min(clip.width, 1280 - (clip.x ?? 0)) } : undefined });
-  console.log("wrote", `docs/images/${name}.png`);
+  const c = { x: 0, y: 0, width: 1280, height: 800, ...clip };
+  c.width = Math.min(c.width, 1280 - c.x);
+  if (PNG) {
+    await p.screenshot({ path: path.join(out, `${name}.png`), clip: c });
+    return console.log("wrote", `docs/images/${name}.png`);
+  }
+  const svg = await finishSvg(await domSvg(p, tools.bundle, c), faces, tools);
+  writeFileSync(path.join(out, `${name}.svg`), svg);
+  const kb = Math.round(svg.length / 1024);
+  console.log("wrote", `docs/images/${name}.svg`, `${kb} KB`, kb > 300 ? "(large)" : "");
 }
 
-const browser = await chromium.launch();
-const only = process.argv.slice(2);
+const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
+const only = args.filter((a) => !a.startsWith("--"));
 for (const [name, scene] of Object.entries(SCENES)) {
   if (only.length && !only.includes(name)) continue;
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
   const page = await ctx.newPage();
   page.on("pageerror", (e) => console.warn(`[${name}] pageerror:`, e.message));
   await page.addInitScript(
-    ([mock, cfg, text]) => {
+    ([mock, cfg, text, json, defaults]) => {
       window.__mockConfig = cfg;
       window.__mockConfigText = text;
+      window.__mockConfigJson = json;
+      window.__mockDefaultConfig = defaults;
       new Function(mock)();
     },
-    [MOCK, baseConfig(), CONFIG_TEXT],
+    [MOCK, baseConfig(), CONFIG_TEXT, CONFIG_JSON, DEFAULT_TEXT],
   );
   await page.goto(URL);
   await page.waitForSelector(".xterm-screen");

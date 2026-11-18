@@ -22,7 +22,7 @@ Every tab is a tree of panes. This guide shows how to split, navigate, resize, r
 
 ## Splitting
 
-![Four panes: git log, htop, tests and logs](../images/panes.png)
+![Four panes: git log, htop, tests and logs](../images/panes.svg)
 
 | Goal | Default key | Command |
 | --- | --- | --- |
@@ -114,21 +114,30 @@ swap_pane_left = "Ctrl+Alt+H"
 
 `toggle_pane_zoom` shows the focused pane alone, filling the tab; run it again to restore the layout. It has no default key (bind one, or use the default toolbar button).
 
-![Zoomed pane with the ZOOM badge](../images/zoom.png)
+![Zoomed pane with the ZOOM badge](../images/zoom.svg)
 
 ```toml
 [keys]
 toggle_pane_zoom = "Ctrl+Shift+Z"
 ```
 
-- A "ZOOM" badge appears in the pane's corner while zoomed; click it to unzoom. Hide it with [`show_zoom_badge`](../reference/configuration.md#show_zoom_badge) = `false`. (The shipped config sets it to `false`, so the badge is off unless you enable it; the tab shows a zoom icon next to the pane count either way.)
+- A "ZOOM" badge appears in the pane's corner while zoomed; click it to unzoom. On by default; hide it with [`show_zoom_badge`](../reference/configuration.md#show_zoom_badge) = `false`. (The tab shows a zoom icon next to the pane count either way; the pane title bar also has a zoom button.)
 - Focusing a pane outside the zoomed subtree, splitting, or restoring a pane un-zooms.
 - Zoom works on a whole group too, see [parent and child](#selecting-a-whole-group-parent-and-child).
 - Zoom is ignored in a tab with a single pane.
 
 ## Pane title bar
 
-By default a split tab shows a bar above each pane with its icon, title, a zoom button and a close button ([`show_pane_title_bar`](../reference/configuration.md#show_pane_title_bar) = `"multiple"`). Set it to `"always"` to show it on single panes too, or `"never"` to hide it. Double-click the title (or run **Rename pane…**) to name the pane; **Reset pane title** goes back to the automatic title.
+By default a split tab shows a bar above each pane with its icon, title, a zoom button and a close button ([`show_pane_title_bar`](../reference/configuration.md#show_pane_title_bar) = `"multiple"`). Set it to `"always"` to show it on single panes too, or `"never"` to hide it. With `"multiple"` the bar is hidden while a pane is zoomed. A bell icon replaces the pane icon after a bell; a lock marks a read-only pane. The zoom button only shows in split tabs.
+
+![Three panes with title bars, one renamed "app logs"](../images/pane-title-bar.svg)
+
+| Goal | How |
+| --- | --- |
+| Rename | Double-click the title, the pane menu "Rename pane…", or `open_pane_renamer` (no default key). `Enter` or clicking away saves, `Escape` cancels. |
+| Back to the automatic title | `reset_pane_title` (palette "Reset pane title"; also what an empty name does) |
+| Set from a custom action | `{ command = "rename_pane", title = "app logs" }` (without `title`: reset) |
+| Move the pane | Drag the title bar, see [Drag and drop](#drag-and-drop) |
 
 ```toml
 show_pane_title_bar = "always"
@@ -162,6 +171,8 @@ With the [pane title bar](#pane-title-bar) shown, drag a pane by its title bar:
 | Outside the window | The pane moves to the window under the pointer, or a new window |
 
 `Escape` cancels the drag. Processes keep running.
+
+![Dragging a pane by its title bar; the bottom half of another pane is highlighted as the drop zone](../images/pane-drag.svg)
 
 A whole tab (terminal, built-in file editor, or settings) can be dragged the same way from the tab bar onto a pane: the last other terminal tab is shown while dragging over the content area, and the tab's panes dock there (its split layout is kept). Right-click the tab > **Show in a pane** does the same beside the active pane.
 
@@ -205,7 +216,7 @@ None have default keys. A "READ-ONLY" badge and a lock icon on the tab show the 
 
 `toggle_broadcast_input` mirrors what you type in the focused pane to every other pane of the tab (skipping read-only panes and panes whose process exited). The tab shows a broadcast icon. It works per tab, and is useful for running the same command on several SSH sessions.
 
-![Broadcast input typed into three panes at once](../images/broadcast.png)
+![Broadcast input typed into three panes at once](../images/broadcast.svg)
 
 ```toml
 [keys]

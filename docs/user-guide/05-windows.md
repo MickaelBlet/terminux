@@ -22,7 +22,7 @@ Terminux runs as a single process with any number of windows. This page covers o
 | New window | `Ctrl+Shift+N` (`new_window`); it opens with one tab running the default profile (or the arguments you pass) |
 | Move a tab to a new window | Drag the tab out of the window, or `move_tab_to_new_window`. Works for the settings editor too (unsaved edits are not carried over) |
 | Move a tab to an existing window | Drag it onto that window, or `{ command = "move_tab", window = "name" }` |
-| Move a pane to a new / existing window | `move_pane_to_new_window`, or `{ command = "move_pane", window = "name" }` |
+| Move a pane to a new / existing window | Drag its [title bar](04-panes.md#drag-and-drop) outside the window (or onto another one), `move_pane_to_new_window`, or `{ command = "move_pane", window = "name" }` |
 | Open a window from a terminal | `terminux nt -p shell` (starts a new window under the default `use_new` behavior) |
 
 Moving a tab or pane between windows hands over the *running processes*: nothing restarts. The source window detaches the session (its output is buffered, up to 8 MB), and the target window re-attaches it. A detached session nobody picks up within 60 seconds is killed.
@@ -77,7 +77,7 @@ The palette's command-line mode (delete the leading `>`) uses the same parser an
 
 ## Fullscreen, focus mode and always on top
 
-![Focus mode: no tab bar or toolbar](../images/focus-mode.png)
+![Focus mode: no tab bar or toolbar](../images/focus-mode.svg)
 
 | Feature | Command | Default key | Config |
 | --- | --- | --- | --- |

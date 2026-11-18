@@ -37,7 +37,7 @@ Everything in this page can also be set per profile. The full key list with defa
 
 [`color_scheme`](../reference/profile-settings.md#color_scheme) takes a scheme name, or a light/dark pair.
 
-![Six panes, each with a different built-in color scheme](../images/schemes.png)
+![Six panes, each with a different built-in color scheme](../images/schemes.svg)
 
 ### Built-in schemes (17)
 
@@ -238,7 +238,7 @@ Tables from `[defaults]` and the profile are merged key by key. Splits also dim 
 
 [`app_theme`](../reference/configuration.md#app_theme) styles the window chrome: title bar, tabs, menus, palette.
 
-![Light app theme with the One Half Light scheme](../images/light-theme.png)
+![Light app theme with the One Half Light scheme](../images/light-theme.svg)
 
 | Value | Look |
 | --- | --- |
@@ -299,9 +299,13 @@ active_border = "#38bdf8"         # active pane outline (several panes)
 
 `[ui_theme.window]` also takes `font` and `font_size` for the interface font (terminals keep their profile font).
 
-In the settings UI, the **UI themes** page previews the edited theme and its **Try** button applies it to the window until you stop or leave the page; built-in themes are read-only and can be duplicated.
+In the settings UI (**Colors** > **UI themes**), the page previews the edited theme live and its **Try** button applies it to the window until you stop or leave the page. The six built-in themes (`dark`, `light`, `system`, `legacyDark`, `legacyLight`, `legacySystem`) are listed read-only and can be duplicated into a `[[ui_theme]]`.
 
-Tabs that have their own color (see [Tabs](03-tabs.md#colors)) keep it. Other chrome settings: [`disable_animations`](../reference/configuration.md#disable_animations), [`show_tabs_fullscreen`](../reference/configuration.md#show_tabs_fullscreen). See the [`ui_theme`](../reference/configuration.md#ui_theme) reference.
+![Settings UI themes page: built-in themes list, theme fields and a live preview](../images/settings-ui-themes.svg)
+
+The same settings app also edits color schemes (**Color schemes**) and root-level `[theme]` overrides (**Color overrides**); edits keep the comments and layout of `config.toml`.
+
+Tabs that have their own color (see [Tabs](03-tabs.md#colors)) keep it. Other chrome settings: [`disable_animations`](../reference/configuration.md#disable_animations), [`show_tabs_fullscreen`](../reference/configuration.md#show_tabs_fullscreen), [`tab_title_ellipsis`](../reference/configuration.md#tab_title_ellipsis) (`"end"` default, or `"start"` to cut long tab titles on the left and keep the end). See the [`ui_theme`](../reference/configuration.md#ui_theme) reference.
 
 ## Renderer
 

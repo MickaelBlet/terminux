@@ -26,9 +26,9 @@ The release scripts (`scripts/build-linux.sh`, `scripts/build-windows.sh`, `scri
 | Windows | NSIS installer (`.exe`) | Cross-compiled with `cargo-xwin`. |
 | Windows | `terminux-portable.exe` | The bare executable; see [Portable mode](#portable-mode). |
 
-The packaging identifier is `com.terminux.app`, the product name is `Terminux`, and the current version is `0.1.0` (`src-tauri/tauri.conf.json`).
+The packaging identifier is `com.terminux.app`, the product name is `Terminux`, and the current version is `0.1.6` (`src-tauri/tauri.conf.json`).
 
-Tagged releases (`v*`) are built by the GitHub Actions workflow (`.github/workflows/build.yml`) on Ubuntu 22.04 and Windows with `tauri-action`, which publishes a draft release. The bundle `targets` in `tauri.conf.json` is `"all"`, so the CI job produces every format Tauri supports on the runner. <!-- TODO verify: exact set of CI artifacts (for example whether an .msi is attached on Windows) -->
+Tagged releases (`v*`) are built by the GitHub Actions workflow (`.github/workflows/build.yml`) on Ubuntu 22.04 and Windows with `tauri-action`, which publishes a draft release. CI also uploads `terminux-portable.exe` and the self-contained AppImage (repacked from the deb) to the release. The bundle `targets` in `tauri.conf.json` is `"all"`, so the CI job produces every format Tauri supports on the runner. <!-- TODO verify: exact set of CI artifacts (for example whether an .msi is attached on Windows) -->
 
 ## Runtime requirements
 
@@ -53,7 +53,7 @@ Windows-only features: acrylic and Mica backdrops, WSL and Windows PowerShell/cm
 
 ```sh
 # Debian / Ubuntu
-sudo apt install ./Terminux_0.1.0_amd64.deb
+sudo apt install ./Terminux_0.1.6_amd64.deb
 
 # Fedora / RHEL family (file name pattern may differ)
 sudo dnf install ./Terminux-*.rpm
@@ -102,7 +102,7 @@ The marker is checked at every start by looking for `.portable` next to the runn
 
 On first start Terminux writes a commented default `config.toml` (see [Where files live](#where-files-live)). The file also lists the profiles generated on your machine (WSL distributions, SSH hosts from `~/.ssh/config`, PowerShell) just above the color-scheme section, so you can see and edit them. The config is watched and hot-reloaded: save the file and open windows update immediately.
 
-- Open the built-in editor with `Ctrl+,` (`open_settings`). It has completion (`Ctrl+Space`) and underlines unknown keys.
+- Open the settings UI with `Ctrl+,` (`open_settings`): forms for every setting, auto-saved to `config.toml`. Its **TOML** switch (or `open_settings_toml`) gives the built-in text editor with completion (`Ctrl+Space`), which underlines unknown keys.
 - Open the read-only defaults with `Ctrl+Alt+,` (`open_default_settings`).
 - Open the file in your external editor with `Ctrl+Shift+,` (`open_settings_file`).
 - The default profile is `shell`, which runs `$SHELL` (the user's default shell).

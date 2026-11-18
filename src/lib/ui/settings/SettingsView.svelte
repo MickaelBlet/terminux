@@ -22,6 +22,9 @@
   import { freshId, freshName, rootGroups, profileGroups, UNIQUE_PROFILE_KEYS } from "../../settings/pages";
   import { exampleDefaults, isTable, matchesQuery, set, type Json, type PatchOp, type Seg } from "../../settings/value";
 
+  /** `paneId`: shown as a pane (else as the settings tab). */
+  let { paneId }: { paneId?: string } = $props();
+
   let root: HTMLDivElement;
   let asideEl = $state<HTMLElement>();
   let navEl = $state<HTMLElement>();
@@ -157,8 +160,14 @@
     invoke<string>("default_config")
       .then((t) => (examples = exampleDefaults(t)))
       .catch(console.error);
-    app.editors.set("config", () => root?.querySelector<HTMLElement>("input, select, button")?.focus());
-    if (app.tab?.kind === "config") queueMicrotask(() => app.editors.get("config")?.());
+    const focus = () => root?.querySelector<HTMLElement>("input, select, button")?.focus();
+    if (paneId) {
+      app.paneEditors.set(paneId, { focus, goto: () => {} });
+      if (app.activePane === paneId) queueMicrotask(focus);
+      return () => app.paneEditors.delete(paneId);
+    }
+    app.editors.set("config", focus);
+    if (app.tab?.kind === "config") queueMicrotask(focus);
     return () => app.editors.delete("config");
   });
 

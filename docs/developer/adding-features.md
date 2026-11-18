@@ -48,7 +48,7 @@ An action is a named command in `COMMANDS` plus a handler in `ACTIONS`. Names fo
 
 3. **If it must work while the settings editor, palette or an input has focus**, add the command to `GLOBAL_COMMANDS` in `actions.ts`.
 
-4. **If it takes an argument** that is new, add the argument name to `ACTION_ARGS` in `src/lib/config-schema.ts` so `[[action]]` completion offers it. `ACTION_COMMANDS` is derived from `COMMANDS` automatically; add the command name to the explicit extra list there only when it has no `COMMANDS` entry (like `send_input`, `wt`, `global_summon`).
+4. **If it takes an argument** that is new, add the argument name to `ACTION_ARGS` in `src/lib/config-schema.ts` so `[[action]]` completion offers it. `ACTION_COMMANDS` is derived from `COMMANDS` automatically; add the command name to the explicit extra list there only when it has no `COMMANDS` entry (like `send_input`, `wt`, `global_summon`, `set_color_scheme`).
 
 5. **Icon**: `actionIcon` falls back to `ICON_BY_ACTION[spec.command]`, then `"terminal"`. Add an entry in `ICON_BY_ACTION` (and a case in `actionIcon` for argument-dependent icons). A new icon is a 16x16 stroke path in `src/lib/ui/icons.ts`. The test `toolbar.test.ts` asserts every command resolves to an existing icon.
 
@@ -60,7 +60,7 @@ An action is a named command in `COMMANDS` plus a handler in `ACTIONS`. Names fo
 
 9. **Docs**: add an entry to [../reference/actions.md](../reference/actions.md) (heading `### toggle_example`) and, if it has a default key, to [../reference/keybindings.md](../reference/keybindings.md).
 
-An action usable only from `[[action]]` / the CLI (no `COMMANDS` entry, no key) needs just the `ACTIONS` handler plus the extra list in `ACTION_COMMANDS`.
+An action usable only from `[[action]]` / the CLI (no `COMMANDS` entry, no key) needs just the `ACTIONS` handler plus the extra list in `ACTION_COMMANDS`. A new `COMMANDS` entry also shows up in the settings UI key bindings page and in the `[keys]` completion; list it (commented, `name = ""` when it has no default key) in the `[keys]` block of `default_config.toml`.
 
 ## Add a config key
 
@@ -99,9 +99,13 @@ Example: `my_key` (boolean, default on).
    # my_key = true   # one-line explanation
    ```
 
-5. **Tests**: add a case in `src/lib/config-schema.test.ts` (for example that `completions` offers the key or `unknownKeys` does not flag it).
+   The commented value is the documented default and it must match the code default: the settings UI reads these `# key = value` lines (`exampleDefaults` in `src/lib/settings/value.ts`; a literal it cannot parse is skipped) to show the default of an unset key, so keep the value a plain TOML literal.
 
-6. **Docs**: add `### my_key` to [../reference/configuration.md](../reference/configuration.md) with type, default, values and an example.
+5. **Settings UI**: nothing to write for a plain key. It gets a control from its `Field` type, and its page is decided by its position in `ROOT_FIELDS` (`rootGroups()` in `src/lib/settings/pages.ts` starts a group at `default_profile`, `app_theme`, `launch_mode` and `copy_formatting`). Keys edited on a dedicated page (`new_tab_menu`, `toolbar`) are listed in `ROOT_ELSEWHERE` there; aliases are hidden from the settings UI (`visibleField` in `settings/value.ts` skips fields whose doc starts with "Alias of").
+
+6. **Tests**: add a case in `src/lib/config-schema.test.ts` (for example that `completions` offers the key or `unknownKeys` does not flag it); `settings/pages.test.ts` already checks that every visible root key sits on exactly one settings page.
+
+7. **Docs**: add `### my_key` to [../reference/configuration.md](../reference/configuration.md) with type, default, values and an example.
 
 ### Backend-read key
 
@@ -114,7 +118,7 @@ Only fields that the backend must act on are typed in `Config`/`Profile` (spawn 
 1. Add the field to `ProfileSettings` in `config.ts` (and to `Appearance` if it may also appear in `unfocused_appearance`).
 2. Interpret it in `resolve()` in `src/lib/term/appearance.ts` and add the resulting value to the `Resolved` interface. Use the merged settings object `s` (profile over `[defaults]`) or the unfocused overlay `a`; if it should be overridable when unfocused add it to `APPEARANCE_KEYS` and to `APPEARANCE_FIELDS` in the schema.
 3. If it maps to an xterm option, add it to `xtermOptions()`; otherwise consume `look.<field>` where it is used (`TermSession.applyLook`, a component, ...).
-4. Add the key to `SETTINGS_FIELDS` in `config-schema.ts` (it is then accepted in `[defaults]` and in every `[[profile]]`; `PROFILE_FIELDS` spreads it).
+4. Add the key to `SETTINGS_FIELDS` in `config-schema.ts` (it is then accepted in `[defaults]` and in every `[[profile]]`; `PROFILE_FIELDS` spreads it), and to `PROFILE_GENERAL` or `PROFILE_APPEARANCE` in `settings/pages.ts` if it belongs on those settings pages (otherwise it lands on *Advanced*). Add its commented example to the `[defaults]` block and to the `# [[profile]]` example block of `default_config.toml`.
 5. Test in `helpers.test.ts` ("resolves defaults, profile and overrides" shows the pattern with `FALLBACK_CONFIG`) and document in [../reference/profile-settings.md](../reference/profile-settings.md) (`### my_setting`).
 
 ### Sections with their own schema
@@ -299,7 +303,9 @@ color_scheme = "My Scheme"   # or { light = "One Half Light", dark = "My Scheme"
 
 - **New OSC sequence**: add a pure parser to `src/lib/osc.ts` with a test in `helpers.test.ts`, then register it in `TermSession.createTerminal` with `t.parser.registerOscHandler(<n>, handler)` (return `true` to mark it handled). If the app must react, add a `SessionHooks` method, implement it in `App.hooks` and update the document [../reference/escape-sequences.md](../reference/escape-sequences.md).
 - **New palette entry / menu item**: add it in `src/lib/ui/palettes.ts` (`commandPalette`) or `src/lib/ui/menus.ts`; use `app.keymap.hint(name)` for the key hint and `commandIcon` for the icon.
-- **New UI theme option**: add the field to `UiTheme` in `config.ts`, to the matching `UI_*_FIELDS` table in `config-schema.ts`, and consume it in `applyUiTheme` (`ui-theme.ts`).
+- **New UI theme option**: add the field to `UiTheme` in `config.ts`, to the matching `UI_*_FIELDS` table in `config-schema.ts`, consume it in `applyUiTheme` (`ui-theme.ts`, with a case in `ui-theme.test.ts`) and, if it needs a dedicated control or preview, in `ui/settings/UiThemesEditor.svelte` / `UiThemePreview.svelte`.
+- **New settings UI page or control**: the page list and routing are in `ui/settings/SettingsView.svelte`, field layout in `settings/pages.ts`, control choice per field in `controlFor` (`settings/value.ts`, tested). Edits must go through `settingsDoc.patch(ops)` (comment-preserving `config_patch`), never by rewriting the whole text.
+- **New pane kind** (like the snippets, file and settings-editor panes): extend `PaneKind` in `state.svelte.ts`, render it in `TerminalPane.svelte`, and handle it in `capturePane` / `adoptPane` (`snapshot.ts`) if it must survive moves and restarts.
 - **Persisted per-window state**: add it to `WindowSnapshot`/`TabSnapshot`/`PaneSnapshot` (`snapshot.ts`), fill it in `snapshotWindow`/`capturePane`, restore it in `applyPayload`/`adoptPane`, and extend `sanitizeTab` if it needs validation. `session_store.rs` stores snapshots as opaque JSON, so no Rust change is needed.
 
 ## Checklist for any change

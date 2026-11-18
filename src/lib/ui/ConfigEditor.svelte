@@ -425,7 +425,7 @@
     {/if}
     {#if !readonly}
       <span class="hint">Ctrl+S save · Ctrl+Space complete · Ctrl+F find</span>
-      {#if !paneId}<button title="Edit with forms" onclick={() => settingsDoc.setView("ui")}>Settings UI</button>{/if}
+      <button title="Edit with forms" onclick={() => settingsDoc.setView("ui")}>Settings UI</button>
       <button title="Open in external editor" onclick={() => app.run("open_settings_file")}>External…</button>
     {/if}
   </footer>

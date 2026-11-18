@@ -149,10 +149,12 @@ Output lands in `src-tauri/target/release/` (binary `terminux`) and `src-tauri/t
 
 - **Triggers**: pushing a tag matching `v*`, or manual `workflow_dispatch`.
 - **Matrix**: `ubuntu-22.04` and `windows-latest` (`fail-fast: false`).
-- **Steps**: checkout, Node 22, stable Rust (`dtolnay/rust-toolchain@stable`); on Linux `apt-get install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`; `npm ci`; `npx vitest run`; `cargo test --manifest-path src-tauri/Cargo.toml`; then `tauri-apps/tauri-action@v0` with `tagName: ${{ github.ref_name }}`, `releaseName: Terminux ${{ github.ref_name }}` and `releaseDraft: true`, using `GITHUB_TOKEN`.
-- The result is a **draft** GitHub release with the platform bundles attached by `tauri-action`. Review and publish it manually.
+- **Steps**: checkout, Node 22, stable Rust (`dtolnay/rust-toolchain@stable`); on Linux `apt-get install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`; `npm ci`; `npx vitest run`; `cargo test --manifest-path src-tauri/Cargo.toml`; then `tauri-apps/tauri-action@v0` with `tagName: ${{ github.ref_name }}`, `releaseName: Terminux ${{ github.ref_name }}` and `releaseDraft: true`, using `GITHUB_TOKEN` (`--bundles deb,rpm` on Linux, default bundles on Windows).
+- **Windows extra**: on a tag, `terminux.exe` is copied to `terminux-portable.exe` and uploaded to the release with `gh release upload`.
+- **Linux extra**: the deb is copied to `dist/` and the `appimage` stage of `docker/Dockerfile` repacks it into the self-contained AppImage (see [AppImage repack](#appimage-repack-quick-sharun)). On a tag the AppImage is uploaded to the release; on a manual run it is kept as the `appimage` workflow artifact.
+- The result is a **draft** GitHub release with the platform bundles, the AppImage and the portable exe. Review and publish it manually.
 
-Differences from the Docker flow: CI does not run `npm run check`, does not build the repacked self-contained AppImage or `terminux-portable.exe`, and builds Windows natively rather than with `cargo-xwin`. The Docker scripts are the reference for the artifacts documented above.
+Differences from the Docker flow: CI does not run `npm run check`, and builds Windows natively rather than with `cargo-xwin` (so there is no NSIS-from-Linux step). The Docker scripts remain the way to reproduce the artifacts locally.
 
 ## Release procedure
 
@@ -171,8 +173,7 @@ Differences from the Docker flow: CI does not run `npm run check`, does not buil
    git push origin <branch> vX.Y.Z
    ```
 
-5. Wait for the `build` workflow; open the draft release on GitHub, check the attached artifacts, edit the notes, publish.
-6. If you also want the self-contained AppImage and the portable exe on the release, build them with `scripts/docker-build.sh` and upload `dist/*` to the release manually (CI does not produce them).
+5. Wait for the `build` workflow; open the draft release on GitHub, check the attached artifacts (deb, rpm, AppImage, Windows installer, `terminux-portable.exe`), edit the notes, publish.
 
 ## Version bump locations
 
@@ -185,22 +186,36 @@ The version is duplicated; keep all of these identical (currently `0.1.6`):
 | `src-tauri/Cargo.toml` | `[package] version` (also used at runtime: `TERM_PROGRAM_VERSION` is `CARGO_PKG_VERSION`) |
 | `src-tauri/Cargo.lock` | the `terminux` package entry (updated by running `cargo build`/`cargo update -p terminux`; the Docker build uses `--locked`, so a stale lock fails) |
 | `src-tauri/tauri.conf.json` | `"version"` (names the bundles and the installer) |
+| `CHANGELOG.md` | a section for the new version (not a version field, but part of the release commit) |
 
 The git tag is `v` + that version.
 
 ## Documentation screenshots
 
-The images in `docs/images/` are generated from the real frontend, without Tauri: `scripts/screenshots/mock.js` mocks the IPC (`window.__TAURI_INTERNALS__`) and fake PTYs replay canned ANSI output (prompts with OSC 133 marks, `git`, `htop`-like screens, test runs). `scripts/screenshots/shoot.mjs` drives the `App` store through `app.run(...)` with Playwright and writes one PNG per scene (1280×800).
+The images in `docs/images/` are vector SVG generated from the real frontend, without Tauri: `scripts/screenshots/mock.js` mocks the IPC (`window.__TAURI_INTERNALS__`) and fake PTYs replay canned ANSI output (prompts with OSC 133 marks, `git`, `htop`-like screens, test runs, a dev server, a Python REPL, `psql`). `scripts/screenshots/shoot.mjs` drives the `App` store through `app.run(...)` with Playwright and writes one SVG per scene (1280×800 unless the scene crops).
+
+`scripts/screenshots/to-svg.mjs` turns the live DOM into SVG:
+
+- terminals use xterm's DOM renderer during capture (`renderer = "dom"`), so terminal text stays text;
+- [dom-to-svg](https://github.com/felixfbecker/dom-to-svg) serializes the page; fix-ups before capture cover what it can't express (outline cursors, gradient separator lines, native checkboxes, `<select>` values, placeholders, animations) and after (paint order of positive `z-index` layers, masks on zero-height icons);
+- the bundled fonts of `src/app.css` are embedded as base64 WOFF2 **subsets** of the characters each image uses (JetBrains Mono, plus the fallback symbol/emoji fonts only for glyphs it lacks), so the images render identically in a GitHub `<img>` (no external fetches);
+- `svgo` minifies the result (~50–250 KB per image).
 
 ```sh
+# One-time: tools in any folder outside the repo (not project dependencies)
+mkdir -p ~/.cache/terminux-shots && cd ~/.cache/terminux-shots
+npm i playwright-core dom-to-svg subset-font svgo esbuild fontkit && npx playwright-core install chromium-headless-shell
+
 npx vite dev --port 1420 &
-PLAYWRIGHT_CORE=/path/to/node_modules/playwright-core node scripts/screenshots/shoot.mjs           # all scenes
-PLAYWRIGHT_CORE=/path/to/node_modules/playwright-core node scripts/screenshots/shoot.mjs find tabs # some scenes
+SHOT_DEPS=~/.cache/terminux-shots node scripts/screenshots/shoot.mjs             # all scenes
+SHOT_DEPS=~/.cache/terminux-shots node scripts/screenshots/shoot.mjs find tabs   # some scenes
+SHOT_DEPS=~/.cache/terminux-shots node scripts/screenshots/shoot.mjs --png find  # raster, for comparison
 ```
 
-- `playwright-core` is not a project dependency: point `PLAYWRIGHT_CORE` at any install with a downloaded Chromium (`npx playwright install chromium`).
-- Scenes live in the `SCENES` object of `shoot.mjs`; canned outputs in `OUTPUT` of `mock.js` (select one for the next spawned pane with `queue(p, ["history"])`). The config shown in the editor is `scripts/screenshots/config.toml`.
-- Re-run after UI changes and review the images before committing.
+- `SHOT_DEPS` is the folder holding those `node_modules`; `PLAYWRIGHT_CORE` overrides the `playwright-core` module and `CHROMIUM` the browser executable (useful when the installed Chromium revision doesn't match `playwright-core`). `SVG_RAW=1` writes dom-to-svg's output without fonts or minification, for debugging.
+- Scenes live in the `SCENES` object of `shoot.mjs`; canned outputs in `OUTPUT` of `mock.js` (select one for the next spawned pane with `queue(p, ["history"])`). Profiles shown are in `baseConfig()`. The config shown in the editors is `scripts/screenshots/config.toml`; the settings UI reads `CONFIG_JSON` in `shoot.mjs` (what `config_parse` returns), so keep the two in sync.
+- Keep the content neutral: generic shells, dev tools and hosts; no third-party product branding.
+- Re-run after UI changes and review the images before committing: open them in a browser through an `<img>` tag, as GitHub does.
 
 ## See also
 

@@ -78,6 +78,7 @@ Names from before Windows Terminal parity are still accepted in `[keys]` and map
 | `font_reset` | `reset_font_size` |
 | `open_config` | `open_settings` |
 | `open_config_external` | `open_settings_file` |
+| `open_snippets_pane` | `toggle_snippets_pane` |
 | `focus_left` | `move_focus_left` |
 | `resize_left` | `resize_pane_left` |
 | `focus_right` | `move_focus_right` |
@@ -237,8 +238,8 @@ These bindings are shipped (commented out) in the default `config.toml`. Conflic
 
 ```toml
 [keys]
-split_pane_down = "Ctrl+Shift+O"            # split horizontally
-split_pane_right = "Ctrl+Shift+E"           # split vertically
+duplicate_pane_right = "Ctrl+Shift+E"           # split vertically
+duplicate_pane_down = "Ctrl+Shift+O"            # split horizontally
 toggle_pane_zoom = "Ctrl+Shift+X"
 toggle_split_orientation = "Super+R"        # rotate
 equalize_panes = "Ctrl+Shift+Alt+E"

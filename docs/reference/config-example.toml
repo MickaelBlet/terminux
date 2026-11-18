@@ -49,7 +49,7 @@ toolbar = [
   "toggle_pane_zoom",
   "find",
   "separator",
-  "agent_layout",                     # the id of an [[action]] below
+  "dev_layout",                     # the id of an [[action]] below
   "open_settings",
 ]
 
@@ -289,7 +289,7 @@ command = "send_input"
 input = "git status\r"
 
 [[action]]
-id = "agent_layout"
+id = "dev_layout"
 name = "Dev layout"
 keys = ["Ctrl+Alt+A"]
 commands = [
@@ -350,7 +350,7 @@ entries = [
 
 [[new_tab_menu]]
 type = "action"
-id = "agent_layout"
+id = "dev_layout"
 
 [[new_tab_menu]]
 type = "remaining_profiles"

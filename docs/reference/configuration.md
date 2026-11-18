@@ -13,7 +13,7 @@ Reference of every global key in `config.toml`, grouped like the default configu
 
 - Location: see [file-locations.md](file-locations.md). The file is created on first run and **hot-reloaded** when saved.
 - Format: TOML. Global keys must appear **before** the first `[table]` header, otherwise TOML makes them belong to that table.
-- Typed (spawn-related) fields are validated when loading; a wrong type such as `font_size = "big"` makes the whole file invalid: Terminux then uses the built-in defaults and shows the error. Unknown keys are ignored by the backend; the built-in editor (`Ctrl+,`) underlines them and offers completion (`Ctrl+Space`) and hover documentation.
+- Typed (spawn-related) fields are validated when loading; a wrong type such as `font_size = "big"` makes the whole file invalid: Terminux then uses the built-in defaults and shows the error. Unknown keys are ignored by the backend; the settings tab (`Ctrl+,`) edits the file through forms, and its TOML view underlines them and offers completion (`Ctrl+Space`) and hover documentation.
 - Enumerated string values ignore case, `_` and `-` (`use_new`, `useNew` and `USE-NEW` are equal). Examples here use the canonical snake_case spelling.
 - A complete example using every section is in [config-example.toml](config-example.toml). The shipped default file is available read-only with `Ctrl+Alt+,`.
 - Windows Terminal names are given in the *Windows Terminal* field (camelCase in `settings.json`).

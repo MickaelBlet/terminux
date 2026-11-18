@@ -109,7 +109,7 @@ input = "git status\r"
 Notes on the example:
 
 - `startupActions` stays a **string** with the `wt` command-line syntax; with a saved session it only runs when `first_window_preference = "default_profile"` ([Troubleshooting](16-troubleshooting.md#faq)).
-- Use `~` or absolute paths instead of `%USERPROFILE%`-style variables. <!-- TODO verify: environment variable expansion in cwd -->
+- Use `~` or absolute paths: only a leading `~` is expanded in `cwd`, not `%USERPROFILE%`-style variables.
 - A key binding that merely re-declares a default (like `alt+shift+plus` above) is redundant: `duplicate_pane_right` already has it. To rebind a default command, use `[keys]` (`duplicate_pane_right = "Alt+Shift+Plus"`).
 - Generated profiles (PowerShell, cmd, WSL, SSH) exist without declaring them; in Windows Terminal their GUIDs were fixed, here their ids are `powershell`, `cmd`, `pwsh`, `wsl-<distro>`, `ssh-<host>`.
 
@@ -149,7 +149,7 @@ Notes on the example:
 | `newTabMenu` | [`[[new_tab_menu]]`](../reference/configuration.md#new_tab_menu) |
 | `useBackgroundImageForWindow` | [`use_background_image_for_window`](../reference/configuration.md#use_background_image_for_window) |
 
-Terminux-only global keys worth knowing: [`trim_paste`](../reference/configuration.md#trim_paste), [`renderer`](../reference/configuration.md#renderer), [`notifications`](../reference/configuration.md#notifications), [`osc52_clipboard`](../reference/configuration.md#osc52_clipboard), [`tab_position`](../reference/configuration.md#tab_position) (vertical tabs), [`toolbar`](../reference/configuration.md#toolbar), [`allow_headless`](../reference/configuration.md#allow_headless), [`scrollback`](../reference/configuration.md#scrollback), [`font_size`](../reference/configuration.md#font_size), [`font_family`](../reference/configuration.md#font_family).
+Terminux-only global keys worth knowing: [`trim_paste`](../reference/configuration.md#trim_paste), [`renderer`](../reference/configuration.md#renderer), [`notifications`](../reference/configuration.md#notifications), [`osc52_clipboard`](../reference/configuration.md#osc52_clipboard), [`tab_position`](../reference/configuration.md#tab_position) (vertical tabs), [`toolbar`](../reference/configuration.md#toolbar), [`allow_headless`](../reference/configuration.md#allow_headless), [`scrollback`](../reference/configuration.md#scrollback), [`font_size`](../reference/configuration.md#font_size), [`font_family`](../reference/configuration.md#font_family), [`tab_title_ellipsis`](../reference/configuration.md#tab_title_ellipsis), [`file_link_open`](../reference/configuration.md#file_link_open), [`ssh_follow_directory`](../reference/configuration.md#ssh_follow_directory).
 
 ## Profiles
 
@@ -171,7 +171,7 @@ Terminux-only global keys worth knowing: [`trim_paste`](../reference/configurati
 | (none) | `env`, `os`, `login_shell` | environment variables, OS filter (`"linux"`, `"windows"`, `"macos"`), run through the login shell |
 | `colorScheme` | [`color_scheme`](../reference/profile-settings.md#color_scheme) | string or `{ light = "...", dark = "..." }` |
 | `foreground`, `background`, `selectionBackground`, `cursorColor` | `foreground`, `background`, `selection_background`, `cursor_color` | |
-| `cursorShape`, `cursorHeight` | `cursor_shape`, `cursor_height` | `bar`, `vintage`, `underscore`, `filled_box`, `empty_box`, `double_underscore` |
+| `cursorShape`, `cursorHeight` | `cursor_shape`, `cursor_height` | `bar`, `vintage`, `underscore`, `filled_box`, `empty_box`, `double_underscore`; `cursor_height` is accepted but ignored (fixed-size underline) |
 | `font.face`, `font.size`, `font.weight`, `font.features`, `font.axes`, `font.cellHeight` | `font = { face, size, weight, features, axes, cell_height, cell_width, ligatures }` | flat `fontFace` / `fontSize` / `fontWeight` become the `font` table. `features` / `axes` need `renderer = "dom"` |
 | `opacity`, `useAcrylic` | `opacity` (0-100), `use_acrylic` | opacity below 100 needs a first restart |
 | `backgroundImage`, `backgroundImageStretchMode`, `backgroundImageAlignment`, `backgroundImageOpacity` | `background_image`, `background_image_stretch_mode`, `background_image_alignment`, `background_image_opacity` | stretch: `none`, `fill`, `uniform`, `uniform_to_fill`; alignment: `center`, `top_left`, ... |
@@ -210,7 +210,7 @@ red = "#c50f1f"
 
 `purple` and `bright_purple` keep Windows Terminal's names. The 17 built-in schemes: Terminux, Campbell, Campbell Powershell, Vintage, One Half Dark, One Half Light, Solarized Dark, Solarized Light, Tango Dark, Tango Light, Dark+, VSCode Dark Modern, VSCode Light Modern, CGA, IBM 5153, Ottosson, Dimidium (see [color schemes](../reference/color-schemes.md)). `[theme]` overrides colors on top of the active scheme.
 
-`themes` (UI themes) become `[[ui_theme]]` with `[ui_theme.tab]`, `[ui_theme.tab_row]` and `[ui_theme.window]` sub-tables (`application_theme`, `frame`, `unfocused_frame`, `use_mica`, `rainbow_frame`); tab keys: `background` (`terminalBackground`, `accent` or a color), `unfocused_background`, `show_close_button` (`always`, `hover`, `never`, `active_only`), `icon_style` (`default`, `hidden`, `monochrome`). See [Appearance](07-appearance.md).
+`themes` (UI themes) become `[[ui_theme]]` with `[ui_theme.tab]`, `[ui_theme.tab_row]` and `[ui_theme.window]` sub-tables (`application_theme`, `frame`, `unfocused_frame`, `use_mica`, `rainbow_frame`); tab keys: `background` (`terminalBackground`, `accent` or a color), `unfocused_background`, `show_close_button` (`always`, `hover`, `never`, `active_only`), `icon_style` (`default`, `hidden`, `monochrome`). Terminux adds `[ui_theme.colors]` (interface palette), `[ui_theme.pane]` (divider, active border), `tab.foreground` / `unfocused_foreground` / `indicator` / `radius` / `height` and `window.font` / `font_size`; `[ui_theme]` can also be edited in Settings > UI themes with live preview. See [Appearance](07-appearance.md#custom-ui-themes).
 
 ## Actions and key bindings
 
@@ -235,7 +235,7 @@ starting_directory = 'C:\src'
 
 Rules:
 
-- `command` / `action` names: camelCase to snake_case (`newTab` -> `new_tab`, `togglePaneZoom` -> `toggle_pane_zoom`, `sendInput` -> `send_input`, `multipleActions` -> `multiple_actions` with `commands = [...]`). Terminux also accepts the nested form `command = { action = "...", ... }`. Check the name in [actions](../reference/actions.md): not every Windows Terminal action exists. <!-- TODO verify: whether camelCase action names are tolerated at runtime; the schema lint only offers snake_case -->
+- `command` / `action` names: camelCase to snake_case (`newTab` -> `new_tab`, `togglePaneZoom` -> `toggle_pane_zoom`, `sendInput` -> `send_input`, `multipleActions` -> `multiple_actions` with `commands = [...]`). Terminux also accepts the nested form `command = { action = "...", ... }`. Names must be exact: a camelCase name (`splitPane`) is an unknown action and does nothing. Check the name in [actions](../reference/actions.md): not every Windows Terminal action exists.
 - Arguments are snake_case too: `splitMode` -> `split_mode`, `startingDirectory` -> `starting_directory`, `tabTitle` -> `tab_title`, `colorScheme` -> `color_scheme`, `singleLine` -> `single_line`, `copyFormatting` -> `copy_formatting`.
 - `keys` accepts the same combos (`ctrl+shift+t`); case is ignored. A list of combos works.
 - Rebind or unbind built-in commands in `[keys]`: `find = "F3"`, `new_window = ""`.
@@ -260,7 +260,7 @@ Supported: `new-tab`/`nt`, `split-pane`/`sp`, `focus-tab`/`ft`, `move-focus`/`mf
 ## Behavior differences
 
 - **Session restore is on by default** (`first_window_preference = "persisted_window_layout"`), and then `startup_actions` is ignored if a session exists.
-- **Settings UI**: `open_settings` opens a built-in **text editor** (TOML with completion, hover documentation and lint), not a form. `open_settings_file` opens the file in your external editor.
+- **Settings UI**: `open_settings` (`Ctrl+,`) opens a built-in settings tab with forms for global settings, profiles (generated ones too), color schemes, color overrides, UI themes, key bindings, custom actions, the new tab menu and the toolbar; edits keep the comments and layout of `config.toml`. A **TOML** button switches to a text editor (completion, hover documentation and lint, find / replace): `open_settings_toml`. `open_settings_pane` shows the settings in a pane, `open_settings_file` opens the file in your external editor.
 - **Hot reload** applies to `config.toml` and `fragments/*.toml`; an invalid file shows an error bar and keeps defaults until fixed.
 - **Fragments** work like Windows Terminal fragment extensions but are plain TOML files in `fragments/` (profiles, schemes and actions only).
 - **Generated profiles**: WSL (Windows), PowerShell, Windows PowerShell and cmd (Windows), and **SSH** hosts from `~/.ssh/config` (all platforms). Other WT generators (Azure Cloud Shell, Visual Studio prompts) are not generated; declare them by hand.
@@ -268,7 +268,7 @@ Supported: `new-tab`/`nt`, `split-pane`/`sp`, `focus-tab`/`ft`, `move-focus`/`mf
 - **Quake mode**: `quake_mode` (`Win+``) docks a window at the top of the monitor, full width and half height. Terminux also offers `global_summon`.
 - **Directory inheritance**: splits and duplicated tabs inherit the directory from the shell's OSC 7 / 9;9 on Windows and from the process on Linux; see [Shell integration](10-shell-integration.md).
 - **Clipboard**: `Ctrl+C` copies only with a selection (as in Windows Terminal). OSC 52 writes are opt-in (`osc52_clipboard`).
-- **Extra features** Windows Terminal does not have: vertical tabs, customizable toolbar, snippets pane, suggestions from shell integration, per-profile startup retries, `renderer` choice, SSH profiles. See [Getting started](02-getting-started.md).
+- **Extra features** Windows Terminal does not have: vertical tabs, customizable toolbar, pane title bars and drag-and-drop panes, snippets pane, Ctrl+click file links with a built-in editor (also over SSH), suggestions from shell integration, per-profile startup retries, `renderer` choice, SSH profiles. See [Getting started](02-getting-started.md).
 
 ## Not supported
 
@@ -283,7 +283,7 @@ No equivalent in Tauri / xterm.js (from the project README):
 - **AltGr aliasing** (`altGrAliasing`).
 - **Localization**: the interface is English only.
 
-Also absent from the configuration schema (so ignored if present): the Windows Terminal settings UI (it is replaced by the text editor), `$schema`, per-profile `elevate`, and any key not listed in the tables above. If a setting is important to you and not listed, check [configuration](../reference/configuration.md) and [profile settings](../reference/profile-settings.md); anything not documented there is not implemented.
+Also absent from the configuration schema (so ignored if present): `$schema`, per-profile `elevate`, and any key not listed in the tables above. If a setting is important to you and not listed, check [configuration](../reference/configuration.md) and [profile settings](../reference/profile-settings.md); anything not documented there is not implemented.
 
 ## See also
 

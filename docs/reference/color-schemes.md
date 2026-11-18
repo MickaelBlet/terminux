@@ -32,7 +32,7 @@ tab_color = "#c50f1f"
 
 Each scheme defines `background`, `foreground`, the cursor color, optionally a selection background, and the 16 ANSI colors (`brightX` are the intense variants). A dash means the scheme does not set it (the terminal default applies). Colors are shown as `#rrggbb`.
 
-![Six built-in color schemes side by side](../images/schemes.png)
+![Six built-in color schemes side by side](../images/schemes.svg)
 
 | Scheme | background | foreground | cursor | selection |
 | --- | --- | --- | --- | --- |

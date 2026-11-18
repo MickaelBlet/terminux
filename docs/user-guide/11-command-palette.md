@@ -17,7 +17,7 @@ The command palette lists every action, lets you drill into nested menus (profil
 
 The palette opens with a `>` already typed in the input. In this mode you type to filter:
 
-![Command palette filtering actions](../images/palette.png)
+![Command palette filtering actions](../images/palette.svg)
 
 - **Fuzzy matching**: every typed character must appear in order in the label. A contiguous substring ranks highest, then matches on consecutive characters and word starts. Several words are matched independently (`new tab` finds "New tab…" and "Duplicate tab").
 - The list contains, in this order: **New tab…** and **Split pane…** (nested), then (in a terminal tab) **Select color scheme…**, **Set background opacity…**, **Move pane to tab…**, then **Switch to tab…**, then every named command, then your own [`[[action]]`](12-custom-actions.md) entries.
@@ -31,7 +31,7 @@ Every row is a command documented in [actions](../reference/actions.md).
 
 Delete the leading `>` (a single Backspace) and the palette becomes a command line. What you type is parsed exactly like arguments of `terminux` and run through the [`wt`](../reference/actions.md) action, so you can build layouts without a config entry:
 
-![Command palette in command-line mode](../images/palette-command-line.png)
+![Command palette in command-line mode](../images/palette-command-line.svg)
 
 ```text
 new-tab -p python ; split-pane -V -s .3 -p shell
@@ -50,7 +50,7 @@ Rules (same as the CLI, see [command line](../reference/command-line.md)):
 
 Typing `>` again at the start returns to action mode.
 
-Relative `-d` paths are resolved against the directory Terminux was launched from when coming from the real command line; from the palette use absolute paths or `~/...`. <!-- TODO verify: base directory of relative -d from the palette -->
+Relative `-d` paths are resolved against Terminux's own working directory (the one it was launched from), not the active pane's; use absolute paths or `~/...` in the palette.
 
 ## Nested menus
 
@@ -80,7 +80,7 @@ The same widget powers a few focused pickers:
 
 `Ctrl+Shift+Period` opens the **suggestions** palette for the active terminal:
 
-![Suggestions from recent commands and snippets](../images/suggestions.png)
+![Suggestions from recent commands and snippets](../images/suggestions.svg)
 
 - `source = "all"` (default): recent commands plus "tasks".
 - `source = "recent_commands"` ([`show_recent_commands`](../reference/actions.md#show_recent_commands)): only commands recorded through [shell integration](10-shell-integration.md). Choosing one replaces the command line you are typing (no Enter is sent).
@@ -103,7 +103,7 @@ Without shell integration and without `send_input` actions the palette shows "No
 
 A snippet is a `send_input` action. The **snippets pane** is a pane type that lists them in a side panel so you can click to send:
 
-![Snippets pane on the right of a terminal](../images/snippets.png)
+![Snippets pane on the right of a terminal](../images/snippets.svg)
 
 - Toggle it with [`toggle_snippets_pane`](../reference/actions.md#toggle_snippets_pane) (palette: "Toggle snippets pane"): a tab has at most one snippets pane, and running the action again closes it (so does the × button in its header). It splits to the right, taking 20% of the width (set `size` to change it), with `split_pane` `type = "snippets"`. Equivalent action: `command = "split_pane"`, `type = "snippets"`, `split = "right"`.
 - A filter box matches both the action name and the text it sends.

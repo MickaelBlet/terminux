@@ -13,6 +13,9 @@ The Rust backend lives in `src-tauri/` (crate `terminux`, library `terminux_lib`
   - [dynamic_profiles.rs](#dynamic_profilesrs)
   - [windows.rs](#windowsrs)
   - [session_store.rs](#session_storers)
+  - [toml_patch.rs](#toml_patchrs)
+  - [editor.rs](#editorrs)
+  - [ssh.rs and remote_files.rs](#sshrs-and-remote_filesrs)
   - [cli.rs](#clirs)
 - [IPC commands](#ipc-commands)
 - [Events and channels](#events-and-channels)
@@ -36,12 +39,16 @@ src-tauri/
     config.rs             config.toml model, merge, paths, validation
     default_config.toml    embedded default config (include_str!)
     dynamic_profiles.rs   generated profiles
+    editor.rs             Ctrl+click on file paths: external editor, built-in editor file access
     pty.rs                PtyManager
+    remote_files.rs       files of an ssh host copied with scp for the built-in editor
     session_store.rs      session.json
+    ssh.rs                ssh argv detection, reopen-in-directory, scp arguments
+    toml_patch.rs         comment-preserving edits of config.toml (settings UI)
     windows.rs            window creation, routing, summon, tray
 ```
 
-Key dependencies (`Cargo.toml`): `tauri` 2 (features `tray-icon`, `image-png`), `portable-pty` 0.9, `toml` 0.9, `serde`/`serde_json`, `dirs` 6, `notify` 8, `anyhow`, and the Tauri plugins listed in [Plugins](#plugins).
+Key dependencies (`Cargo.toml`): `tauri` 2 (features `tray-icon`, `image-png`), `portable-pty` 0.9, `toml` 0.9, `toml_edit`, `serde`/`serde_json`, `dirs` 6, `notify` 8, `anyhow`, and the Tauri plugins listed in [Plugins](#plugins).
 
 ## Modules
 
@@ -56,7 +63,7 @@ Then it calls `terminux_lib::run()`.
 
 ### lib.rs
 
-- `AppState { config: Mutex<Config>, pty: PtyManager, windows: Mutex<windows::Windows> }`, registered with `.manage(...)`.
+- `AppState { config: Mutex<Config>, pty: PtyManager, windows: Mutex<windows::Windows>, open_files: editor::OpenFiles, remote_files: remote_files::RemoteFiles }`, registered with `.manage(...)`.
 - All `#[tauri::command]` functions and the `generate_handler!` list (see [IPC commands](#ipc-commands)).
 - `run()`: handles `--help` (prints `cli::HELP`, returns), builds the Tauri app, registers plugins, starts the config watcher, opens the initial windows, wires window events and run events.
 - `open_initial_windows` / `second_instance`: launch and routing logic described in [architecture.md](architecture.md#window-routing).
@@ -97,7 +104,7 @@ Command construction (`build_command`):
 
 Parses `config.toml` into `Config`. Only spawn-related fields are typed; everything else is carried in `#[serde(flatten)] extra: Table` and interpreted by the frontend.
 
-Typed in `Config`: `default_profile` (default `"shell"`), `font_size` (14), `font_family`, `scrollback` (10000), `notifications` (true), `copy_on_select`, `middle_click_paste` (true), `right_click_paste` (true), `word_separators` (alias `word_delimiters`), `renderer`, `defaults` (table), `profiles` (`[[profile]]`), `schemes` (`[[scheme]]`), `ui_themes` (`[[ui_theme]]`), `actions` (`[[action]]`), `keys` (`[keys]`, string or list), `theme` (`[theme]`), `disabled_profile_sources`, and `error` (set when the user file failed to parse).
+Typed in `Config`: `default_profile` (default `"shell"`), `font_size` (14), `font_family`, `scrollback` (100000), `notifications` (true), `copy_on_select`, `middle_click_paste` (true), `right_click_paste` (true), `word_separators` (alias `word_delimiters`), `renderer`, `defaults` (table), `profiles` (`[[profile]]`), `schemes` (`[[scheme]]`), `ui_themes` (`[[ui_theme]]`), `actions` (`[[action]]`), `keys` (`[keys]`, string or list), `theme` (`[theme]`), `disabled_profile_sources`, and `error` (set when the user file failed to parse).
 
 Typed in `Profile`: `id`, `name`, `cmd`, `commandline` (parse-only), `args`, `cwd` (alias `starting_directory`), `env`, `os`, `login_shell`, `hidden`, `source` (set by generators, never read from TOML), plus `extra` for appearance keys.
 
@@ -109,7 +116,7 @@ Behavior:
 - `extend(dir)` adds fragments, then generated profiles (see the flowchart in [architecture.md](architecture.md#config-load-merge-watch-hot-reload)). `Profile::inherit` lets a user profile with the same id as a generated one fill its gaps (cmd/args, name, cwd, login_shell, extra keys, source).
 - `split_commandline`: whitespace splitting with `'`/`"` grouping; a backslash only escapes a `"` (so Windows paths survive).
 - Paths: `config_dir()` (`<exe dir>/settings` in portable mode, else `dirs::config_dir()/terminux`), `config_path()`, `state_dir()` (portable: same `settings` dir; else `dirs::state_dir()` or the local data dir, plus `terminux`), `resolve_path` (`~` expansion, relative paths against the config dir).
-- `ensure_file()` writes the default config on first run, with the profiles generated on this machine written out just before the `# Color schemes.` marker (`initial_config`).
+- `ensure_file()` writes the default config on first run, with the profiles generated on this machine written out as `[[profile]]   # generated: <source>` blocks just before the `# Color schemes.` marker (`initial_config`).
 - `validate(src)` returns a `ConfigError { message, from, to }` with offsets converted to UTF-16 code units (CodeMirror offsets). `write(src)` validates then writes.
 - `load()` = `ensure_file` + parse (falling back to defaults with `error` set) + `extend`.
 
@@ -151,6 +158,27 @@ The reserved window name is the constant `QUAKE = "_quake"`.
 
 Persists `{ "version": 1, "windows": [...] }` to `<state_dir>/session.json`, written atomically (`session.json.tmp` then rename). `load()` returns the saved window snapshots that still have tabs (`tabs` or `editors` non-empty); `bounds(snapshot)` extracts `(x, y, width, height, maximized)`. Snapshots are opaque `serde_json::Value`s produced by the frontend (`WindowSnapshot` in `src/lib/snapshot.ts`).
 
+### toml_patch.rs
+
+Comment-preserving edits of `config.toml` for the settings UI, built on `toml_edit`. `parse(src)` returns the raw document as JSON (no fragments, no generated profiles). `patch(src, ops)` applies `PatchOp`s in order and returns the new text, leaving comments and layout of untouched parts alone. A path is a list of segments (table key or array index), for example `["profile", 2, "font", "size"]`.
+
+| Op | Effect |
+| --- | --- |
+| `set { path, value }` | Set a value, creating missing tables; `null` removes it. |
+| `remove { path }` | Remove a key or array element; tables left empty are removed too. |
+| `insert { path, index?, value }` | Insert into an array (of tables), created if missing; no index appends. |
+| `move { path, from, to }` | Reorder an element of an array (of tables). |
+
+### editor.rs
+
+Backs Ctrl+click on file paths printed in a terminal. `open(template, path, line, col, terminal)` expands `~`, checks the file exists, substitutes `{file}`, `{line}`, `{col}` per argument of [`file_link_editor`](../reference/configuration.md#file_link_editor) (the program comes from the config only; no shell is involved) and starts it detached. Without a template it returns a fallback command line (`$VISUAL` / `$EDITOR` / `vi` at the line; Notepad on Windows) for a terminal tab; with `terminal = true` it returns the command line for a pane. `OpenFiles` is the allow-list of the built-in editor: `read` (UTF-8 text, at most 8 MiB, canonicalized) records the path, `write` refuses any path that was not read first. `quote_arg` quotes one argument for `split_commandline`.
+
+### ssh.rs and remote_files.rs
+
+`ssh.rs` recognises an interactive `ssh` command (`parse_ssh_argv` returns an `SshTarget { program, dest, opts }`, or `None` for non-interactive uses such as a remote command or `-W`), builds the argv that reopens it in another remote directory (`follow_argv`) and the `scp` arguments that copy a file to or from the host (`scp_args`). Options only ever come from a command the user launched. `PtyManager::ssh_target(id)` finds the session (the foreground process on Linux, else the spawned command); `spawned_ssh(id)` only the spawned one.
+
+`remote_files.rs` (`RemoteFiles`) copies a file of the host to a private cache directory (`<cache dir>/terminux/remote`) with `scp` (`fetch`) and uploads it back when the built-in editor saves it (`upload`). Only fetched files can be uploaded.
+
 ### cli.rs
 
 Parses `wt`-compatible command lines into a `Cli { window, maximized, fullscreen, focus, pos, size, actions, help }`, where each action is a JSON object with the same shape as an `[[action]]` entry. Details:
@@ -167,7 +195,7 @@ The full flag reference is in [../reference/command-line.md](../reference/comman
 
 ## IPC commands
 
-All 30 commands registered in `generate_handler!` (`src-tauri/src/lib.rs`). Tauri injects `AppHandle`, `WebviewWindow` and `State` automatically; they are not part of the JS arguments. Rust argument names are converted to camelCase on the JS side (`default_name` becomes `defaultName`, `on_data` becomes `onData`). Fallible commands return `Result<T, String>` (the JS promise rejects with the string).
+All 39 commands registered in `generate_handler!` (`src-tauri/src/lib.rs`). Tauri injects `AppHandle`, `WebviewWindow` and `State` automatically; they are not part of the JS arguments. Rust argument names are converted to camelCase on the JS side (`default_name` becomes `defaultName`, `on_data` becomes `onData`). Fallible commands return `Result<T, String>` (the JS promise rejects with the string).
 
 ### Config and files
 
@@ -178,11 +206,17 @@ All 30 commands registered in `generate_handler!` (`src-tauri/src/lib.rs`). Taur
 | `open_config` | `() -> Result<()>` | Opens `config.toml` with the system handler (opener plugin). |
 | `config_path` | `() -> String` | Absolute path of `config.toml`. |
 | `read_config` | `() -> Result<String>` | Contents of `config.toml` (creates it first if missing). |
+| `config_parse` | `(src: String) -> Result<Value>` | The raw TOML text as JSON (settings UI read side; no fragments or generated profiles). |
+| `config_patch` | `(src: String, ops: Vec<PatchOp>) -> Result<String>` | Applies settings UI edits to the text, keeping comments (see [toml_patch.rs](#toml_patchrs)). |
 | `validate_config` | `(src: String) -> Option<ConfigError>` | TOML/serde validation; `{ message, from, to }` in UTF-16 offsets, or `null`. |
 | `write_config` | `(src: String) -> Result<()>` | Validates, then writes `config.toml`. The watcher then reloads. |
 | `default_config` | `() -> &'static str` | The embedded `default_config.toml` (read-only "Default settings" tab). |
 | `read_binary` | `(path: String) -> Result<Response>` | Raw bytes of a user file (background image, bell sound, icon). Path resolved with `resolve_path`; must be referenced by the config; max 64 MiB. |
 | `open_path` | `(path: String) -> Result<()>` | Opens a directory in the system file manager; errors if it is not a directory. |
+| `open_in_editor` | `async (path: String, line?: u32, col?: u32, terminal: bool) -> Result<Option<String>>` | Opens a Ctrl+clicked file with `file_link_editor`; may return a command line for a terminal tab or pane to run instead. |
+| `file_read` | `async (path: String) -> Result<{ path, text }>` | Reads a UTF-8 text file (max 8 MiB) for the built-in editor and allow-lists it for `file_write`. |
+| `file_write` | `async (path: String, text: String) -> Result<()>` | Saves a file opened with `file_read` (no other path is writable); uploads it when it came from an ssh host. |
+| `remote_file_fetch` | `async (id: u32, path: String) -> Result<{ local, label }>` | Copies a file from the ssh host the pane `id` runs into the cache; open the copy with `file_read`. |
 | `save_text` | `(path: Option<String>, defaultName: String, text: String) -> Result<Option<String>>` | Writes exported text. With `path`: must be referenced by the config. Without: shows a save dialog. Returns the written path, or `null` when cancelled. |
 
 ### PTY
@@ -196,12 +230,15 @@ All 30 commands registered in `generate_handler!` (`src-tauri/src/lib.rs`). Taur
 | `pty_resize` | `(id: u32, cols: u16, rows: u16) -> Result<()>` | Resizes the PTY (no-op after the child exited). |
 | `pty_kill` | `(id: u32)` | Kills the child and drops any orphan. |
 | `pty_cwd` | `(id: u32) -> Option<String>` | Foreground process cwd (Linux only, else `null`). |
+| `pty_is_ssh` | `(id: u32) -> bool` | Whether the pane runs an interactive `ssh` session. |
+| `pty_ssh_follow` | `(id: u32, dir?: String) -> Option<String>` | Command line reopening the pane's ssh session in `dir` (split / duplicate of an ssh pane). |
+| `pty_ssh_resume` | `(id: u32, dir?: String) -> Option<String>` | Same for a session the pane was spawned with (reconnect, session restore). |
 
 ### Windows and application
 
 | Command | Rust signature (JS-visible args) | Purpose |
 | --- | --- | --- |
-| `window_init` | `() -> InitInfo` | Init payload for the calling window: `{ id, name, transparent, payload, grid, launch_mode, center }`. |
+| `window_init` | `() -> InitInfo` | Detaches PTYs still owned by the calling window (a reloaded page lost its channels). Returns the init payload for the calling window: `{ id, name, transparent, payload, grid, launch_mode, center }`. |
 | `window_new` | `async (payload: Value) -> Result<()>` | Creates a window with a payload (`actions` / `snapshot` / `position`). Async on purpose: creating a window from a sync command deadlocks on Windows (WebView2). |
 | `window_send` | `async (target: String, payload: Value) -> Result<()>` | Delivers a payload to another window (`new`, `last`, id or name; excludes the caller). |
 | `window_rename` | `(name: Option<String>)` | Sets/clears the calling window's name. |

@@ -29,7 +29,8 @@ See [building-and-release.md](building-and-release.md) for prerequisites and pac
 
 ```text
 terminux/
-  README.md, CLAUDE.md          project intro; guidance for AI coding assistants
+  README.md, CHANGELOG.md       project intro; release notes
+  AGENTS.md, CLAUDE.md          guidance for coding agents (CLAUDE.md includes AGENTS.md)
   package.json, package-lock.json, vite.config.js, svelte.config.js, tsconfig.json
   docs/                         this documentation
     user-guide/  reference/  developer/
@@ -46,11 +47,16 @@ terminux/
       commands.ts keys.ts actions.ts       action pipeline
       layout/tree.ts            pane layout tree (+ tree.test.ts)
       term/                     session.ts appearance.ts marks.ts markmode.ts shell-integration.ts
+                                file-link-provider.ts link-tooltip.ts
       osc.ts paste.ts paths.ts audio.ts snippets.ts toolbar.ts schemes.ts ui-theme.ts
+      file-links.ts file-langs.ts color-swatch.ts emoji-icons.ts
       windows.ts snapshot.ts    multi-window, session persistence
       config.ts config-schema.ts config-edit.ts
-      ui/                       Svelte components, menus.ts, palettes.ts, tab drag helpers
-      *.test.ts                 Vitest tests
+      settings/                 settings UI model (doc.svelte.ts, pages.ts, value.ts)
+      ui/                       Svelte components, menus.ts, palettes.ts, tab and pane drag helpers,
+                                editor-search.ts editor-theme.ts pane-title.ts
+      ui/settings/              settings UI components
+      *.test.ts                 Vitest tests (next to the module)
   src-tauri/                    backend (Rust, Tauri v2)
     Cargo.toml, build.rs, tauri.conf.json
     capabilities/default.json   frontend permissions
@@ -58,9 +64,10 @@ terminux/
     src/
       main.rs lib.rs            entry, AppState, IPC commands, startup
       cli.rs                    wt-style command line
-      config.rs default_config.toml dynamic_profiles.rs
+      config.rs default_config.toml dynamic_profiles.rs toml_patch.rs
       pty.rs                    PtyManager
       windows.rs session_store.rs
+      editor.rs ssh.rs remote_files.rs     file links, ssh panes, remote files
   dist/                         build artifacts (git-ignored)
 ```
 
@@ -85,11 +92,11 @@ Code, identifiers, comments, commit messages, UI strings and documentation are i
 
 ### Schema sync
 
-The built-in editor (`ui/ConfigEditor.svelte`) completes and lints against `src/lib/config-schema.ts`. Anything the user can write in `config.toml` must exist there, or it is underlined as unknown. When you add or rename:
+The built-in TOML editor (`ui/ConfigEditor.svelte`) completes and lints against `src/lib/config-schema.ts`, and the settings UI builds its forms from the same schema (`settings/pages.ts` places the fields). Anything the user can write in `config.toml` must exist there, or it is underlined as unknown. When you add or rename:
 
 - a global key: `Config` in `config.ts`, `ROOT_FIELDS` in `config-schema.ts`, a commented example in `src-tauri/src/default_config.toml`;
 - a profile/`[defaults]` key: `ProfileSettings` in `config.ts`, `resolve()` in `term/appearance.ts`, `SETTINGS_FIELDS` in `config-schema.ts`;
-- an action: `COMMANDS` + `ACTIONS` (+ `ACTION_ARGS` for new arguments);
+- an action: `COMMANDS` + `ACTIONS` (+ `ACTION_ARGS` for new arguments, and a commented line in the `[keys]` block of `default_config.toml`);
 - a table (`[[x]]`): the `HEADERS` list and `fieldsOf()`.
 
 Then update the reference docs (`docs/reference/configuration.md`, `profile-settings.md`, `actions.md`) and add or extend a test. Recipes: [adding-features.md](adding-features.md).
@@ -100,7 +107,7 @@ The backend types only what it must act on (spawn and window routing). New user 
 
 ### Safe by default
 
-- File access from the webview is allow-listed to paths referenced by the config (`referenced_by_config`); do not add commands that read or write arbitrary paths.
+- File access from the webview is allow-listed: paths referenced by the config (`referenced_by_config`), and files the built-in editor opened (`OpenFiles`); do not add commands that read or write arbitrary paths.
 - Clipboard reads by terminal programs (OSC 52 query) are never answered; writes are opt-in (`osc52_clipboard`).
 - Pastes are sanitized (`sanitizePaste`) and can require confirmation.
 
@@ -126,6 +133,8 @@ No formatter or linter configuration is committed; match the surrounding code.
 | Multi-window behavior | `windows.ts` (frontend), `windows.rs` (backend) |
 | Process/PTY behavior | `pty.rs` |
 | UI chrome | `src/lib/ui/` |
+| Settings UI | `src/lib/settings/` (pure model), `src/lib/ui/settings/` (components), `src-tauri/src/toml_patch.rs` (edits) |
+| File links, ssh panes | `file-links.ts`, `term/file-link-provider.ts`, `src-tauri/src/editor.rs`, `ssh.rs`, `remote_files.rs` |
 | Packaging | `docker/`, `scripts/`, `tauri.conf.json`, `.github/workflows/build.yml` |
 
 ## Pull request checklist

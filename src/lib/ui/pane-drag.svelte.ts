@@ -29,7 +29,9 @@ export function paneAt(x: number, y: number, exclude?: string): PaneHit | null {
     if (paneId === exclude) return null;
     const r = pane.getBoundingClientRect();
     const zone = dropZone(r, x, y);
-    return { paneId, zone, box: zoneBox(r.width, r.height, zone) };
+    // The hint is positioned inside the pane's border (padding box): size it to that box, or its
+    // right/bottom edges end up clipped under the border.
+    return { paneId, zone, box: zoneBox(pane.clientWidth, pane.clientHeight, zone) };
   }
   return null;
 }
