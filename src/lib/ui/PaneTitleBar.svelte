@@ -36,7 +36,15 @@
   class:active
   ondblclick={() => (app.renamingPane = paneId)}
   onpointerdown={(e) => !(e.target as Element).closest("button, input") && paneDrag.down(e, paneId)}
-  title="Drag to move the pane, double-click to rename"
+  onmousedown={(e) => e.button === 1 && e.preventDefault()}
+  onmouseup={(e) => e.button === 1 && e.preventDefault()}
+  onauxclick={(e) => {
+    if (e.button !== 1 || (e.target as Element).closest("input")) return;
+    // Block X11 primary-selection paste into the refocused terminal.
+    e.preventDefault();
+    setTimeout(() => app.closePane(paneId));
+  }}
+  title="Drag to move the pane, double-click to rename, middle-click to close"
   role="presentation"
 >
   {#if p?.bell}<span class="bell"><Icon name="bell" size={11} /></span>

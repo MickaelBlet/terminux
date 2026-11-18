@@ -138,6 +138,7 @@ By default a split tab shows a bar above each pane with its icon, title, a zoom 
 | Back to the automatic title | `reset_pane_title` (palette "Reset pane title"; also what an empty name does) |
 | Set from a custom action | `{ command = "rename_pane", title = "app logs" }` (without `title`: reset) |
 | Move the pane | Drag the title bar, see [Drag and drop](#drag-and-drop) |
+| Close the pane | Close button or middle-click on the title bar |
 
 ```toml
 show_pane_title_bar = "always"
