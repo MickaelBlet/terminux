@@ -66,14 +66,15 @@ export function commandPalette(app: App): PaletteView {
   });
   for (const [name, c] of Object.entries(COMMANDS)) {
     if (c.hidden) continue;
-    items.push({ label: c.label, icon: c.icon, hint: hint(name), run: () => app.run(c.spec) });
+    items.push({ id: name, label: c.label, icon: c.icon, hint: hint(name), run: () => app.run(c.spec) });
   }
-  for (const a of app.userActions) items.push({ label: a.name, icon: a.icon ?? commandIcon(a.spec), hint: app.keymap.hint(a.spec), run: () => app.run(a.spec) });
+  for (const a of app.userActions) items.push({ id: `action:${a.name}`, label: a.name, icon: a.icon ?? commandIcon(a.spec), hint: app.keymap.hint(a.spec), run: () => app.run(a.spec) });
   return {
     placeholder: "Type a command, or delete \">\" to run a command line (new-tab -p python ; split-pane -H)…",
     query: ">",
     items,
     commandline: (text) => void app.run({ command: "wt", commandline: text }),
+    recentKey: "terminux.paletteRecent",
   };
 }
 

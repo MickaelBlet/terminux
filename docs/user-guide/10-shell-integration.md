@@ -100,7 +100,7 @@ When a pane runs an interactive `ssh` (an SSH profile, or `ssh host` typed in a 
 
 - **Split / duplicate** (split without a profile, `duplicate_tab`) reconnects with the same destination and connection options (`-p`, `-l`, `-i`, `-J`, `-F`, `-o`, ...; port forwards are not repeated) and runs `cd <dir>; exec $SHELL -l` on the host, `<dir>` being the last directory the **remote** shell reported with OSC 7. Disable with [`ssh_follow_directory = false`](../reference/configuration.md#ssh_follow_directory).
 - **Reconnect** (Enter after the connection dropped, `restart_connection`, startup retries) and **session restore** of a pane started with `ssh` (SSH profile) reconnect in the last remote directory, the same way.
-- **Ctrl+click a file path** copies the file from the host with `scp` (resolved against the remote directory) and opens it in the built-in editor, labeled `host:path`. Ctrl+S saves the local copy and uploads it back. This ignores `file_link_open`.
+- **Ctrl+click a file path** copies the file from the host with `scp` (resolved against the remote directory) and opens it in the built-in editor, labeled `host:path`. Ctrl+S saves the local copy and uploads it back. This ignores `file_link_open`, except `"builtin_pane"` which opens it as a split.
 
 Requirements:
 

@@ -4,7 +4,7 @@
 </script>
 
 <script lang="ts">
-  // Built-in file editor (Ctrl+click on a file path, file_link_open = "builtin").
+  // Built-in file editor (Ctrl+click on a file path, file_link_open = "builtin" / "builtin_pane").
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { Compartment, EditorSelection, EditorState } from "@codemirror/state";

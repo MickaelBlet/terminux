@@ -75,7 +75,7 @@ export const ROOT_FIELDS: Record<string, Field> = {
   detect_file_paths: bool("Underline file paths printed in the terminal; Ctrl+click opens them in an editor."),
   file_link_editor: str("Editor for Ctrl+clicked file paths; {file}, {line}, {col} are substituted, e.g. \"code --goto {file}:{line}:{col}\". Unset: $VISUAL/$EDITOR in a new tab (Notepad on Windows)."),
   ssh_follow_directory: bool("Splitting or duplicating a pane running ssh reconnects to the same host in the remote directory reported by OSC 7 (default true)."),
-  file_link_open: str("Where Ctrl+clicked file paths open: external editor, terminal tab or split pane running the editor, or the built-in editor tab (default).", ["builtin", "external", "tab", "pane"]),
+  file_link_open: str("Where Ctrl+clicked file paths open: external editor, terminal tab or split pane running the editor, the built-in editor tab (default) or the built-in editor in a split pane.", ["builtin", "builtin_pane", "external", "tab", "pane"]),
   large_paste_warning: str("Confirm pastes larger than 5 KiB.", ["true", "false", "always", "never"]),
   multi_line_paste_warning: str("Confirm pastes of several lines.", ["true", "false", "always", "never"]),
   search_web_url: str('Search the web URL; %s is the selection.'),

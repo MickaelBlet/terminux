@@ -207,7 +207,7 @@ Only *writing* is supported; a program can never read your clipboard through OSC
 - Hyperlinks that programs emit with `OSC 8` (for example `ls --hyperlink`, `gcc` diagnostics, `eza`) are always active and open the same way.
 - Set `detect_urls = false` to stop automatic URL detection (OSC 8 links keep working).
 - File paths in the output (`src/main.rs:12:5`, `./a.txt`, `~/notes.md`, `C:\work\app.ts(4,2)`, Python `File "x.py", line 7`) are underlined on hover; **Ctrl+click** (Cmd+click on macOS) opens the file at that line in Terminux's built-in editor, in a new tab (syntax highlighting, **Ctrl+S** to save, **Ctrl+F** to find, **Ctrl+H** to replace; closing with unsaved changes asks first). To keep it next to a terminal, drag its tab onto a pane (the highlighted zone shows where it docks) or right-click the tab > **Show in a pane**; unsaved edits follow. "Move pane to new tab" brings it back to a tab. Relative paths resolve against the pane's current directory (shell integration or the live process directory).
-- [`file_link_open`](../reference/configuration.md#file_link_open) changes that: `"external"` runs [`file_link_editor`](../reference/configuration.md#file_link_editor) (e.g. `"code --goto {file}:{line}:{col}"`; unset: `$VISUAL` / `$EDITOR` in a new tab, Notepad on Windows), `"tab"` / `"pane"` run the editor in a terminal tab / split (e.g. `file_link_editor = "nvim +{line} {file}"`). Set [`detect_file_paths = false`](../reference/configuration.md#detect_file_paths) to turn file links off.
+- [`file_link_open`](../reference/configuration.md#file_link_open) changes that: `"builtin_pane"` opens the built-in editor as a split next to the clicked pane, `"external"` runs [`file_link_editor`](../reference/configuration.md#file_link_editor) (e.g. `"code --goto {file}:{line}:{col}"`; unset: `$VISUAL` / `$EDITOR` in a new tab, Notepad on Windows), `"tab"` / `"pane"` run the editor in a terminal tab / split (e.g. `file_link_editor = "nvim +{line} {file}"`). Set [`detect_file_paths = false`](../reference/configuration.md#detect_file_paths) to turn file links off.
 
 ![Hovering a file path in compiler output](../images/file-links.svg)
 
@@ -219,7 +219,7 @@ The editor's find panel looks like the terminal [search bar](09-search-and-navig
 
 ### Files on an SSH host
 
-In a pane running `ssh`, a Ctrl+clicked path is on the remote host: it is copied with `scp` and always opens in the built-in editor (the tab title shows the remote path); **Ctrl+S** uploads it back. `file_link_open` / `file_link_editor` do not apply. Relative paths resolve against the remote directory reported by the remote shell (see [Shell integration](10-shell-integration.md#ssh-sessions)), else the remote home.
+In a pane running `ssh`, a Ctrl+clicked path is on the remote host: it is copied with `scp` and always opens in the built-in editor (as a split with `file_link_open = "builtin_pane"`, else in a tab; the title shows the remote path); **Ctrl+S** uploads it back. Other `file_link_open` values and `file_link_editor` do not apply. Relative paths resolve against the remote directory reported by the remote shell (see [Shell integration](10-shell-integration.md#ssh-sessions)), else the remote home.
 
 ## Dropping files
 

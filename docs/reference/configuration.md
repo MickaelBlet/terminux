@@ -574,16 +574,17 @@ file_link_editor = "code --goto {file}:{line}:{col}"
 
 **Type:** string | **Default:** `"builtin"`
 
-**Values:** `"builtin"`, `"external"`, `"tab"`, `"pane"`
+**Values:** `"builtin"`, `"builtin_pane"`, `"external"`, `"tab"`, `"pane"`
 
 Where Ctrl+clicked file paths open:
 
 - `"builtin"`: Terminux's own editor in a new tab (syntax highlighting, Ctrl+S save, Ctrl+F find, Reload). Clicking a file already open focuses its tab at the line. Text files up to 8 MiB (UTF-8); only files opened this way can be saved.
+- `"builtin_pane"`: the same editor as a split next to the clicked pane (direction leaving the most room).
 
 - `"external"`: [`file_link_editor`](#file_link_editor) launched detached (fallback: `$VISUAL` / `$EDITOR` in a new tab, Notepad on Windows).
 - `"tab"` / `"pane"`: a new tab / a split next to the clicked pane running `file_link_editor` as a terminal program (e.g. `"nvim +{line} {file}"`), or `$VISUAL` / `$EDITOR` / `vi` when unset. On Windows `file_link_editor` is required.
 
-In a pane running `ssh`, a clicked path is on the remote host: it is copied with `scp` and always opens in the built-in editor; saving uploads it back. See [Shell integration › SSH](../user-guide/10-shell-integration.md#ssh-sessions).
+In a pane running `ssh`, a clicked path is on the remote host: it is copied with `scp` and always opens in the built-in editor (as a split with `"builtin_pane"`, else in a tab); saving uploads it back. See [Shell integration › SSH](../user-guide/10-shell-integration.md#ssh-sessions).
 
 ```toml
 file_link_open = "external"

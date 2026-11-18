@@ -4,10 +4,30 @@
   import ProfileIcon from "./ProfileIcon.svelte";
   import Icon from "./Icon.svelte";
   import type { PaletteItem, PaletteView } from "./types";
+  import { asRecent, orderItems, pushRecent } from "../palette-order";
+
+  const SORT_KEY = "terminux.paletteSort";
+  function load(key: string): unknown {
+    try {
+      return JSON.parse(localStorage.getItem(key) ?? "null");
+    } catch {
+      return null;
+    }
+  }
+  function save(key: string, v: unknown) {
+    try {
+      localStorage.setItem(key, JSON.stringify(v));
+    } catch {
+      /* storage unavailable */
+    }
+  }
 
   const root: PaletteView = app.palette!;
-  // Nested lists (sub-commands); the last one is shown.
-  let stack = $state<{ title: string; items: PaletteItem[] }[]>([{ title: "", items: root.items }]);
+  const itemKey = (it: PaletteItem) => it.id ?? it.label;
+  const recent = root.recentKey ? asRecent(load(root.recentKey)) : [];
+  let alpha = $state(!!root.recentKey && load(SORT_KEY) === "alpha");
+  // Nested lists (sub-commands); the last one is shown. `root` = key of the top-level entry opened.
+  let stack = $state<{ title: string; items: PaletteItem[]; root?: string }[]>([{ title: "", items: root.items }]);
   let query = $state(root.query ?? "");
   let sel = $state(0);
   let input: HTMLInputElement;
@@ -36,10 +56,16 @@
     return i === q.length ? s : 0;
   }
 
+  // Unfiltered list: recently used first (top level only), then the rest (A→Z if toggled).
+  const ordered = $derived.by(() => {
+    if (!root.recentKey) return { recent: [], rest: level.items };
+    return orderItems(level.items, itemKey, (it) => it.label, stack.length === 1 ? recent : [], alpha);
+  });
+  const recentCount = $derived(lineMode || text ? 0 : ordered.recent.length);
   const filtered = $derived.by(() => {
     if (lineMode) return [];
     const words = text.split(/\s+/).filter(Boolean);
-    if (!words.length) return level.items;
+    if (!words.length) return [...ordered.recent, ...ordered.rest];
     return level.items
       .map((it) => ({ it, s: words.reduce((acc, w) => (acc && score(it.label, w) ? acc + score(it.label, w) : 0), 1) }))
       .filter((x) => x.s > 0)
@@ -73,10 +99,11 @@
   function exec(it: PaletteItem | undefined) {
     if (!it) return;
     if (it.children) {
-      stack = [...stack, { title: it.label, items: it.children() }];
+      stack = [...stack, { title: it.label, items: it.children(), root: stack.length === 1 ? itemKey(it) : stack[1].root }];
       query = "";
       return;
     }
+    if (root.recentKey) save(root.recentKey, pushRecent(recent, stack.length === 1 ? itemKey(it) : stack[1].root!));
     done = true;
     app.palette = null;
     app.focusCurrent();
@@ -97,8 +124,14 @@
     stack = stack.slice(0, -1);
     query = root.commandline && stack.length === 1 ? ">" : "";
   }
+  function toggleSort() {
+    alpha = !alpha;
+    save(SORT_KEY, alpha ? "alpha" : "default");
+    input.focus();
+  }
   function onkeydown(e: KeyboardEvent) {
-    if (e.key === "ArrowDown") sel = Math.min(sel + 1, filtered.length - 1);
+    if (root.recentKey && e.altKey && e.code === "KeyS") toggleSort();
+    else if (e.key === "ArrowDown") sel = Math.min(sel + 1, filtered.length - 1);
     else if (e.key === "ArrowUp") sel = Math.max(sel - 1, 0);
     else if (e.key === "PageDown") sel = Math.min(sel + 10, filtered.length - 1);
     else if (e.key === "PageUp") sel = Math.max(sel - 10, 0);
@@ -123,12 +156,19 @@
         {stack.slice(1).map((s) => s.title).join(" › ")}
       </div>
     {/if}
-    <input bind:this={input} bind:value={query} {onkeydown} placeholder={root.placeholder} spellcheck="false" />
+    <div class="bar">
+      <input bind:this={input} bind:value={query} {onkeydown} placeholder={root.placeholder} spellcheck="false" />
+      {#if root.recentKey && !lineMode}
+        <button class="sort" class:on={alpha} onclick={toggleSort} title="Sort alphabetically (Alt+S)">A–Z</button>
+      {/if}
+    </div>
     <ul>
       {#if lineMode}
         <li class="empty">{query.trim() ? `Enter: run "${query.trim()}"` : "Type a command line: new-tab -p shell ; split-pane -V -p python"}</li>
       {:else}
         {#each filtered as it, i ((it.id ?? it.label) + i)}
+          {#if recentCount && i === 0}<li class="group">Recently used</li>{/if}
+          {#if recentCount && i === recentCount}<li class="group">{alpha ? "All commands (A–Z)" : "All commands"}</li>{/if}
           <li class:sel={i === sel} use:scrollIntoView={i === sel}>
             <button onclick={() => exec(it)} onmousemove={() => (sel = i)}>
               {#if it.icon}<span class="icon"><ProfileIcon icon={it.icon} /></span>{/if}
@@ -176,13 +216,39 @@
     transform: rotate(90deg);
     padding: 2px;
   }
+  .bar {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .bar .sort {
+    width: auto;
+    margin-right: 8px;
+    padding: 3px 7px;
+    color: var(--muted);
+    font-size: 11px;
+    border: 1px solid transparent;
+  }
+  .bar .sort:hover {
+    background: var(--hover);
+  }
+  .bar .sort.on {
+    color: var(--fg);
+    border-color: var(--border);
+    background: var(--hover);
+  }
+  .group {
+    padding: 6px 10px 2px;
+    color: var(--muted);
+    font-size: 11px;
+  }
   input {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     box-sizing: border-box;
     padding: 12px 14px;
     background: transparent;
     border: none;
-    border-bottom: 1px solid var(--border);
     color: var(--fg);
     font: inherit;
     font-size: 14px;

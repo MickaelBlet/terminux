@@ -25,6 +25,8 @@ export interface PaletteView {
   commandline?: (text: string) => void;
   /** Initial query. */
   query?: string;
+  /** localStorage key: remember picked top-level entries, show them first, allow A→Z sort. */
+  recentKey?: string;
 }
 
 export interface MenuItem {

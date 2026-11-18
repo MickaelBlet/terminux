@@ -24,6 +24,8 @@ The palette opens with a `>` already typed in the input. In this mode you type t
 - The right side of each row shows the **key binding** currently bound to it (from the defaults and your [`[keys]`](../reference/configuration.md#keys) / `keys` of actions).
 - Some commands are hidden because they have a dedicated entry or are only meant for keys: `command_palette`, `switch_to_last_tab`, `switch_to_tab_1..8`, `new_tab_profile_1..9`, `move_pane_to_tab_1..9`, `show_context_menu`.
 - Run an item with `Enter` or a click. The palette closes and focus returns to the terminal.
+- **Recently used**: with an empty filter, the last 8 entries you ran are listed first under "Recently used" (most recent on top), then "All commands". Picking an item in a nested menu records its top-level entry (for example **New tab…**). The history is kept per machine, across restarts.
+- **Sort A–Z**: the `A–Z` button at the right of the input (or `Alt+S`) sorts "All commands" and nested lists alphabetically. The choice is remembered. While you type, rows are always ranked by match quality.
 
 Every row is a command documented in [actions](../reference/actions.md).
 
@@ -127,6 +129,7 @@ input = "make deploy ENV=staging"
 | `Up` / `Down` | previous / next row |
 | `PgUp` / `PgDn` | 10 rows up / down |
 | `Enter` | run, open the nested list, or run the typed command line |
+| `Alt+S` | toggle alphabetical sort (command palette) |
 | `Escape` | up one level, or close |
 | `Backspace` (empty input, nested) | up one level |
 

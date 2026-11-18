@@ -511,14 +511,16 @@ export class App {
   /** Ctrl+click on a file path, per `file_link_open`. A file on the pane's ssh host is copied with scp and always opens in the built-in editor (saving uploads it back). */
   private async openFile(from: string, path: string, line?: number, col?: number, remote = false) {
     const mode = norm(this.config.file_link_open) || "builtin";
+    // Built-in editor as a split next to the clicked pane, else in its own tab.
+    const beside = mode === "builtinpane" ? from : undefined;
     try {
       if (remote) {
         const s = sessions.get(from);
         if (!s) return;
         const { local, label } = await s.fetchRemoteFile(path);
-        return this.openFileBuiltin(local, line, col, label);
+        return this.openFileBuiltin(local, line, col, label, beside);
       }
-      if (mode === "builtin") return this.openFileBuiltin(path, line, col);
+      if (mode === "builtin" || mode === "builtinpane") return this.openFileBuiltin(path, line, col, undefined, beside);
       const terminal = mode === "tab" || mode === "pane";
       const commandline = await invoke<string | null>("open_in_editor", { path, line, col, terminal });
       if (!commandline) return;
@@ -532,8 +534,8 @@ export class App {
     }
   }
 
-  /** Built-in editor in its own tab; a file already open is focused at the line. */
-  private openFileBuiltin(file: string, line?: number, col?: number, remoteLabel?: string) {
+  /** Built-in editor in its own tab, or split next to pane `beside`; a file already open is focused at the line. */
+  private openFileBuiltin(file: string, line?: number, col?: number, remoteLabel?: string, beside?: string) {
     const same = Object.values(this.panes).find((p) => p.kind === "file" && p.spec.file === file && this.tabOf(p.id));
     if (same) {
       this.focusPane(same.id);
@@ -541,6 +543,14 @@ export class App {
       return;
     }
     const id = this.addPaneInfo("file", clean({ profileId: this.config.default_profile, file, line, col, remoteLabel })).id;
+    const host = beside ? this.tabOf(beside) : undefined;
+    if (host && beside) {
+      const { dir, before } = this.splitSide("auto", beside);
+      host.zoom = null;
+      host.root = tree.split(host.root, beside, dir, id, { before });
+      this.focusPane(id);
+      return;
+    }
     this.insertTab({
       id: tree.newId("t"), kind: "term", root: tree.pane(id), active: id, zoom: null,
       name: null, color: null, broadcast: false, mru: [id], group: null,
