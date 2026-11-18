@@ -5,7 +5,7 @@ import { getCurrentWindow, UserAttentionType } from "@tauri-apps/api/window";
 import { readText, writeHtml, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ACTIONS, GLOBAL_COMMANDS, type ActionContext } from "./actions";
+import { ACTIONS, GLOBAL_COMMANDS, PANE_COMMANDS, type ActionContext } from "./actions";
 import { playBell } from "./audio";
 import { COMMANDS, commandName, parseUserActions, type ActionSpec, type UserAction } from "./commands";
 import { DEFAULT_SEARCH_URL, FALLBACK_CONFIG, findProfile, visibleProfiles, type Config, type UiTheme } from "./config";
@@ -1553,8 +1553,10 @@ export class App {
     }
     const spec = this.keymap.match(e);
     if (!spec) return;
-    // Where text is being edited only window-level commands stay global.
-    if (text && !GLOBAL_COMMANDS.has(spec.command)) return;
+    // Where text is being edited only window-level commands stay global,
+    // plus pane layout commands inside a pane (file editor, settings, search bar).
+    const inPane = this.tab?.kind === "term" && !this.overlayOpen() && e.target instanceof Element && !!e.target.closest("[data-pane-id]");
+    if (text && !GLOBAL_COMMANDS.has(spec.command) && !(inPane && PANE_COMMANDS.has(spec.command))) return;
     if (this.run(spec, { event: e }) !== false) {
       this.menu = null;
       e.preventDefault();

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `file_link_open = "builtin_pane"`: Ctrl+clicked file paths (SSH ones too) open in the built-in editor as a split next to the clicked pane
 - Built-in file editor: Markdown highlighting (with highlighted fenced code blocks), PHP, and ~30 more languages (Scala, Dart, R, Julia, Erlang, Clojure, OCaml, F#, LaTeX, Protobuf, Gherkin, Jinja…)
 - Middle-click on a pane title bar closes the pane
+- Built-in file editor: Ctrl+Q closes it (asks first if there are unsaved changes)
 
 ### Changed
 
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Pane drop zone hint no longer clipped under the pane border on its right / bottom edge
+- Pane keys (zoom, move focus, split, resize, swap…) now also work while the built-in file editor or settings pane has the focus
 - Windows: saving a file from a WSL share (`\\wsl.localhost\...`) in the built-in editor failed with "path not found" (`UNC\...` path)
 
 ## [0.1.6] - 2026-11-18

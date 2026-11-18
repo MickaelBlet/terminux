@@ -114,6 +114,7 @@
             font.of(fontTheme(app.config, app.editorFontSize)),
             keymap.of([
               { key: "Mod-s", run: () => (save(), true) },
+              { key: "Ctrl-q", run: () => (app.closePane(paneId), true) },
               ...closeBracketsKeymap,
               ...defaultKeymap,
               ...searchKeymap,
@@ -160,7 +161,7 @@
   <footer>
     <span class="file" title={info?.spec.remoteLabel ?? path}>{info?.spec.remoteLabel || path || info?.spec.file}{info?.dirty ? " ●" : ""}</span>
     {#if status}<span class:err={statusError}>{status}</span>{/if}
-    <span class="hint">Ctrl+S save · Ctrl+F find</span>
+    <span class="hint">Ctrl+S save · Ctrl+F find · Ctrl+Q close</span>
     <button title="Reload from disk" onclick={reload}>Reload</button>
   </footer>
 </div>

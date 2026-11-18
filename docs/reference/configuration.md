@@ -578,7 +578,7 @@ file_link_editor = "code --goto {file}:{line}:{col}"
 
 Where Ctrl+clicked file paths open:
 
-- `"builtin"`: Terminux's own editor in a new tab (syntax highlighting, Ctrl+S save, Ctrl+F find, Reload). Clicking a file already open focuses its tab at the line. Text files up to 8 MiB (UTF-8); only files opened this way can be saved.
+- `"builtin"`: Terminux's own editor in a new tab (syntax highlighting, Ctrl+S save, Ctrl+F find, Ctrl+Q close, Reload). Clicking a file already open focuses its tab at the line. Text files up to 8 MiB (UTF-8); only files opened this way can be saved.
 - `"builtin_pane"`: the same editor as a split next to the clicked pane (direction leaving the most room).
 
 - `"external"`: [`file_link_editor`](#file_link_editor) launched detached (fallback: `$VISUAL` / `$EDITOR` in a new tab, Notepad on Windows).

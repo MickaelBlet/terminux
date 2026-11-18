@@ -28,6 +28,12 @@ export const GLOBAL_COMMANDS = new Set([
   "quake_mode", "global_summon", "minimize_to_tray", "identify_window", "identify_windows", "customize_toolbar",
 ]);
 
+/** Pane layout commands, also run while a text field inside a pane has the focus. */
+export const PANE_COMMANDS = new Set([
+  "split_pane", "toggle_pane_zoom", "move_focus", "swap_pane", "resize_pane", "move_pane", "close_other_panes",
+  "toggle_split_orientation", "equalize_panes", "open_pane_renamer", "rename_pane",
+]);
+
 const term = (app: App) => (app.tab?.kind === "term" ? app.session : undefined);
 
 /** Run with the active terminal, or report "not handled". */
