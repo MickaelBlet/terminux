@@ -63,7 +63,7 @@ emoji_font = "Segoe UI Emoji"
 
 ### scrollback
 
-**Type:** integer (lines) | **Default:** `10000` (the generated `config.toml` sets `100000`) | **Windows Terminal:** `historySize`
+**Type:** integer (lines) | **Default:** `100000` | **Windows Terminal:** `historySize`
 
 Scrollback lines per terminal. `history_size` of the profile / `[defaults]` takes precedence.
 
@@ -230,7 +230,7 @@ show_zoom_badge = true
 
 ### show_pane_title_bar
 
-**Type:** string | **Default:** `"never"`
+**Type:** string | **Default:** `"multiple"`
 
 Title bar above each pane: profile icon, title, read-only flag, zoom and close buttons. Double-click the title to rename the pane ([`open_pane_renamer`](actions.md#open_pane_renamer)); the name is kept across session restore and pane moves.
 

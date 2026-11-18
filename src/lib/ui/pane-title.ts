@@ -2,11 +2,11 @@
 
 export type PaneTitleBarMode = "never" | "multiple" | "always";
 
-/** Config value → mode (booleans accepted: true = always, false = never). */
+/** Config value → mode (booleans accepted: true = always, false = never). Default: multiple. */
 export function paneTitleBarMode(v: unknown): PaneTitleBarMode {
   if (v === true || v === "always" || v === "true") return "always";
-  if (v === "multiple") return "multiple";
-  return "never";
+  if (v === false || v === "never" || v === "false") return "never";
+  return "multiple";
 }
 
 /** "multiple": only while several panes are visible (tab split and not zoomed). */

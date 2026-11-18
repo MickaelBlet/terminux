@@ -260,6 +260,7 @@ export const DEFAULT_THEME: ITheme = {
   cursor: "#34d399",
   cursorAccent: "#14161b",
   selectionBackground: "#3a4256",
+  selectionForeground: "#ffffff",
   black: "#1d2027",
   red: "#e06c75",
   green: "#98c379",
@@ -281,7 +282,7 @@ export const DEFAULT_THEME: ITheme = {
 export const FALLBACK_CONFIG: Config = {
   default_profile: "shell",
   font_size: 14,
-  scrollback: 10000,
+  scrollback: 100000,
   notifications: true,
   copy_on_select: false,
   copy_feedback: true,

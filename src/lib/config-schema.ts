@@ -92,7 +92,7 @@ const APPEARANCE_FIELDS: Record<string, Field> = {
   selection_background: str("Selection color override."),
   cursor_color: str("Cursor color override."),
   cursor_shape: str("Cursor shape.", ["bar", "vintage", "underscore", "filled_box", "empty_box", "double_underscore"]),
-  cursor_height: num("Vintage cursor height (1-100)."),
+  cursor_height: num("Accepted for Windows Terminal compatibility; ignored."),
   opacity: num("Background opacity, 0-100."),
   use_acrylic: bool("Blurred transparency (Windows / macOS)."),
   background_image: str("Background image path (relative to the config directory)."),

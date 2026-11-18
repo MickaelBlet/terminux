@@ -238,7 +238,7 @@ cursor_shape = "bar"
 
 **Type:** number | **Default:** unset | **Windows Terminal:** `cursorHeight`
 
-Height of the vintage cursor (1-100). Accepted for compatibility but **not applied** by Terminux at present (the shapes above have fixed sizes).
+Height of the vintage cursor in Windows Terminal. Accepted for compatibility but **ignored**: the terminal engine draws a fixed-size underline.
 
 ```toml
 cursor_height = 25
@@ -437,7 +437,7 @@ tab_color = "#34d399"
 
 ### history_size
 
-**Type:** integer (lines) | **Default:** `10000` (global `scrollback`) | **Windows Terminal:** `historySize`
+**Type:** integer (lines) | **Default:** `100000` (global `scrollback`) | **Windows Terminal:** `historySize`
 
 Scrollback lines for this profile. Takes precedence over the global `scrollback`.
 

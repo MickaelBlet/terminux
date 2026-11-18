@@ -128,10 +128,10 @@ toggle_pane_zoom = "Ctrl+Shift+Z"
 
 ## Pane title bar
 
-Set [`show_pane_title_bar`](../reference/configuration.md#show_pane_title_bar) to `"multiple"` (split tabs only) or `"always"` to show a bar above each pane with its icon, title, a zoom button and a close button. Double-click the title (or run **Rename pane…**) to name the pane; **Reset pane title** goes back to the automatic title.
+By default a split tab shows a bar above each pane with its icon, title, a zoom button and a close button ([`show_pane_title_bar`](../reference/configuration.md#show_pane_title_bar) = `"multiple"`). Set it to `"always"` to show it on single panes too, or `"never"` to hide it. Double-click the title (or run **Rename pane…**) to name the pane; **Reset pane title** goes back to the automatic title.
 
 ```toml
-show_pane_title_bar = "multiple"
+show_pane_title_bar = "always"
 ```
 
 ## Selecting a whole group: parent and child

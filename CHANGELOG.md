@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `customize_toolbar` opens Settings → Toolbar instead of the palette editor
 - Default `config.toml` lists every setting: UI themes, new tab menu, all key bindings with their defaults, full scheme / color overrides
 - Config and file editors: find / replace panel styled like the terminal search bar (match count, case / word / regex toggles, Ctrl+H for replace)
+- Defaults now match the commented values in the default `config.toml`: `scrollback` / `history_size` 100000 (was 10000), `show_pane_title_bar = "multiple"` (was `"never"`), Terminux scheme `selection_foreground = "#ffffff"`
+- `cursor_height` removed from the default config and settings UI (accepted but ignored: the terminal engine draws a fixed-size underline)
 - `open_snippets_pane` renamed `toggle_snippets_pane` (old name still accepted): a tab has at most one snippets pane, running the action again closes it; it opens at 20% width (`size` overrides) and has a close button in its header
 
 ### Fixed
@@ -36,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The webview's native context menu no longer appears on right-click (still available in text fields)
 - Maximized / fullscreen windows: no frame, and a pointer at the screen's top edge hits the tabs
 - Vertical tabs: a pointer at the screen's side edge hits the tabs (maximized / fullscreen)
-- Default `config.toml`: wrong default key bindings in comments
+- Default `config.toml`: wrong default key bindings in comments, wrong default `font_family` stack in comments
 - Windows: holding Ctrl+Plus / Ctrl+Minus (font zoom) no longer crashes the app (zoom steps coalesced per frame, pty resizes debounced and run off the main thread)
 
 ## [0.1.5] - 2026-11-16

@@ -196,7 +196,7 @@ query_url = "https://docs.rs/releases/search?query=%s"
 
 ## Scrollback size
 
-The number of lines kept per pane is `history_size` (a profile / `[defaults]` setting) or, as a root fallback, `scrollback`. The shipped config sets `scrollback = 100000`. A larger value uses more memory; session restore and moving a pane to another window keep up to 5000 lines of it.
+The number of lines kept per pane is `history_size` (a profile / `[defaults]` setting) or, as a root fallback, `scrollback`. The default is 100000 lines. A larger value uses more memory; session restore and moving a pane to another window keep up to 5000 lines of it.
 
 ```toml
 [defaults]

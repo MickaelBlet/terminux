@@ -154,7 +154,7 @@ Zoom is one global offset (from -8 to +40 px) added to every pane's size, in eve
 | [`cursor_shape`](../reference/profile-settings.md#cursor_shape) | `bar`, `vintage`, `underscore`, `filled_box` (default), `empty_box`, `double_underscore` |
 | [`cursor_color`](../reference/profile-settings.md#cursor_color) | Color; default comes from the scheme |
 
-The terminal engine has three cursor styles, so shapes map as: `bar` is a bar, `vintage`, `underscore` and `double_underscore` are an underline, `filled_box` and `empty_box` are a block. The cursor blinks. `cursor_height` is accepted for Windows Terminal compatibility but not applied. <!-- TODO verify: cursor_height has no effect in appearance.ts (cursorWidth is fixed at 2) -->
+The terminal engine has three cursor styles, so shapes map as: `bar` is a bar, `vintage`, `underscore` and `double_underscore` are an underline, `filled_box` and `empty_box` are a block. The cursor blinks. `cursor_height` is accepted for Windows Terminal compatibility but not applied.
 
 ## Padding and scrollbar
 

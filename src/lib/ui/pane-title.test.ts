@@ -3,12 +3,13 @@ import { paneTitleBarMode, showPaneTitleBar } from "./pane-title";
 
 describe("pane title bar", () => {
   it("parses the mode", () => {
-    expect(paneTitleBarMode(undefined)).toBe("never");
+    expect(paneTitleBarMode(undefined)).toBe("multiple");
     expect(paneTitleBarMode(false)).toBe("never");
     expect(paneTitleBarMode(true)).toBe("always");
     expect(paneTitleBarMode("always")).toBe("always");
     expect(paneTitleBarMode("multiple")).toBe("multiple");
-    expect(paneTitleBarMode("bogus")).toBe("never");
+    expect(paneTitleBarMode("never")).toBe("never");
+    expect(paneTitleBarMode("bogus")).toBe("multiple");
   });
   it("decides visibility", () => {
     expect(showPaneTitleBar("never", 3, false)).toBe(false);

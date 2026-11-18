@@ -53,7 +53,7 @@ fn default_font_size() -> f32 {
     14.0
 }
 fn default_scrollback() -> u32 {
-    10_000
+    100_000
 }
 fn default_true() -> bool {
     true

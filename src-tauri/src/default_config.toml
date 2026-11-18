@@ -4,14 +4,14 @@
 # TOML rule: global keys must come before the first [table] header.
 
 default_profile = "shell"
-font_size = 14
-# font_family = "'JetBrains Mono', 'Symbols Nerd Font Mono', 'Noto Sans Symbols 2', 'Noto Sans Math', monospace"
+# font_size = 14
+# font_family = "'JetBrains Mono', 'Symbols Nerd Font Mono', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', 'Noto Sans Symbols 2', 'Noto Sans Symbols', 'Noto Sans Math', monospace"
 # Color emoji font, tried before the bundled Twemoji (default: the system one: Segoe UI Emoji / Apple Color Emoji / Noto Color Emoji).
 # emoji_font = "Segoe UI Emoji"
-scrollback = 100000
+# scrollback = 100000
 # renderer = "canvas"   # "webgl" | "canvas" | "dom" (default: canvas on Linux, webgl elsewhere)
 # Notify (desktop) on OSC 9 / OSC 777 or bell when the window is not focused.
-notifications = true
+# notifications = true
 # screen_reader = false          # accessible text buffer for screen readers
 
 # --- Appearance ---
@@ -21,11 +21,11 @@ notifications = true
 # tab_position = "top"           # "top" | "left" | "right" (vertical tabs)
 # vertical_tab_width = 200       # initial width of the vertical tab panel (px, 120-480)
 # vertical_tabs_collapsed = false
-# new_tab_position = "after_last_tab"   # or "after_current_tab"
-# tab_switcher_mode = "in_order" # "mru" | "in_order" | "disabled" (Ctrl+Tab overlay)
+# new_tab_position = "after_last_tab"  # or "after_current_tab"
+# tab_switcher_mode = "in_order"       # "mru" | "in_order" | "disabled" (Ctrl+Tab overlay)
 # show_tabs_fullscreen = false
-# show_zoom_badge = true         # ZOOM badge on a zoomed pane
-# show_pane_title_bar = "never"  # "never" | "multiple" (split tabs only) | "always"
+# show_zoom_badge = true            # ZOOM badge on a zoomed pane
+# show_pane_title_bar = "multiple"  # "never" | "multiple" (split tabs only) | "always"
 # show_terminal_title_in_titlebar = true
 # Title-bar buttons: command names, [[action]] ids or "separator". Toolbar edits in the UI (right-click, drag) are saved here.
 # toolbar = ["duplicate_pane_right", "duplicate_pane_down", "toggle_pane_zoom", "find", "separator", "open_settings"]
@@ -59,8 +59,8 @@ copy_on_select = false
 # trim_block_selection = true
 # trim_paste = true
 # Paste the clipboard on middle / right click (Shift+click when an app grabs the mouse).
-middle_click_paste = true
-right_click_paste = true
+# middle_click_paste = true
+# right_click_paste = true
 # right_click_context_menu = false   # right click opens the menu instead of pasting
 # Characters that delimit a word on double-click selection (alias: word_delimiters).
 # word_separators = " ()[]{}',\"`"
@@ -86,7 +86,6 @@ right_click_paste = true
 #   weight: "thin" | "extra-light" | "light" | "semi-light" | "normal" | "medium" | "semi-bold" | "bold" | "extra-bold" | "black" | "extra-black"
 #   features: OpenType features, e.g. { ss01 = 1, liga = 0 }; axes: variable axes, e.g. { wght = 450 } (DOM renderer)
 # cursor_shape = "filled_box"    # "bar" | "vintage" | "underscore" | "filled_box" | "empty_box" | "double_underscore"
-# cursor_height = 25             # vintage cursor height (1-100)
 # cursor_color = "#34d399"
 # foreground = "#d6d9e0"
 # background = "#14161b"
@@ -103,7 +102,7 @@ right_click_paste = true
 # background_image_opacity = 1.0 # 0-1
 # retro_terminal_effect = false
 # unfocused_appearance = { opacity = 90 }   # appearance keys only (color_scheme, colors, cursor, opacity, background image...)
-# history_size = 10000
+# history_size = 100000
 # snap_on_input = true
 # close_on_exit = "automatic"    # "automatic" | "graceful" | "always" | "never"
 # startup_timeout = 15           # restart a new shell silent for this many seconds (0 = off)
@@ -144,7 +143,6 @@ right_click_paste = true
 # color_scheme = "One Half Dark" # or { light = "One Half Light", dark = "One Half Dark" }
 # font = { face = "JetBrains Mono", size = 14, weight = "normal", cell_height = 1.0, cell_width = 0, ligatures = false, features = { ss01 = 1 }, axes = { wght = 450 } }
 # cursor_shape = "bar"
-# cursor_height = 25
 # cursor_color = "#34d399"
 # foreground = "#d6d9e0"
 # background = "#14161b"
@@ -161,7 +159,7 @@ right_click_paste = true
 # background_image_opacity = 1.0
 # retro_terminal_effect = false
 # unfocused_appearance = { opacity = 90 }
-# history_size = 10000
+# history_size = 100000
 # snap_on_input = true
 # close_on_exit = "automatic"
 # startup_timeout = 15

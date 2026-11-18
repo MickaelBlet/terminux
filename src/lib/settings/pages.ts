@@ -31,7 +31,7 @@ export function rootGroups(): Group[] {
 
 const PROFILE_GENERAL = ["name", "id", "commandline", "cmd", "args", "cwd", "login_shell", "env", "os", "hidden", "icon", "tab_title", "suppress_application_title", "tab_color"];
 const PROFILE_APPEARANCE = [
-  "color_scheme", "font", "foreground", "background", "selection_background", "cursor_shape", "cursor_height", "cursor_color",
+  "color_scheme", "font", "foreground", "background", "selection_background", "cursor_shape", "cursor_color",
   "opacity", "use_acrylic", "padding", "scrollbar_state", "intense_text_style", "adjust_indistinguishable_colors",
   "background_image", "background_image_stretch_mode", "background_image_alignment", "background_image_opacity",
   "retro_terminal_effect", "unfocused_appearance",

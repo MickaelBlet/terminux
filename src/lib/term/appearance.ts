@@ -265,7 +265,7 @@ export function resolve(cfg: Config, spec: PaneSpec, env: ResolveEnv): Resolved 
     cursorWidth: 2,
     boldIsBright: intense === "bright" || intense === "all",
     minimumContrastRatio: contrast === "always" ? 4.5 : contrast === "indexed" ? 3 : 1,
-    scrollback: Math.max(0, s.history_size ?? cfg.scrollback ?? 10000),
+    scrollback: Math.max(0, s.history_size ?? cfg.scrollback ?? 100000),
     snapOnInput: s.snap_on_input ?? true,
     padding: parsePadding(s.padding, [6, 4, 2, 2]),
     scrollbar: norm(s.scrollbar_state) === "hidden" ? "hidden" : "visible",
