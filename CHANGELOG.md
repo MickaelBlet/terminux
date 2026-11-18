@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Snippets pane now refreshes when `send_input` actions are added or changed in the config (no reopen needed)
+- SSH panes launched with a remote shell command (e.g. `ssh -t host /path/zsh`) are detected as ssh: Ctrl+click copies files with scp, and split/reconnect keep that shell
 
 ## [0.1.7] - 2026-11-18
 

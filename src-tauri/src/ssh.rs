@@ -10,6 +10,8 @@ pub struct SshTarget {
     pub dest: String,
     /// Connection options as `(flag, value)`; `value` is empty for boolean flags.
     pub opts: Vec<(char, String)>,
+    /// Remote command starting the shell (`ssh -t host /path/zsh`); `None` for the login shell.
+    pub shell: Option<String>,
 }
 
 /// ssh flags taking a value.
@@ -34,14 +36,17 @@ pub fn parse_ssh_argv(argv: &[String]) -> Option<SshTarget> {
     }
     let mut opts = Vec::new();
     let mut dest = None;
+    let mut shell = None;
     let mut it = args.iter();
     while let Some(a) = it.next() {
         if dest.is_some() {
-            // A remote command: only the one `follow_argv` adds keeps a shell.
-            if is_follow_command(a) && it.len() == 0 {
-                break;
-            }
-            return None;
+            // A remote command: only an interactive shell, or the one `follow_argv` adds, keeps one.
+            let rest: Vec<&str> = std::iter::once(a.as_str()).chain(it.map(String::as_str)).collect();
+            shell = Some(match follow_shell(&rest) {
+                Some(s) => s,
+                None => Some(shell_command(&rest)?),
+            });
+            break;
         }
         if a == "--" {
             dest = Some(it.next()?.clone());
@@ -69,14 +74,34 @@ pub fn parse_ssh_argv(argv: &[String]) -> Option<SshTarget> {
         }
     }
     let dest = dest.filter(|d| !d.is_empty() && !d.starts_with('-'))?;
-    Some(SshTarget { program: program.clone(), dest, opts })
+    Some(SshTarget { program: program.clone(), dest, opts, shell: shell.flatten() })
 }
 
-/// End of the remote command added by `follow_argv`.
-const FOLLOW_TAIL: &str = r#" 2>/dev/null; exec "${SHELL:-sh}" -l"#;
+/// Remote shells accepted as an ssh remote command.
+const SHELLS: &[&str] = &["sh", "bash", "zsh", "fish", "ksh", "mksh", "dash", "ash", "tcsh", "csh", "nu", "elvish", "xonsh", "pwsh"];
 
-fn is_follow_command(cmd: &str) -> bool {
-    cmd.starts_with("cd -- ") && cmd.ends_with(FOLLOW_TAIL)
+/// `words` (an ssh remote command) joined, if it only starts an interactive shell.
+fn shell_command(words: &[&str]) -> Option<String> {
+    let safe = |w: &str| !w.is_empty() && w.chars().all(|c| c.is_ascii_alphanumeric() || "_./~+-=".contains(c));
+    let (first, args) = words.split_first()?;
+    let name = first.rsplit('/').next()?;
+    let flags_ok = args.iter().all(|a| a.starts_with('-') && safe(a));
+    (safe(first) && !first.starts_with('-') && SHELLS.contains(&name) && flags_ok).then(|| words.join(" "))
+}
+
+/// End of the remote command added by `follow_argv`, before the shell.
+const FOLLOW_EXEC: &str = " 2>/dev/null; exec ";
+/// Login shell started by `follow_argv`.
+const LOGIN_SHELL: &str = r#""${SHELL:-sh}" -l"#;
+
+/// The shell of a remote command added by `follow_argv` (`Some(None)`: the login shell).
+fn follow_shell(words: &[&str]) -> Option<Option<String>> {
+    let [cmd] = words else { return None };
+    let (_, sh) = cmd.strip_prefix("cd -- ")?.rsplit_once(FOLLOW_EXEC)?;
+    if sh == LOGIN_SHELL {
+        return Some(None);
+    }
+    Some(Some(shell_command(&sh.split(' ').collect::<Vec<_>>())?))
 }
 
 /// Quote one argument for the remote POSIX shell.
@@ -94,13 +119,15 @@ pub fn follow_argv(t: &SshTarget, dir: Option<&str>) -> Vec<String> {
         }
     }
     let dir = dir.filter(|d| !d.is_empty());
-    if dir.is_some() {
+    if dir.is_some() || t.shell.is_some() {
         argv.push("-t".into());
     }
     argv.push("--".into());
     argv.push(t.dest.clone());
-    if let Some(dir) = dir {
-        argv.push(format!("cd -- {}{FOLLOW_TAIL}", sh_quote(dir)));
+    let shell = t.shell.as_deref().unwrap_or(LOGIN_SHELL);
+    match dir {
+        Some(dir) => argv.push(format!("cd -- {}{FOLLOW_EXEC}{shell}", sh_quote(dir))),
+        None => argv.extend(t.shell.clone()),
     }
     argv
 }
@@ -155,7 +182,7 @@ mod tests {
     #[test]
     fn parses_destinations() {
         let t = parse_ssh_argv(&argv("ssh web")).unwrap();
-        assert_eq!(t, SshTarget { program: "ssh".into(), dest: "web".into(), opts: vec![] });
+        assert_eq!(t, SshTarget { program: "ssh".into(), dest: "web".into(), opts: vec![], shell: None });
         assert_eq!(parse_ssh_argv(&argv(r"C:\Windows\System32\OpenSSH\ssh.exe h")).unwrap().program, r"C:\Windows\System32\OpenSSH\ssh.exe");
         let t = parse_ssh_argv(&argv("/usr/bin/ssh -p 2222 -l bob -oUser=x -4A host")).unwrap();
         assert_eq!(t.dest, "host");
@@ -170,7 +197,7 @@ mod tests {
 
     #[test]
     fn rejects_non_interactive() {
-        for s in ["ssh h ls", "ssh -N h", "ssh -W x:1 h", "ssh -p", "ssh", "bash", "ssh -O check h"] {
+        for s in ["ssh h ls", "ssh h zsh;x", "ssh h zsh -c x", "ssh h -zsh", "ssh -N h", "ssh -W x:1 h", "ssh -p", "ssh", "bash", "ssh -O check h"] {
             assert!(parse_ssh_argv(&argv(s)).is_none(), "{s}");
         }
     }
@@ -195,6 +222,18 @@ mod tests {
     }
 
     #[test]
+    fn remote_shell_command() {
+        let t = parse_ssh_argv(&argv("ssh.exe -t u@h /home/u/.local/bin/zsh")).unwrap();
+        assert_eq!((t.dest.as_str(), t.shell.as_deref()), ("u@h", Some("/home/u/.local/bin/zsh")));
+        assert_eq!(parse_ssh_argv(&argv("ssh h bash -l")).unwrap().shell.as_deref(), Some("bash -l"));
+        assert_eq!(follow_argv(&t, None), ["ssh.exe", "-t", "--", "u@h", "/home/u/.local/bin/zsh"]);
+        let back = follow_argv(&t, Some("/d"));
+        assert_eq!(back[4], "cd -- '/d' 2>/dev/null; exec /home/u/.local/bin/zsh");
+        assert_eq!(parse_ssh_argv(&back).unwrap(), t);
+        assert_eq!(parse_ssh_argv(&follow_argv(&t, None)).unwrap(), t);
+    }
+
+    #[test]
     fn scp_mapping() {
         let t = parse_ssh_argv(&argv("ssh -p 2 -l u -S /s -i k h")).unwrap();
         assert_eq!(
@@ -204,7 +243,7 @@ mod tests {
         let up = scp_args(&t, "~/x", "/l", true).unwrap();
         assert_eq!(up[up.len() - 2..], ["/l", "h:~/x"]);
         assert!(scp_args(&t, "-oProxyCommand=x", "/l", false).is_err());
-        let v6 = SshTarget { program: "ssh".into(), dest: "u@::1".into(), opts: vec![] };
+        let v6 = SshTarget { program: "ssh".into(), dest: "u@::1".into(), opts: vec![], shell: None };
         assert_eq!(scp_args(&v6, "/r", "/l", false).unwrap().last().unwrap(), "/l");
         assert!(scp_args(&v6, "/r", "/l", false).unwrap().contains(&"u@[::1]:/r".to_string()));
     }
