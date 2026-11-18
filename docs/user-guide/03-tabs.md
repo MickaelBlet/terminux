@@ -245,12 +245,12 @@ Right-click a tab:
 
 | Group | Items |
 | --- | --- |
-| Tab | Color..., Rename tab, Duplicate tab, Split tab (duplicate pane, direction auto), Move tab to new window |
+| Tab | Show in a pane, Color..., Rename tab, Duplicate tab, Split tab (duplicate pane, direction auto), Move tab to new window |
 | Buffer | Export text..., Find... |
 | Close | Close tabs to the right, Close other tabs, Close tab |
 | Layout | Reopen closed tab, Tab position (Top / Left / Right), Collapse vertical tabs |
 
-Settings tabs only get the Close and Layout groups. Right-clicking empty tab-bar space shows a smaller menu: New tab, New tab with profile, the layout group, Focus mode, Always on top, Fullscreen, Customize toolbar..., Settings and Command palette.
+"Show in a pane" moves the tab's panes (terminal or built-in file editor) beside the active pane of the most recent other terminal tab; dragging the tab onto a pane does the same at the highlighted spot. Settings tabs only get the Close and Layout groups. Right-clicking empty tab-bar space shows a smaller menu: New tab, New tab with profile, the layout group, Focus mode, Always on top, Fullscreen, Customize toolbar..., Settings and Command palette.
 
 ## Tab-related settings
 

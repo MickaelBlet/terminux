@@ -82,14 +82,14 @@ export class TabDrag {
     if (c) notifyTabMotion(c);
   }
 
-  /** Settings tab dragged off the tab strip: show a terminal tab and target its panes. */
+  /** Tab dragged off the tab strip: show a terminal tab and target its panes. */
   private editorDrop(d: DragState, e: PointerEvent) {
     const app = this.app;
     const t = app.tabs[d.from];
-    if (t?.kind !== "config" && t?.kind !== "defaults") return null;
+    if (!app.canDockTab(t)) return null;
     if (document.elementsFromPoint(e.clientX, e.clientY).some((el) => el.closest('[role="tablist"]'))) return null;
     if (app.tab === t) {
-      const host = app.recentTermTab();
+      const host = app.recentTermTab(t);
       if (!host) return null;
       d.shown = t.id;
       app.gotoTab(app.tabs.indexOf(host));
@@ -106,9 +106,10 @@ export class TabDrag {
     const app = this.app;
     const t = app.tabs[d.from];
     if (hint || d.shown) swallowClick(); // the tab under the pointer must not be selected
-    if (hint && (t?.kind === "config" || t?.kind === "defaults")) {
+    if (hint && t && app.canDockTab(t)) {
       const tab = app.tabOf(hint.paneId);
-      if (tab) app.openEditorPane(t.kind, { tab, target: hint.paneId, side: hint.zone });
+      const at = tab && { tab, target: hint.paneId, side: hint.zone };
+      if (at) t.kind === "term" ? app.tabToPane(t, at) : app.openEditorPane(t.kind, at);
       return;
     }
     if (d.shown && t) app.gotoTab(app.tabs.indexOf(t)); // dropped elsewhere: show the settings tab again

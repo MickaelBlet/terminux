@@ -801,9 +801,26 @@ export class App {
     if (focus) this.gotoTab(i);
   }
 
-  /** Most recently used terminal tab. */
-  recentTermTab(): Tab | undefined {
-    return this.tabMru.map((id) => this.tabs.find((t) => t.id === id)).find((t) => t?.kind === "term");
+  /** Most recently used terminal tab, other than `exclude`. */
+  recentTermTab(exclude?: Tab): Tab | undefined {
+    return this.tabMru.map((id) => this.tabs.find((t) => t.id === id)).find((t) => t?.kind === "term" && t !== exclude);
+  }
+
+  /** Tab that can be dropped onto a pane: terminal / file editor tabs and settings editors. */
+  canDockTab(t: Tab | undefined): boolean {
+    return !!t && (t.kind === "term" || isEditorPane(t.kind));
+  }
+
+  /**
+   * Move all panes of the terminal tab `t` into another tab: next to `target` on `side`
+   * (default: beside the active pane of the most recent other terminal tab).
+   */
+  tabToPane(t: Tab, at?: { tab: Tab; target: string; side: Direction | "center" | "auto" }): boolean {
+    if (t.kind !== "term") return false;
+    const host = at?.tab ?? this.recentTermTab(t);
+    if (!host || host === t) return false;
+    const side = at?.side ?? "auto";
+    return this.dockPane(t.root.id, host, at?.target ?? host.active, side === "center" ? "auto" : side);
   }
 
   /** Pane showing the settings editor `kind`, if any. */

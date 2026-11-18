@@ -95,6 +95,7 @@ export function tabMenu(app: App, index: number, x: number, y: number): MenuRequ
   const groups: MenuItem[][] = [];
   if (term) {
     groups.push([
+      { label: "Show in a pane", disabled: !app.recentTermTab(t), run: () => void app.tabToPane(t) },
       { label: "Color…", run: () => (app.colorPicker = { tabId: t.id, x, y }) },
       { label: "Rename tab", hint: app.keymap.hint("open_tab_renamer"), run: () => (app.renaming = t.id) },
       item("Duplicate tab", "duplicate_tab"),

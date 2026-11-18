@@ -163,7 +163,7 @@ With the [pane title bar](#pane-title-bar) shown, drag a pane by its title bar:
 
 `Escape` cancels the drag. Processes keep running.
 
-The settings tab (`config.toml`, or the default settings) can be dragged the same way from the tab bar onto a pane: the last terminal tab is shown while dragging over the content area, and the settings editor docks there as a pane.
+A whole tab (terminal, built-in file editor, or settings) can be dragged the same way from the tab bar onto a pane: the last other terminal tab is shown while dragging over the content area, and the tab's panes dock there (its split layout is kept). Right-click the tab > **Show in a pane** does the same beside the active pane.
 
 ### With the keyboard
 

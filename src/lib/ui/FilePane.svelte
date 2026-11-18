@@ -1,3 +1,8 @@
+<script lang="ts" module>
+  /** Unsaved state of an editor whose pane moved (tab <-> pane): the component remounts. */
+  const drafts = new Map<string, { text: string; saved: string; path: string; head: number }>();
+</script>
+
 <script lang="ts">
   // Built-in file editor (Ctrl+click on a file path, file_link_open = "builtin").
   import { onMount } from "svelte";
@@ -113,9 +118,12 @@
 
   onMount(() => {
     let disposed = false;
-    load().then(async (text) => {
+    const draft = drafts.get(paneId);
+    drafts.delete(paneId);
+    const initial = draft ? Promise.resolve((path = draft.path, draft.text)) : load();
+    initial.then(async (text) => {
       if (disposed || text === null) return;
-      saved = text;
+      saved = draft?.saved ?? text;
       view = new EditorView({
         parent: host,
         state: EditorState.create({
@@ -151,7 +159,11 @@
         }),
       });
       app.paneEditors.set(paneId, { focus: () => view?.focus(), goto });
-      goto(info?.spec.line, info?.spec.col);
+      if (draft) {
+        const head = Math.min(draft.head, text.length);
+        view.dispatch({ selection: EditorSelection.cursor(head), effects: EditorView.scrollIntoView(head, { y: "center" }) });
+      }
+      else goto(info?.spec.line, info?.spec.col);
       if (app.tab?.active === paneId) view.focus();
       const lang = langOf(path);
       if (lang) {
@@ -161,6 +173,8 @@
     });
     return () => {
       disposed = true;
+      // Still a pane: it is being moved, keep the edits for the next mount.
+      if (view && app.panes[paneId]?.dirty) drafts.set(paneId, { text: view.state.doc.toString(), saved, path, head: view.state.selection.main.head });
       app.paneEditors.delete(paneId);
       view?.destroy();
     };

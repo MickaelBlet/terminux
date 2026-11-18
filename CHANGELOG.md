@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Terminal and built-in file editor tabs can be moved into a pane of another tab: drag the tab onto a pane or right-click the tab > Show in a pane (unsaved editor edits follow)
+
 ## [0.1.6] - 2026-11-18
 
 ### Added
