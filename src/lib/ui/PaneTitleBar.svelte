@@ -5,6 +5,7 @@
   import Icon from "./Icon.svelte";
   import ProfileIcon from "./ProfileIcon.svelte";
   import { paneDrag } from "./pane-drag.svelte";
+  import { paneHeaderMenu } from "./menus";
 
   let { paneId, tab }: { paneId: string; tab: Tab } = $props();
 
@@ -44,7 +45,14 @@
     e.preventDefault();
     setTimeout(() => app.closePane(paneId));
   }}
-  title="Drag to move the pane, double-click to rename, middle-click to close"
+  oncontextmenu={(e) => {
+    if ((e.target as Element).closest("input")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    app.focusPane(paneId);
+    app.menu = paneHeaderMenu(app, e.clientX, e.clientY);
+  }}
+  title="Drag to move the pane, right-click for move options, double-click to rename, middle-click to close"
   role="presentation"
 >
   {#if p?.bell}<span class="bell"><Icon name="bell" size={11} /></span>

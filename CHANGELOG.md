@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Open file…** prompt completes paths while typing (local, or on the ssh host in an ssh pane): ↑/↓ select, Tab accepts the suggestion or the common prefix, Enter on a directory descends into it
+- Right-click a pane title bar to move it (left/right/up/down), swap it, send it to another tab, a new tab or a new window, or zoom/rename/equalize/close
 
 ### Changed
 

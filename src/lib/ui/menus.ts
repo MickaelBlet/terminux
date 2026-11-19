@@ -71,6 +71,51 @@ export function paneMenu(app: App, paneId: string, x: number, y: number): MenuRe
   return { x, y, groups };
 }
 
+/** Right-click on a pane title bar: move / swap / dock elsewhere. */
+export function paneHeaderMenu(app: App, x: number, y: number): MenuRequest {
+  const t = app.tab;
+  const multi = t?.root.kind === "split";
+  const fixed = !multi || !!t?.zoom;
+  const dirs = ["left", "right", "up", "down"] as const;
+  const cap = (d: string) => d[0].toUpperCase() + d.slice(1);
+  const others = app.tabs.map((x, i) => [x, i] as const).filter(([x]) => x !== t && x.kind === "term");
+  const groups: MenuItem[][] = [
+    [
+      {
+        label: "Move pane",
+        icon: "move-right",
+        disabled: fixed,
+        children: [dirs.map((d) => act(app, cap(d), `move_pane_${d}`))],
+      },
+      {
+        label: "Swap pane",
+        icon: "swap",
+        disabled: fixed,
+        children: [
+          dirs.map((d) => act(app, cap(d), `swap_pane_${d}`)),
+          [act(app, "Previous", "swap_pane_previous"), act(app, "Next in order", "swap_pane_next_in_order")],
+        ],
+      },
+      {
+        label: "Move pane to tab",
+        children: [
+          others.map(([x, i]) => act(app, app.tabTitle(x) || `Tab ${i + 1}`, { command: "move_pane", index: i })),
+          [act(app, "New tab", "move_pane_to_new_tab", { disabled: !multi })],
+        ].filter((g) => g.length),
+      },
+      act(app, "Move pane to new window", "move_pane_to_new_window"),
+    ],
+    [
+      act(app, t?.zoom ? "Unzoom pane" : "Zoom pane", "toggle_pane_zoom", { disabled: !multi }),
+      act(app, "Rename pane…", "open_pane_renamer"),
+      act(app, "Toggle split orientation", "toggle_split_orientation", { disabled: !multi }),
+      act(app, "Equalize panes", "equalize_panes", { disabled: fixed }),
+    ],
+    [act(app, "Close other panes", "close_other_panes", { disabled: !multi }), act(app, "Close pane", "close_pane")],
+  ];
+  return { x, y, groups };
+}
+
 /** Tab color presets, grouped by the UI theme they suit best; each group ordered by hue. */
 export const TAB_COLORS_DARK = [
   "#c50f1f", "#e74856", "#d13438", "#ca5010", "#f7630c", "#ffb900", "#c19c00", "#8cbd18",
