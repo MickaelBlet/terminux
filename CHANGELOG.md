@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.8] - 2026-11-19
 
 ### Added
 
@@ -268,7 +268,8 @@ Windows Terminal, in snake_case).
 
 - No equivalent in Tauri / xterm.js: OS default terminal, elevation, jump list, HLSL shaders, ClearType settings, snap to grid on resize, AltGr aliasing, localization
 
-[Unreleased]: https://github.com/MickaelBlet/terminux/compare/v0.1.7...HEAD
+[Unreleased]: https://github.com/MickaelBlet/terminux/compare/v0.1.8...HEAD
+[0.1.8]: https://github.com/MickaelBlet/terminux/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/MickaelBlet/terminux/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/MickaelBlet/terminux/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/MickaelBlet/terminux/compare/v0.1.4...v0.1.5

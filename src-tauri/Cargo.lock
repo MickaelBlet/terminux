@@ -4444,7 +4444,7 @@ dependencies = [
 
 [[package]]
 name = "terminux"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "anyhow",
  "dirs 6.0.0",
