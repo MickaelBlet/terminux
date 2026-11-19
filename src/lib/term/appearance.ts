@@ -30,9 +30,11 @@ export interface PaneSpec {
   remoteLabel?: string;
   line?: number;
   col?: number;
-  /** Runtime overrides (adjust_opacity, toggle_shader_effects). */
+  /** Runtime overrides (adjust_opacity, toggle_shader_effects, adjust_font_size with pane = true). */
   opacity?: number;
   retro?: boolean;
+  /** Pane font zoom (px), added to the window zoom. */
+  fontDelta?: number;
 }
 
 export interface BackgroundImage {
@@ -253,7 +255,7 @@ export function resolve(cfg: Config, spec: PaneSpec, env: ResolveEnv): Resolved 
     backgroundImage,
     retro: spec.retro ?? !!a.retro_terminal_effect,
     fontFamily: fontFamilyOf(cfg, font.face),
-    fontSize: clamp((font.size ?? cfg.font_size ?? 14) + env.fontDelta, 6, 72),
+    fontSize: clamp((font.size ?? cfg.font_size ?? 14) + env.fontDelta + (spec.fontDelta ?? 0), 6, 72),
     fontWeight: weight,
     fontWeightBold: boldIsBold ? Math.max(700, weight) : weight,
     lineHeight: clamp(font.cell_height ?? 1, 0.8, 3),

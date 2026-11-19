@@ -522,7 +522,7 @@ focus_follow_mouse = true
 
 **Type:** boolean | **Default:** `true`
 
-`Ctrl`+wheel changes the font size of the window.
+`Ctrl`+wheel changes the font size of the window, `Ctrl+Alt`+wheel the active pane's only.
 
 ```toml
 scroll_to_zoom = false

@@ -144,8 +144,11 @@ Setting `face` keeps the symbol/emoji fallbacks, so Nerd Font glyphs and emoji s
 | --- | --- |
 | Bigger / smaller / reset | `Ctrl+Plus`, `Ctrl+Minus`, `Ctrl+0` (numpad variants too) |
 | Mouse | `Ctrl+wheel` (turn off with [`scroll_to_zoom`](../reference/configuration.md#scroll_to_zoom) = `false`) |
+| Active pane only | `Ctrl+Alt+wheel`, or bind `increase_pane_font_size` / `decrease_pane_font_size` / `reset_pane_font_size` |
 
 Zoom is one global offset (from -8 to +40 px) added to every pane's size, in every tab of the window; it is not saved, and "Reset font size" returns to the configured size. The settings editor follows the zoom too.
+
+A pane zoom adds its own offset (-8 to +40 px) to one pane only, on top of the window zoom. It follows the pane when it moves to another tab or window and is saved with the session; "Reset pane font size" removes it.
 
 ## Cursor
 

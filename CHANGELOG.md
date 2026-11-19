@@ -11,13 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Open file…** prompt completes paths while typing (local, or on the ssh host in an ssh pane): ↑/↓ select, Tab accepts the suggestion or the common prefix, Enter on a directory descends into it
 - Right-click a pane title bar to move it (left/right/up/down), swap it, send it to another tab, a new tab or a new window, or zoom/rename/equalize/close
+- Per-pane font zoom: `Ctrl+Alt+wheel`, or `increase_pane_font_size` / `decrease_pane_font_size` / `reset_pane_font_size` (`adjust_font_size` / `reset_font_size` with `pane = true`); follows the pane across tabs/windows and is saved with the session
 
 ### Changed
 
 - Bell indicator is filled and swings like a ringing bell, and tabs with a bell softly pulse their background
+- Startup notices (no output, spawn retries) show as a notification with a **Restart** button instead of being written into the terminal, and disappear once the shell prints
+- Restored sessions mark the restore point with a full-width gray "[Restored <date>]" bar
 
 ### Fixed
 
+- Terminal query replies (DSR, DA) sent before the shell's pty is ready are no longer dropped, so shells waiting on them don't hang at startup
 - The command palette and dialogs keep keyboard focus when the window is refocused or a terminal grabs it
 - Snippets pane now refreshes when `send_input` actions are added or changed in the config (no reopen needed)
 - SSH panes launched with a remote shell command (e.g. `ssh -t host /path/zsh`) are detected as ssh: Ctrl+click copies files with scp, and split/reconnect keep that shell

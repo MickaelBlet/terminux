@@ -261,15 +261,16 @@ select_previous_output = "Ctrl+Shift+]"
 
 ### adjust_font_size
 
-Change the window font zoom.
+Change the window font zoom, or with `pane = true` the active pane's only.
 
-Named commands using it: [`increase_font_size`](#increase_font_size), [`decrease_font_size`](#decrease_font_size).
+Named commands using it: [`increase_font_size`](#increase_font_size), [`decrease_font_size`](#decrease_font_size), [`increase_pane_font_size`](#increase_pane_font_size), [`decrease_pane_font_size`](#decrease_pane_font_size).
 
 Windows Terminal: `adjustFontSize`.
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
 | `delta` | number | `1` | Pixels to add (negative to shrink). Total zoom is limited to -8..+40 px and the font to 6-72 px. |
+| `pane` | boolean | `false` | Zoom only the active pane, on top of the window zoom (saved with the session). |
 
 ```toml
 [[action]]
@@ -2714,9 +2715,50 @@ Reset the window font zoom.
 - Default keys: `Ctrl+0`, `Ctrl+Numpad_0`
 - Legacy names: `font_reset`
 
+With `pane = true`, resets only the active pane's zoom.
+
 ```toml
 [keys]
 reset_font_size = ["Ctrl+0", "Ctrl+Numpad_0"]
+```
+
+### increase_pane_font_size
+
+Increase the active pane's font size by 1 px, on top of the window zoom. `Ctrl+Alt+wheel` does the same with the mouse.
+
+- Action: `adjust_font_size`, `delta = 1`, `pane = true` ([parameters](#adjust_font_size))
+- Label: Increase pane font size
+- Default keys: none
+
+```toml
+[keys]
+increase_pane_font_size = "Ctrl+Shift+Plus"
+```
+
+### decrease_pane_font_size
+
+Decrease the active pane's font size by 1 px.
+
+- Action: `adjust_font_size`, `delta = -1`, `pane = true` ([parameters](#adjust_font_size))
+- Label: Decrease pane font size
+- Default keys: none
+
+```toml
+[keys]
+decrease_pane_font_size = "Ctrl+Shift+Minus"
+```
+
+### reset_pane_font_size
+
+Reset the active pane's font zoom (the window zoom stays).
+
+- Action: `reset_font_size`, `pane = true`
+- Label: Reset pane font size
+- Default keys: none
+
+```toml
+[keys]
+reset_pane_font_size = "Ctrl+Shift+0"
 ```
 
 ### increase_opacity

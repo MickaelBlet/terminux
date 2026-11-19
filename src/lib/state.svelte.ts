@@ -492,6 +492,7 @@ export class App {
     },
     onWheel: (id, kind, delta) => {
       if (kind === "zoom") this.adjustFont(delta);
+      else if (kind === "pane-zoom") this.adjustPaneFont(delta, id);
       else this.adjustOpacity(delta * 5, true, id);
     },
     onMarkMode: (id, active, block) => {
@@ -499,6 +500,12 @@ export class App {
     },
     requestPaste: (id) => this.paste({}, id),
     onCopy: () => this.copied(),
+    onStartupNotice: (id, message, error) => {
+      const key = `startup:${id}`;
+      if (message == null) return this.dismissToast(key);
+      const run = () => sessions.get(id)?.restart();
+      this.toast(`${this.paneTitle(id)}: ${message}`, error ? "error" : "warn", { label: "Restart", run }, key);
+    },
     openLink: (uri) => void openUrl(uri).catch(console.error),
     openFile: (id, path, line, col, remote, mode) => void this.openFile(id, path, line, col, remote, mode),
   };
@@ -688,11 +695,18 @@ export class App {
     });
   }
 
-  toast(message: string, kind: Toast["kind"] = "info") {
-    if (this.toasts.some((t) => t.message === message)) return;
+  /** `key`: replaces the toast shown with the same key (status updates). */
+  toast(message: string, kind: Toast["kind"] = "info", action?: Toast["action"], key?: string) {
+    if (key) this.dismissToast(key);
+    else if (this.toasts.some((t) => t.message === message)) return;
     const id = ++this.toastSeq;
-    this.toasts.push({ id, message, kind });
-    setTimeout(() => (this.toasts = this.toasts.filter((t) => t.id !== id)), kind === "info" ? 2500 : 4500);
+    this.toasts.push({ id, message, kind, action, key });
+    setTimeout(() => this.dismissToast(id), action ? 15000 : kind === "info" ? 2500 : 4500);
+  }
+
+  /** Dismiss by id, or every toast with that key. */
+  dismissToast(which: number | string) {
+    this.toasts = this.toasts.filter((t) => (typeof which === "number" ? t.id : t.key) !== which);
   }
 
   // ---------- panes: creation ----------
@@ -1125,7 +1139,7 @@ export class App {
       // In ssh it reconnects to the same host, in the remote directory.
       const follow = duplicate && !a.commandline ? await this.sshFollow(t.active) : null;
       const base = duplicate && source?.kind === "term"
-        ? { ...$state.snapshot(source.spec), cwd: undefined, opacity: undefined, retro: undefined, ...(follow && { commandline: follow }) }
+        ? { ...$state.snapshot(source.spec), cwd: undefined, opacity: undefined, retro: undefined, fontDelta: undefined, ...(follow && { commandline: follow }) }
         : undefined;
       const spec = this.specFrom(a, base);
       if (!spec || !this.tabs.includes(t)) return false;
@@ -1412,6 +1426,17 @@ export class App {
 
   resetFont() {
     this.setFontDelta(0);
+  }
+
+  /** Font zoom of one pane only, on top of the window zoom. `delta` null resets it. */
+  adjustPaneFont(delta: number | null, id = this.activePane) {
+    const p = id ? this.panes[id] : undefined;
+    if (!p) return;
+    const value = delta == null ? 0 : Math.max(-8, Math.min(40, (p.spec.fontDelta ?? 0) + delta));
+    if (value === (p.spec.fontDelta ?? 0)) return;
+    if (value) p.spec.fontDelta = value;
+    else delete p.spec.fontDelta;
+    sessions.get(p.id)?.update();
   }
 
   private fontFrame = 0;

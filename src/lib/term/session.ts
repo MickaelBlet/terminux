@@ -37,12 +37,14 @@ export interface SessionHooks {
   onCwd(paneId: string, cwd: string): void;
   /** Resolved appearance changed (pane chrome follows it). */
   onLook(paneId: string, look: Resolved): void;
-  onWheel(paneId: string, kind: "zoom" | "opacity", delta: number): void;
+  onWheel(paneId: string, kind: "zoom" | "pane-zoom" | "opacity", delta: number): void;
   onMarkMode(paneId: string, active: boolean, block: boolean): void;
   /** Mouse paste (middle / right click): the app reads, filters and confirms. */
   requestPaste(paneId: string): void;
   /** The selection was copied to the clipboard (copy_on_select, right click). */
   onCopy(paneId: string): void;
+  /** Startup status (hung shell restart, spawn retry) for the app's notifications; null: the process came up. */
+  onStartupNotice(paneId: string, message: string | null, error?: boolean): void;
   openLink(uri: string): void;
   /** Ctrl+click on a file path; `path` is absolute or `~`-relative. `remote`: on the pane's ssh host. */
   openFile(paneId: string, path: string, line?: number, col?: number, remote?: boolean, mode?: string): void;
@@ -127,6 +129,13 @@ export class TermSession {
   private attaching = false;
   /** Bytes received from the pty channel (drained before a hand-off). */
   private received = 0;
+  /** A startup notice is on screen: withdrawn once the process prints. */
+  private noticeShown = false;
+  /**
+   * Input while a spawn is pending: the process may query the terminal (DSR, DA) before
+   * pty_spawn returns its id, and a dropped reply leaves a shell waiting for it.
+   */
+  private pendingInput: string[] | null = null;
   private skipViewportPush = false;
   private highlights: IDecoration[] = [];
   private renderer: { kind: Renderer; addon: WebglAddon | CanvasAddon | null } = { kind: "dom", addon: null };
@@ -362,6 +371,7 @@ export class TermSession {
   /** Raw write to the process. */
   write(data: string) {
     if (this.ptyId != null) invoke("pty_write", { id: this.ptyId, data }).catch(() => {});
+    else this.pendingInput?.push(data);
   }
 
   /** Paste through xterm (bracketed paste, newline conversion). */
@@ -392,7 +402,11 @@ export class TermSession {
       await new Promise<void>((done) => this.term.write(restore.buffer, done));
       this.attaching = false;
       // A fresh process starts below the restored content.
-      if (restore.ptyId == null && !restore.exited) this.term.write("\x1b[0m\r\n");
+      if (restore.ptyId == null && !restore.exited) {
+        const nl = this.term.buffer.active.cursorX > 0 ? "\r\n" : "";
+        // Full-width gray bar (EL fills with the current background), like Windows Terminal.
+        this.term.write(`\x1b[0m${nl}\x1b[48;2;85;87;83;38;2;211;215;207m  [Restored ${new Date().toLocaleString()}]\x1b[K\x1b[0m\r\n`);
+      }
     }
     this.restore = null;
     if (this.disposed) return;
@@ -481,9 +495,9 @@ export class TermSession {
       }
     }, { capture: true });
     el.addEventListener("wheel", (e) => {
-      if (!e.ctrlKey || e.altKey || e.deltaY === 0) return;
-      const kind = e.shiftKey ? "opacity" : "zoom";
-      if (kind === "zoom" ? this.config.scroll_to_zoom === false : this.config.scroll_to_change_opacity === false) return;
+      if (!e.ctrlKey || (e.altKey && e.shiftKey) || e.deltaY === 0) return;
+      const kind = e.shiftKey ? "opacity" : e.altKey ? "pane-zoom" : "zoom";
+      if (kind === "opacity" ? this.config.scroll_to_change_opacity === false : this.config.scroll_to_zoom === false) return;
       e.preventDefault();
       e.stopPropagation();
       this.hooks.onWheel(this.paneId, kind, e.deltaY < 0 ? 1 : -1);
@@ -552,11 +566,17 @@ export class TermSession {
     onData.onmessage = (buf) => {
       const bytes = buf instanceof ArrayBuffer ? new Uint8Array(buf) : Uint8Array.from(buf);
       if (!alive) alive = hasVisibleText(bytes);
+      if (alive && this.noticeShown) {
+        this.noticeShown = false;
+        this.hooks.onStartupNotice(this.paneId, null);
+      }
       this.received += bytes.length;
       this.term.write(bytes);
       this.hooks.onOutput(this.paneId);
     };
     this.received = 0;
+    // Not on adopt: replies to queries replayed from the backlog must not reach the process.
+    this.pendingInput = adopt == null ? [] : null;
     const spawned = { cols: this.term.cols, rows: this.term.rows };
     try {
       let id: number;
@@ -588,15 +608,19 @@ export class TermSession {
       this.ptyId = id;
       this.exited = false;
       byPty.set(id, this);
+      const pending = this.pendingInput ?? [];
+      this.pendingInput = null;
+      if (pending.length) this.write(pending.join(""));
       // Resizes during the spawn/attach await were dropped (no pty yet): resync now.
       if (this.term.cols !== spawned.cols || this.term.rows !== spawned.rows || adopt != null) {
         invoke("pty_resize", { id, cols: this.term.cols, rows: this.term.rows }).catch(() => {});
       }
       if (adopt == null) this.watchStartup(id, gen, attempt, () => alive);
     } catch (e) {
+      this.pendingInput = null;
       if (adopt == null && attempt < this.look.startupRetries) {
         this.exited = true;
-        this.notice(`\x1b[31m${String(e)}\x1b[0m\r\n\x1b[2m[retrying ${attempt + 1}/${this.look.startupRetries}...]\x1b[0m`);
+        this.notice(`${String(e).replace(/\s*\n\s*/g, " ")}, retrying (${attempt + 1}/${this.look.startupRetries})...`, true);
         await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
         if (this.disposed || gen !== this.connectGen || this.ptyId != null) return;
         return this.connect(null, attempt + 1);
@@ -615,17 +639,18 @@ export class TermSession {
       if (this.disposed || this.ptyId !== id || gen !== this.connectGen || alive()) return;
       const max = this.look.startupRetries;
       if (attempt >= max) {
-        this.notice(`\x1b[2m[no output after ${secs}s]\x1b[0m`);
+        this.notice(`no output after ${secs}s`);
         return;
       }
-      this.notice(`\x1b[2m[no output after ${secs}s, restarting ${attempt + 1}/${max}...]\x1b[0m`);
+      this.notice(`no output after ${secs}s, restarting (${attempt + 1}/${max})...`);
       this.dropPty(true);
       this.connect(null, attempt + 1);
     }, secs * 1000);
   }
 
-  private notice(text: string) {
-    this.term.write(`\x1b[0m\r\n${text}\r\n`);
+  private notice(text: string, error = false) {
+    this.noticeShown = true;
+    this.hooks.onStartupNotice(this.paneId, text, error);
   }
 
   private dropPty(kill: boolean) {

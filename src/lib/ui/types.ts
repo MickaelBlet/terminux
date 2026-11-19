@@ -77,4 +77,7 @@ export interface Toast {
   id: number;
   message: string;
   kind: "info" | "warn" | "error";
+  /** Button on the toast; clicking it runs `run` and dismisses the toast. */
+  action?: { label: string; run: () => void };
+  key?: string;
 }

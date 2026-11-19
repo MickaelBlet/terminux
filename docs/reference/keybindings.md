@@ -198,7 +198,7 @@ Every command with default keys. All other commands (`toggle_focus_mode`, `toggl
 | [`decrease_font_size`](actions.md#decrease_font_size) | `Ctrl+Minus`, `Ctrl+Numpad_Minus` |
 | [`reset_font_size`](actions.md#reset_font_size) | `Ctrl+0`, `Ctrl+Numpad_0` |
 
-Mouse wheel (not rebindable, toggled by [`scroll_to_zoom`](configuration.md#scroll_to_zoom) and [`scroll_to_change_opacity`](configuration.md#scroll_to_change_opacity)): `Ctrl+wheel` changes the font size, `Ctrl+Shift+wheel` changes the pane opacity by 5 points per notch.
+Mouse wheel (not rebindable, toggled by [`scroll_to_zoom`](configuration.md#scroll_to_zoom) and [`scroll_to_change_opacity`](configuration.md#scroll_to_change_opacity)): `Ctrl+wheel` changes the font size, `Ctrl+Alt+wheel` the font size of the pane under the mouse only, `Ctrl+Shift+wheel` changes the pane opacity by 5 points per notch.
 
 `Ctrl+V` with an image on the clipboard is passed through to the application as a literal `Ctrl+V`, which lets the application read the image itself.
 

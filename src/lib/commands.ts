@@ -145,6 +145,9 @@ export const COMMANDS: Record<string, NamedCommand> = {
   increase_font_size: n("Increase font size", "adjust_font_size", { delta: 1 }, ["Ctrl+Plus", "Ctrl+Numpad_Plus"]),
   decrease_font_size: n("Decrease font size", "adjust_font_size", { delta: -1 }, ["Ctrl+Minus", "Ctrl+Numpad_Minus"]),
   reset_font_size: n("Reset font size", "reset_font_size", {}, ["Ctrl+0", "Ctrl+Numpad_0"]),
+  increase_pane_font_size: n("Increase pane font size", "adjust_font_size", { delta: 1, pane: true }),
+  decrease_pane_font_size: n("Decrease pane font size", "adjust_font_size", { delta: -1, pane: true }),
+  reset_pane_font_size: n("Reset pane font size", "reset_font_size", { pane: true }),
   increase_opacity: n("Increase opacity", "adjust_opacity", { opacity: 10, relative: true }),
   decrease_opacity: n("Decrease opacity", "adjust_opacity", { opacity: -10, relative: true }),
 };

@@ -283,8 +283,8 @@ export const ACTIONS: Record<string, Handler> = {
   select_output: withTerm((s, _app, spec) => s.shell.selectOutput(norm(spec.direction) === "next" ? "next" : "prev")),
 
   // ---------- visual ----------
-  adjust_font_size: (app, spec) => app.adjustFont(num(spec.delta) ?? 1),
-  reset_font_size: (app) => app.resetFont(),
+  adjust_font_size: (app, spec) => (spec.pane ? app.adjustPaneFont(num(spec.delta) ?? 1) : app.adjustFont(num(spec.delta) ?? 1)),
+  reset_font_size: (app, spec) => (spec.pane ? app.adjustPaneFont(null) : app.resetFont()),
   adjust_opacity: (app, spec) => {
     if (!term(app)) return false;
     app.adjustOpacity(num(spec.opacity) ?? 0, spec.relative !== false);

@@ -69,7 +69,7 @@ export const ROOT_FIELDS: Record<string, Field> = {
   trim_paste: bool("Trim trailing whitespace of pasted text."),
   right_click_context_menu: bool("Right click opens the context menu instead of copy/paste."),
   focus_follow_mouse: bool("Focus panes on mouse hover."),
-  scroll_to_zoom: bool("Ctrl+wheel changes the font size."),
+  scroll_to_zoom: bool("Ctrl+wheel changes the font size (Ctrl+Alt+wheel: this pane only)."),
   scroll_to_change_opacity: bool("Ctrl+Shift+wheel changes the background opacity."),
   detect_urls: bool("Underline and open URLs (Ctrl+click)."),
   detect_file_paths: bool("Underline file paths printed in the terminal; Ctrl+click opens them in an editor."),
@@ -230,7 +230,7 @@ const ACTION_ARGS = [
   "suppress_application_title", "split", "split_mode", "size", "type", "direction", "target", "title", "color", "window",
   "rows_to_scroll", "clear", "path", "delta", "opacity", "relative", "source", "use_commandline", "query_url", "name",
   "monitor", "desktop", "dropdown_duration", "toggle_visibility", "single_line", "with_control_sequences",
-  "copy_formatting", "dismiss_selection", "tab_switcher_mode", "background", "foreground", "match_mode", "mode",
+  "copy_formatting", "dismiss_selection", "tab_switcher_mode", "background", "foreground", "match_mode", "mode", "pane",
 ];
 const ACTION_FIELDS: Record<string, Field> = {
   id: str("Id, usable in [keys] and new_tab_menu."),

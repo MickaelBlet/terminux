@@ -160,7 +160,13 @@
 {#if app.toasts.length}
   <div class="toasts">
     {#each app.toasts as t (t.id)}
-      <div class="toast {t.kind}">{t.message}</div>
+      <div class="toast {t.kind}">
+        {t.message}
+        {#if t.action}
+          {@const action = t.action}
+          <button onclick={() => (app.dismissToast(t.id), action.run())}>{action.label}</button>
+        {/if}
+      </div>
     {/each}
   </div>
 {/if}
@@ -423,6 +429,10 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     box-shadow: 0 6px 20px var(--shadow);
+  }
+  .toast button {
+    margin-left: 10px;
+    pointer-events: auto;
   }
   .toast.warn {
     border-color: var(--warn);
