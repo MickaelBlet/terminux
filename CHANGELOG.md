@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Bell indicator is filled and swings like a ringing bell, and tabs with a bell softly pulse their background
+
 ### Fixed
 
 - Snippets pane now refreshes when `send_input` actions are added or changed in the config (no reopen needed)

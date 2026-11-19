@@ -124,6 +124,11 @@
   .bell {
     color: var(--warn);
     display: flex;
+    transform-origin: 50% 15%;
+    animation: bell-ring 1.5s ease-in-out infinite;
+  }
+  .bell :global(path) {
+    fill: currentColor;
   }
   .flag {
     display: flex;

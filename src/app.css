@@ -197,6 +197,18 @@ body.dragging-pane * {
   .scroll-mark-flash { animation-duration: 0.01s; animation-delay: 1s; }
 }
 
+/* Bell ringing: swing around the top, then rest. */
+@keyframes bell-ring {
+  0%, 60%, 100% { transform: rotate(0); }
+  6% { transform: rotate(18deg); }
+  14% { transform: rotate(-16deg); }
+  22% { transform: rotate(12deg); }
+  30% { transform: rotate(-9deg); }
+  38% { transform: rotate(6deg); }
+  46% { transform: rotate(-3deg); }
+  54% { transform: rotate(1deg); }
+}
+
 kbd {
   font-family: inherit;
 }

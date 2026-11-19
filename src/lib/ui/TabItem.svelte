@@ -57,6 +57,7 @@
   class:dragging={dragged}
   class:torn={dragged && d?.outside}
   class:colored={!!app.tabColor(t)}
+  class:belled={f.bell}
   class:pane-drop={paneDrag.state?.target?.kind === "tab" && paneDrag.state.target.tabId === t.id}
   data-tab-id={t.id}
   role="tab"
@@ -86,6 +87,7 @@
   }}
   onkeydown={() => {}}
 >
+  {#if f.bell}<span class="bell-glow"></span>{/if}
   <span class="lead">
     {#if t.kind !== "term"}<Icon name="gear" size={12} />
     {:else if f.bell}<span class="bell"><Icon name="bell" size={12} /></span>
@@ -299,6 +301,22 @@
     background: var(--hover);
     color: var(--fg);
   }
+  .tab.belled {
+    isolation: isolate;
+  }
+  .bell-glow {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--warn);
+    pointer-events: none;
+    opacity: 0;
+    animation: tab-bell-glow 1.5s ease-in-out infinite;
+  }
+  @keyframes tab-bell-glow {
+    50% { opacity: 0.18; }
+  }
   .tab.active {
     color: var(--fg);
     font-weight: 500;
@@ -430,6 +448,11 @@
   .bell {
     color: var(--warn);
     display: grid;
+    transform-origin: 50% 15%;
+    animation: bell-ring 1.5s ease-in-out infinite;
+  }
+  .bell :global(path) {
+    fill: currentColor;
   }
   button {
     display: grid;
