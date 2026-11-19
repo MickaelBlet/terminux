@@ -132,6 +132,41 @@ pub fn follow_argv(t: &SshTarget, dir: Option<&str>) -> Vec<String> {
     argv
 }
 
+/// Remote path as a shell word: quoted, a leading `~` kept outside the quotes so it expands.
+pub fn remote_path_arg(path: &str) -> String {
+    match path.strip_prefix('~') {
+        Some("") => "~/".into(),
+        Some(rest) if rest.starts_with('/') => format!("~/{}", sh_quote(rest.trim_start_matches('/'))),
+        _ => sh_quote(path),
+    }
+}
+
+/// Arguments (after the program) running `remote_cmd` non-interactively on the target.
+pub fn exec_args(t: &SshTarget, remote_cmd: &str) -> Vec<String> {
+    let mut args: Vec<String> = ["-T", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5"].map(String::from).into();
+    for (f, v) in &t.opts {
+        args.push(format!("-{f}"));
+        if !v.is_empty() {
+            args.push(v.clone());
+        }
+    }
+    args.extend(["--".into(), t.dest.clone(), remote_cmd.into()]);
+    args
+}
+
+/// A background command (no console window flashing on Windows).
+pub fn quiet_command(program: &str) -> std::process::Command {
+    #[allow(unused_mut)]
+    let mut cmd = std::process::Command::new(program);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    cmd
+}
+
 /// `scp` arguments copying `remote` (on the target) to or from `local`.
 pub fn scp_args(t: &SshTarget, remote: &str, local: &str, upload: bool) -> Result<Vec<String>, String> {
     if remote.is_empty() || remote.starts_with('-') {
@@ -246,5 +281,18 @@ mod tests {
         let v6 = SshTarget { program: "ssh".into(), dest: "u@::1".into(), opts: vec![], shell: None };
         assert_eq!(scp_args(&v6, "/r", "/l", false).unwrap().last().unwrap(), "/l");
         assert!(scp_args(&v6, "/r", "/l", false).unwrap().contains(&"u@[::1]:/r".to_string()));
+    }
+
+    #[test]
+    fn exec_mapping() {
+        let t = parse_ssh_argv(&argv("ssh -p 2 -A h")).unwrap();
+        assert_eq!(
+            exec_args(&t, "ls"),
+            ["-T", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", "-p", "2", "-A", "--", "h", "ls"]
+        );
+        assert_eq!(remote_path_arg("/a b/"), "'/a b/'");
+        assert_eq!(remote_path_arg("~"), "~/");
+        assert_eq!(remote_path_arg("~/x'y/"), r"~/'x'\''y/'");
+        assert_eq!(remote_path_arg("~bob/x"), "'~bob/x'");
     }
 }

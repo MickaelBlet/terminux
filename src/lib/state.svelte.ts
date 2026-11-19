@@ -16,12 +16,13 @@ import type { Progress } from "./osc";
 import { pasteWarning, sanitizePaste } from "./paste";
 import { droppedPaths } from "./paths";
 import { dirOf, parseFileArg, resolveFilePath } from "./file-links";
+import { applyCompletion, commonPrefix, completionQuery, filterEntries, separatorOf, type PathEntry } from "./path-complete";
 import { baseName } from "./file-langs";
 import type { PaneSnapshot, TabSnapshot } from "./snapshot";
 import type { PaneSpec, Resolved } from "./term/appearance";
 import { sessionByPty, sessions, TermSession, type Restore, type SessionHooks } from "./term/session";
 import { applyUiTheme, isDarkTheme, type UiLook } from "./ui-theme";
-import type { DialogRequest, MenuRequest, PaletteView, Toast } from "./ui/types";
+import type { Completion, DialogRequest, MenuRequest, PaletteView, Toast } from "./ui/types";
 import { paneMenu } from "./ui/menus";
 import { canonicalEntry, DEFAULT_TOOLBAR, moveEntry, resolveToolbar, toolbarEntries, type ToolbarItem } from "./toolbar";
 import { setRootKey, tomlStringArray } from "./config-edit";
@@ -444,7 +445,7 @@ export class App {
     this.windowFocused = focused;
     const t = this.tab;
     if (t?.kind === "term") sessions.get(t.active)?.setFocused(focused);
-    if (focused) this.focusCurrent();
+    if (focused && !this.overlayOpen()) this.focusCurrent(); // an overlay keeps its focus
     else if (this.tabSwitcher) this.commitTabSwitcher();
     windows.focusChanged(this, focused);
   }
@@ -538,7 +539,7 @@ export class App {
    * (or its ssh host, or the directory of the active editor's file); prompted for when empty. */
   async openFileAt(input?: string, mode?: string) {
     const from = this.activePane;
-    input ??= (await this.promptText("Open file", "", "path[:line[:col]]")) ?? "";
+    input ??= (await this.promptText("Open file", "", "path[:line[:col]]", this.pathCompleter(from))) ?? "";
     const arg = parseFileArg(input);
     if (!arg) return;
     try {
@@ -552,6 +553,39 @@ export class App {
     } catch (e) {
       this.toast(e instanceof Error ? e.message : String(e), "error");
     }
+  }
+
+  /** Path completion for `open_file`, relative to the same directory `openFileAt` resolves against. */
+  private pathCompleter(from: string | undefined): (text: string) => Promise<Completion | null> {
+    const base = (async (): Promise<{ dir: string | null; remote?: number }> => {
+      const s = from ? sessions.get(from) : undefined;
+      if (s) {
+        if (s.ptyId != null && (await s.isSsh())) return { dir: s.reportedCwd ?? "~", remote: s.ptyId };
+        return { dir: await s.cwdNow() };
+      }
+      const p = from ? this.panes[from] : undefined;
+      return { dir: p?.kind === "file" && p.spec.file && !p.spec.remoteLabel ? dirOf(p.spec.file) : null };
+    })();
+    const cache = new Map<string, Promise<PathEntry[]>>();
+    return async (text) => {
+      const { dir: baseDir, remote } = await base;
+      const q = completionQuery(text, baseDir);
+      if (!q.dir) return null;
+      let list = cache.get(q.dir);
+      if (!list) {
+        list = invoke<PathEntry[]>("path_complete", { id: remote ?? null, dir: q.dir }).catch(() => []);
+        cache.set(q.dir, list);
+      }
+      // Windows paths (drive or backslashes) match case-insensitively.
+      const ci = remote == null && /^[A-Za-z]:|\\/.test(q.dir);
+      const items = filterEntries(await list, q.prefix, ci);
+      const sep = separatorOf(text, baseDir);
+      const common = commonPrefix(items.map((e) => e.name), ci);
+      return {
+        items: items.map((e) => ({ label: e.name + (e.dir ? sep : ""), dir: e.dir, text: applyCompletion(q, e.name, e.dir, sep) })),
+        common: common.length > q.prefix.length ? q.head + common : null,
+      };
+    };
   }
 
   /** Built-in editor in its own tab, or split next to pane `beside`; a file already open is focused at the line. */
@@ -648,9 +682,9 @@ export class App {
     });
   }
 
-  promptText(title: string, value = "", placeholder = ""): Promise<string | null> {
+  promptText(title: string, value = "", placeholder = "", complete?: (text: string) => Promise<Completion | null>): Promise<string | null> {
     return new Promise((resolve) => {
-      this.dialog = { title, input: { value, placeholder }, ok: "OK", cancel: "Cancel", resolve: (v) => resolve(typeof v === "string" ? v : null) };
+      this.dialog = { title, input: { value, placeholder, complete }, ok: "OK", cancel: "Cancel", resolve: (v) => resolve(typeof v === "string" ? v : null) };
     });
   }
 

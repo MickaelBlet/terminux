@@ -941,7 +941,7 @@ open_cwd = "Ctrl+Alt+X"   # example binding
 
 ### open_file
 
-Open a file by path, like a Ctrl+clicked [file link](../user-guide/08-text-and-clipboard.md#links): `path[:line[:col]]`, relative paths resolve against the active pane's directory (the remote directory in an ssh pane, which opens the remote file; the file's directory when a built-in editor pane is active). Without `path`, a dialog asks for it.
+Open a file by path, like a Ctrl+clicked [file link](../user-guide/08-text-and-clipboard.md#links): `path[:line[:col]]`, relative paths resolve against the active pane's directory (the remote directory in an ssh pane, which opens the remote file; the file's directory when a built-in editor pane is active). Without `path`, a dialog asks for it, with path completion: suggestions are listed while typing, ↑/↓ select, Tab accepts the selection (or the common prefix of the matches), Enter on a directory descends into it. Files starting with `.` are suggested once `.` is typed. In an ssh pane the remote directory is listed with a non-interactive `ssh` (key/agent or ControlMaster, like the file copy).
 
 - Action: `open_file`
 - Label: Open file…

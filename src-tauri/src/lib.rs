@@ -1,4 +1,5 @@
 mod cli;
+mod complete;
 mod config;
 mod dynamic_profiles;
 mod editor;
@@ -164,6 +165,15 @@ async fn file_write(state: State<'_, AppState>, path: String, text: String) -> C
 async fn remote_file_fetch(state: State<'_, AppState>, id: u32, path: String) -> CmdResult<remote_files::Fetched> {
     let target = state.pty.ssh_target(id).ok_or("the pane is not running ssh")?;
     state.remote_files.fetch(target, &path)
+}
+
+/// Entries of directory `dir` for path completion: on the ssh host when pane `id` runs ssh.
+#[tauri::command]
+async fn path_complete(state: State<'_, AppState>, id: Option<u32>, dir: String) -> CmdResult<Vec<complete::Entry>> {
+    match id.and_then(|id| state.pty.ssh_target(id)) {
+        Some(target) => complete::list_remote(&target, &dir),
+        None => complete::list_local(&dir),
+    }
 }
 
 /// Write exported text to `path` (only when named in the config, e.g. an `export_buffer` action)
@@ -578,6 +588,7 @@ pub fn run() {
             pty_ssh_follow,
             pty_ssh_resume,
             remote_file_fetch,
+            path_complete,
             window_init,
             window_new,
             window_send,

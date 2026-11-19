@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use std::sync::Mutex;
 
 use crate::ssh::{SshTarget, scp_args};
@@ -36,15 +36,8 @@ fn create_private_dir(dir: &Path) -> Result<(), String> {
 }
 
 fn run_scp(args: &[String]) -> Result<(), String> {
-    let mut cmd = Command::new(if cfg!(windows) { "scp.exe" } else { "scp" });
+    let mut cmd = crate::ssh::quiet_command(if cfg!(windows) { "scp.exe" } else { "scp" });
     cmd.args(args).stdin(Stdio::null());
-    #[cfg(windows)]
-    {
-        // No console window flashing for each copy.
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        cmd.creation_flags(CREATE_NO_WINDOW);
-    }
     let out = cmd.output().map_err(|e| format!("scp: {e}"))?;
     if out.status.success() {
         return Ok(());

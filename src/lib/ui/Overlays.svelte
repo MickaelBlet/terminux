@@ -3,6 +3,8 @@
   import { app } from "../state.svelte";
   import { TAB_COLORS_DARK, TAB_COLORS_LIGHT } from "./menus";
   import Icon from "./Icon.svelte";
+  import { trapFocus } from "./focus-trap";
+  import type { Completion } from "./types";
 
   let value = $state("");
   let checked = $state(false);
@@ -20,6 +22,47 @@
       } else dialogEl?.querySelector<HTMLButtonElement>("button.ok")?.focus();
     });
   });
+  // Suggestions of a prompt with `input.complete` (open_file paths).
+  let completion = $state<Completion | null>(null);
+  let sel = $state(-1);
+  let seq = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  function refresh(text: string, delay = 80) {
+    const complete = app.dialog?.input?.complete;
+    clearTimeout(timer);
+    const n = ++seq;
+    if (!complete) return void (completion = null);
+    timer = setTimeout(() => {
+      void complete(text)
+        .catch(() => null)
+        .then((c) => {
+          if (n !== seq) return;
+          completion = c?.items.length ? c : null;
+          sel = -1;
+        });
+    }, delay);
+  }
+  $effect(() => {
+    if (app.dialog?.input?.complete) refresh(value);
+    else completion = null;
+  });
+  function accept(text: string) {
+    value = text; // the effect lists the new directory; the old list stays until then
+  }
+  /** Tab: the selected item, the only one, else the common prefix. */
+  function tab() {
+    const c = completion;
+    if (!c) return;
+    const item = c.items[sel] ?? (c.items.length === 1 ? c.items[0] : null);
+    if (item) accept(item.text);
+    else if (c.common) accept(c.common);
+  }
+  function scrollIntoView(el: HTMLElement, on: boolean) {
+    const go = (v: boolean) => v && el.scrollIntoView({ block: "nearest" });
+    go(on);
+    return { update: go };
+  }
+
   function answer(ok: boolean) {
     const d = app.dialog;
     if (!d) return;
@@ -29,7 +72,17 @@
     if (!app.dialog) app.focusCurrent();
   }
   function dialogKey(e: KeyboardEvent) {
-    if (e.key === "Escape") answer(false);
+    const c = e.target instanceof HTMLInputElement && e.target.type !== "checkbox" ? completion : null;
+    if (c && e.key === "ArrowDown") sel = (sel + 1) % c.items.length;
+    else if (c && e.key === "ArrowUp") sel = sel <= 0 ? c.items.length - 1 : sel - 1;
+    else if (e.key === "Tab" && app.dialog?.input?.complete && e.target instanceof HTMLInputElement && !e.shiftKey) tab();
+    else if (c && e.key === "Escape" && sel >= 0) sel = -1;
+    else if (c && e.key === "Enter" && c.items[sel]) {
+      // A directory continues the path; a file is opened.
+      const item = c.items[sel];
+      if (item.dir) accept(item.text);
+      else ((value = item.text), answer(true));
+    } else if (e.key === "Escape") answer(false);
     else if (e.key === "Enter" && !(e.target instanceof HTMLButtonElement && !e.target.classList.contains("ok"))) answer(true);
     else return;
     e.preventDefault();
@@ -52,17 +105,55 @@
 
 {#if app.dialog}
   {@const d = app.dialog}
-  <div class="backdrop" role="presentation" onmousedown={() => answer(false)}>
-    <div class="dialog" bind:this={dialogEl} role="dialog" tabindex="-1" onmousedown={(e) => e.stopPropagation()} onkeydown={dialogKey}>
-      <h3>{d.title}</h3>
-      {#if d.message}<pre>{d.message}</pre>{/if}
-      {#if d.input}<input bind:value placeholder={d.input.placeholder} spellcheck="false" />{/if}
-      {#if d.checkbox}<label class="check"><input type="checkbox" bind:checked />{d.checkbox.label}</label>{/if}
-      <div class="buttons">
-        {#if d.cancel}<button onclick={() => answer(false)}>{d.cancel}</button>{/if}
-        <button class="ok" class:danger={d.danger} onclick={() => answer(true)}>{d.ok}</button>
+  <div class="backdrop" class:top={!!d.input?.complete} role="presentation" onmousedown={() => answer(false)}>
+    {#if d.input?.complete}
+      <!-- Path prompt: palette-like, same position as the palette. -->
+      <div class="dialog completing" bind:this={dialogEl} use:trapFocus={() => !!app.dialog} role="dialog" tabindex="-1" onmousedown={(e) => e.stopPropagation()} onkeydown={dialogKey}>
+        <div class="crumb"><Icon name="file" size={11} />{d.title}</div>
+        <div class="bar">
+          <span class="bar-icon"><Icon name="folder" size={14} /></span>
+          <input bind:value placeholder={d.input.placeholder || "Path"} spellcheck="false" autocomplete="off" />
+        </div>
+        <!-- Fixed size: the dialog does not jump while typing. -->
+        <div class="completions" role="listbox">
+          {#each completion?.items ?? [] as item, i (item.label)}
+            <button
+              class:sel={i === sel}
+              class:dir={item.dir}
+              role="option"
+              aria-selected={i === sel}
+              tabindex="-1"
+              use:scrollIntoView={i === sel}
+              onmousedown={(e) => e.preventDefault()}
+              onmousemove={() => (sel = i)}
+              onclick={() => (item.dir ? accept(item.text) : ((value = item.text), answer(true)))}
+            >
+              <span class="item-icon"><Icon name={item.dir ? "folder" : "file"} size={13} /></span>
+              <span class="label">{item.label}</span>
+            </button>
+          {:else}
+            <div class="empty">No match</div>
+          {/each}
+        </div>
+        <div class="hints">
+          <span><kbd>Tab</kbd> complete</span>
+          <span><kbd>↑</kbd><kbd>↓</kbd> select</span>
+          <span><kbd>Enter</kbd> {d.ok === "OK" ? "open" : d.ok.toLowerCase()}</span>
+          <span><kbd>Esc</kbd> cancel</span>
+        </div>
       </div>
-    </div>
+    {:else}
+      <div class="dialog" bind:this={dialogEl} use:trapFocus={() => !!app.dialog} role="dialog" tabindex="-1" onmousedown={(e) => e.stopPropagation()} onkeydown={dialogKey}>
+        <h3>{d.title}</h3>
+        {#if d.message}<pre>{d.message}</pre>{/if}
+        {#if d.input}<input bind:value placeholder={d.input.placeholder} spellcheck="false" autocomplete="off" />{/if}
+        {#if d.checkbox}<label class="check"><input type="checkbox" bind:checked />{d.checkbox.label}</label>{/if}
+        <div class="buttons">
+          {#if d.cancel}<button onclick={() => answer(false)}>{d.cancel}</button>{/if}
+          <button class="ok" class:danger={d.danger} onclick={() => answer(true)}>{d.ok}</button>
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -108,7 +199,7 @@
 
 {#if app.about}
   <div class="backdrop" role="presentation" onmousedown={() => ((app.about = false), app.focusCurrent())}>
-    <div class="dialog about" role="dialog" tabindex="-1" onmousedown={(e) => e.stopPropagation()}>
+    <div class="dialog about" use:trapFocus={() => app.about} role="dialog" tabindex="-1" onmousedown={(e) => e.stopPropagation()}>
       <h3><Icon name="terminal" size={16} /> Terminux</h3>
       <p>Terminal multiplexer. Tauri v2, Svelte 5, xterm.js.</p>
       <p class="muted">Fonts: JetBrains Mono (OFL), Symbols Nerd Font (MIT), Twemoji Mozilla (CC-BY 4.0), Noto Sans Symbols / Math (OFL).</p>
@@ -188,6 +279,104 @@
   }
   input:focus {
     border-color: var(--accent);
+  }
+  .backdrop.top {
+    place-items: start center;
+    padding-top: 12vh;
+  }
+  .dialog.completing {
+    width: min(600px, 90vw);
+    padding: 0;
+    overflow: hidden;
+  }
+  .crumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px 0;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .bar-icon {
+    display: grid;
+    padding-left: 14px;
+    color: var(--muted);
+  }
+  .dialog.completing .bar input {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 10px 14px 10px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    font-size: 14px;
+  }
+  .completions {
+    display: flex;
+    flex-direction: column;
+    height: calc(10 * 28px + 8px);
+    box-sizing: border-box;
+    padding: 4px;
+    overflow-y: auto;
+  }
+  .completions button {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 28px;
+    padding: 0 10px;
+    border: none;
+    border-radius: 5px;
+    text-align: left;
+  }
+  .item-icon {
+    display: grid;
+    color: var(--muted);
+  }
+  .completions button.dir .item-icon {
+    color: var(--accent);
+  }
+  .label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .completions button.sel {
+    background: var(--hover);
+  }
+  .completions button:hover {
+    background: none;
+  }
+  .completions button.sel:hover {
+    background: var(--hover);
+  }
+  .empty {
+    padding: 10px;
+    color: var(--muted);
+  }
+  .hints {
+    display: flex;
+    gap: 14px;
+    padding: 6px 14px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+  }
+  kbd {
+    margin-right: 3px;
+    padding: 0 4px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font: inherit;
+    font-size: 10px;
   }
   .buttons {
     display: flex;

@@ -46,11 +46,25 @@ export interface MenuRequest {
   groups: MenuItem[][];
 }
 
+export interface CompletionItem {
+  label: string;
+  /** A directory: accepting it keeps the prompt open to continue typing. */
+  dir: boolean;
+  /** Input text once accepted. */
+  text: string;
+}
+
+export interface Completion {
+  items: CompletionItem[];
+  /** Input text extended to the items' common prefix, null when it adds nothing. */
+  common: string | null;
+}
+
 export interface DialogRequest {
   title: string;
   message?: string;
-  /** Present for a text prompt. */
-  input?: { value: string; placeholder?: string };
+  /** Present for a text prompt; `complete` suggests values while typing. */
+  input?: { value: string; placeholder?: string; complete?: (text: string) => Promise<Completion | null> };
   /** Optional checkbox; `checked` is updated in place before `resolve`. */
   checkbox?: { label: string; checked: boolean };
   ok: string;

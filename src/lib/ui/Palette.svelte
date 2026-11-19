@@ -3,6 +3,7 @@
   import { app } from "../state.svelte";
   import ProfileIcon from "./ProfileIcon.svelte";
   import Icon from "./Icon.svelte";
+  import { trapFocus } from "./focus-trap";
   import type { PaletteItem, PaletteView } from "./types";
   import { asRecent, orderItems, pushRecent } from "../palette-order";
 
@@ -149,7 +150,7 @@
 </script>
 
 <div class="backdrop" onmousedown={() => close()} role="presentation">
-  <div class="palette" onmousedown={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
+  <div class="palette" use:trapFocus={() => !done && !!app.palette} onmousedown={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
     {#if stack.length > 1}
       <div class="crumb">
         <button onclick={back} title="Back (Backspace)"><Icon name="chevron" size={11} /></button>

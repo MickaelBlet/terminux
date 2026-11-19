@@ -37,6 +37,7 @@ src-tauri/
     lib.rs                AppState, IPC commands, startup, config watcher
     cli.rs                wt-style command line parser
     config.rs             config.toml model, merge, paths, validation
+    complete.rs           path completion for open_file: directory entries, local or over ssh
     default_config.toml    embedded default config (include_str!)
     dynamic_profiles.rs   generated profiles
     editor.rs             Ctrl+click on file paths: external editor, built-in editor file access
@@ -173,11 +174,13 @@ Comment-preserving edits of `config.toml` for the settings UI, built on `toml_ed
 
 Backs Ctrl+click on file paths printed in a terminal. `open(template, path, line, col, terminal)` expands `~`, checks the file exists, substitutes `{file}`, `{line}`, `{col}` per argument of [`file_link_editor`](../reference/configuration.md#file_link_editor) (the program comes from the config only; no shell is involved) and starts it detached. Without a template it returns a fallback command line (`$VISUAL` / `$EDITOR` / `vi` at the line; Notepad on Windows) for a terminal tab; with `terminal = true` it returns the command line for a pane. `OpenFiles` is the allow-list of the built-in editor: `read` (UTF-8 text, at most 8 MiB, canonicalized) records the path, `write` refuses any path that was not read first. `quote_arg` quotes one argument for `split_commandline`.
 
-### ssh.rs and remote_files.rs
+### ssh.rs, remote_files.rs and complete.rs
 
 `ssh.rs` recognises an interactive `ssh` command (`parse_ssh_argv` returns an `SshTarget { program, dest, opts }`, or `None` for non-interactive uses such as a remote command or `-W`), builds the argv that reopens it in another remote directory (`follow_argv`) and the `scp` arguments that copy a file to or from the host (`scp_args`). Options only ever come from a command the user launched. `PtyManager::ssh_target(id)` finds the session (the foreground process on Linux, else the spawned command); `spawned_ssh(id)` only the spawned one.
 
 `remote_files.rs` (`RemoteFiles`) copies a file of the host to a private cache directory (`<cache dir>/terminux/remote`) with `scp` (`fetch`) and uploads it back when the built-in editor saves it (`upload`). Only fetched files can be uploaded.
+
+`complete.rs` lists one directory for the `open_file` prompt (names and a directory flag only): `list_local`, or `list_remote` running `ls -1ApL` on the host with `ssh::exec_args` (`BatchMode=yes`, `ConnectTimeout=5`). The frontend (`path-complete.ts`, `App.pathCompleter`) caches each listing for the life of the prompt.
 
 ### cli.rs
 
@@ -217,6 +220,7 @@ All 39 commands registered in `generate_handler!` (`src-tauri/src/lib.rs`). Taur
 | `file_read` | `async (path: String) -> Result<{ path, text }>` | Reads a UTF-8 text file (max 8 MiB) for the built-in editor and allow-lists it for `file_write`. |
 | `file_write` | `async (path: String, text: String) -> Result<()>` | Saves a file opened with `file_read` (no other path is writable); uploads it when it came from an ssh host. |
 | `remote_file_fetch` | `async (id: u32, path: String) -> Result<{ local, label }>` | Copies a file from the ssh host the pane `id` runs into the cache; open the copy with `file_read`. |
+| `path_complete` | `async (id: Option<u32>, dir: String) -> Result<{ name, dir }[]>` | Entries of `dir` (absolute or `~`) for `open_file` completion; on the ssh host when pane `id` runs ssh. |
 | `save_text` | `(path: Option<String>, defaultName: String, text: String) -> Result<Option<String>>` | Writes exported text. With `path`: must be referenced by the config. Without: shows a save dialog. Returns the written path, or `null` when cancelled. |
 
 ### PTY

@@ -68,6 +68,7 @@ terminux/
       pty.rs                    PtyManager
       windows.rs session_store.rs
       editor.rs ssh.rs remote_files.rs     file links, ssh panes, remote files
+      complete.rs               open_file path completion
   dist/                         build artifacts (git-ignored)
 ```
 
@@ -134,7 +135,7 @@ No formatter or linter configuration is committed; match the surrounding code.
 | Process/PTY behavior | `pty.rs` |
 | UI chrome | `src/lib/ui/` |
 | Settings UI | `src/lib/settings/` (pure model), `src/lib/ui/settings/` (components), `src-tauri/src/toml_patch.rs` (edits) |
-| File links, ssh panes | `file-links.ts`, `term/file-link-provider.ts`, `src-tauri/src/editor.rs`, `ssh.rs`, `remote_files.rs` |
+| File links, ssh panes | `file-links.ts`, `path-complete.ts`, `term/file-link-provider.ts`, `src-tauri/src/editor.rs`, `ssh.rs`, `remote_files.rs` |
 | Packaging | `docker/`, `scripts/`, `tauri.conf.json`, `.github/workflows/build.yml` |
 
 ## Pull request checklist
