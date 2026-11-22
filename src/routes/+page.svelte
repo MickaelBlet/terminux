@@ -44,12 +44,14 @@
 <svelte:window oncontextmenu={blockNativeMenu} />
 
 <main>
+  <!-- Left panel spans the full height, its head beside the title bar. -->
+  {#if app.tabBarVisible && app.tabPosition === "left"}<VerticalTabs side="left" />{/if}
+  <div class="col">
   {#if app.tabBarVisible}<TabBar />{/if}
   {#if app.config.error}
     <div class="error">Config error, using defaults — {app.config.error}</div>
   {/if}
   <div class="body">
-    {#if app.tabBarVisible && app.tabPosition === "left"}<VerticalTabs side="left" />{/if}
     <div class="tabs" style:background={windowImage ? (look?.paneBackground ?? "") : ""}>
       {#if windowImage && look?.backgroundImage}
         <div
@@ -76,6 +78,7 @@
     </div>
     {#if app.tabBarVisible && app.tabPosition === "right"}<VerticalTabs side="right" />{/if}
   </div>
+  </div>
   {#if app.palette}
     {#key app.palette}<Palette />{/key}
   {/if}
@@ -89,8 +92,13 @@
 <style>
   main {
     display: flex;
-    flex-direction: column;
     height: 100%;
+  }
+  .col {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
   }
   .body {
     display: flex;

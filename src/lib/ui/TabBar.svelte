@@ -11,6 +11,8 @@
   import type { TabVariant } from "./tab-info";
   import Icon from "./Icon.svelte";
   import TabItem from "./TabItem.svelte";
+  import TabLead from "./TabLead.svelte";
+  import { tabInfo } from "./tab-info";
   import { trackActiveTab } from "./tab-baseline";
   import { settingsDoc } from "../settings/doc.svelte";
 
@@ -25,6 +27,7 @@
 
   /** Vertical tabs: this bar is only the title bar, the tab list lives in VerticalTabs. */
   const vertical = $derived(app.tabPosition !== "top");
+  const curInfo = $derived(vertical && app.tab ? tabInfo(app, app.tab, app.activeTab) : null);
 
   let dropdownBtn = $state<HTMLButtonElement>();
   $effect(() => {
@@ -157,7 +160,15 @@
 
 <header class="bar" data-tauri-drag-region bind:this={barEl}>
   {#if vertical}
-    <div class="drag wtitle" data-tauri-drag-region role="presentation" oncontextmenu={onBarMenu}>{app.tab ? app.tabTitle(app.tab) : ""}</div>
+    <div class="drag wtitle" data-tauri-drag-region role="presentation" oncontextmenu={onBarMenu}>
+      {#if app.tab && curInfo}
+        <span class="cur" class:belled={curInfo.bell}>
+          {#if curInfo.bell}<span class="bell-glow"></span>{/if}
+          <TabLead t={app.tab} f={curInfo} forceIcon />
+        </span>
+        <span class="wtext" data-tauri-drag-region>{app.tabTitle(app.tab)}</span>
+      {/if}
+    </div>
   {:else}
     <div class="tabs" role="tablist" tabindex="-1" data-tauri-drag-region bind:this={tabsEl} oncontextmenu={onBarMenu}>
       {#each app.tabs as t (t.id)}
@@ -302,12 +313,27 @@
   .wtitle {
     display: flex;
     align-items: center;
-    padding: 0 12px;
+    gap: 4px;
+    padding: 0 12px 0 6px;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .wtext {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    color: var(--muted);
-    font-size: 12px;
+  }
+  /* Active tab icon with its bell / progress animations. */
+  .cur {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    padding: 4px;
+    border-radius: 4px;
+    color: var(--fg);
   }
   .win {
     display: flex;

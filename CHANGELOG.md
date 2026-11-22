@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `notify_command_finished` (default 10 s): a shell-integrated command that ends unseen sends a notification, marks its tab and, when the window is unfocused, flashes the taskbar with a green/red full progress until focused
 - `taskbar_attention`: `informational` (brief) or `critical` (until focused) taskbar flash; OSC 9 / OSC 777 notifications also flash the taskbar when unfocused
 - OSC 9;4 progress shows as a thin line along the top of split panes and a ring on the pane title bar icon
+- Vertical tabs: the title bar shows the active tab's icon with its bell and progress animations
 
 ### Changed
 
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Shift+wheel` scrolls like the plain wheel, and is reported with the Shift modifier to programs that capture the mouse
 - `bell_style` defaults to `taskbar` instead of `none`
 - Taskbar progress aggregates every tab of the window (error > paused > normal > indeterminate) instead of following the active tab
+- Vertical tabs: the collapse button moved from the panel footer to its header; on the left, the panel spans the full window height with its header beside the title bar
 
 ### Fixed
 

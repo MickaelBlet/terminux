@@ -72,6 +72,16 @@
 </script>
 
 <nav class="vtabs {side}" class:collapsed class:resizing={!!resize} style:width={collapsed ? null : `${app.verticalWidth}px`} bind:this={navEl}>
+  <div class="head" role="toolbar" tabindex="-1" data-tauri-drag-region oncontextmenu={onBarMenu}>
+    {#if !collapsed}
+      <span class="spacer" data-tauri-drag-region></span>
+    {/if}
+    <button
+      title={collapsed ? "Expand tabs" : "Collapse tabs"}
+      onclick={() => app.setVerticalCollapsed(!collapsed)}
+      ><Icon name={(side === "left") === collapsed ? "right" : "left"} size={12} /></button
+    >
+  </div>
   <div class="list" role="tablist" tabindex="-1" aria-orientation="vertical" bind:this={listEl} oncontextmenu={onBarMenu}>
     {#each app.tabs as t (t.id)}
       <TabItem {t} {drag} {side} variant={collapsed ? "collapsed" : "vertical"} />
@@ -84,16 +94,6 @@
         >
       {/if}
     </div>
-  </div>
-  <div class="foot" role="toolbar" tabindex="-1" oncontextmenu={onBarMenu}>
-    {#if !collapsed}
-      <span class="spacer"></span>
-    {/if}
-    <button
-      title={collapsed ? "Expand tabs" : "Collapse tabs"}
-      onclick={() => app.setVerticalCollapsed(!collapsed)}
-      ><Icon name={(side === "left") === collapsed ? "right" : "left"} size={12} /></button
-    >
   </div>
   {#if !collapsed}
     <div
@@ -195,15 +195,19 @@
   .add .plus {
     flex: 1;
   }
-  .foot {
+  .head {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
     gap: 1px;
-    padding: 4px;
-    border-top: 1px solid var(--border);
+    /* Same height as the title bar: on the left, the panel head sits next to it. */
+    box-sizing: border-box;
+    height: var(--tab-height, 34px);
+    padding: 0 4px;
+    border-bottom: 1px solid var(--border);
   }
-  .collapsed .foot {
-    flex-direction: column;
+  .collapsed .head {
+    justify-content: center;
   }
   .spacer {
     flex: 1;

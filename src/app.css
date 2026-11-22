@@ -244,6 +244,21 @@ body.dragging-pane * {
   54% { transform: rotate(1deg); }
 }
 
+/* Warn-colored pulse behind a ringing tab (parent: position relative + isolation). */
+.bell-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--warn);
+  pointer-events: none;
+  opacity: 0;
+  animation: tab-bell-glow 1.5s ease-in-out infinite;
+}
+@keyframes tab-bell-glow {
+  50% { opacity: 0.18; }
+}
+
 kbd {
   font-family: inherit;
 }
