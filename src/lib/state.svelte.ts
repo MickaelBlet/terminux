@@ -464,7 +464,7 @@ export class App {
       if (document.hasFocus() && id === this.activePane) return;
       const p = this.panes[id];
       this.notify(title || p?.title || "Terminux", body);
-      if (p && id !== this.activePane) p.bell = true;
+      if (p && (id !== this.activePane || !document.hasFocus())) p.bell = true;
     },
     onFocus: (id) => this.focusPane(id),
     onInput: (id, data) => this.onInput(id, data),
@@ -636,7 +636,7 @@ export class App {
   private bell(id: string) {
     const p = this.panes[id];
     if (!p) return;
-    if (id !== this.activePane) p.bell = true;
+    if (id !== this.activePane || !document.hasFocus()) p.bell = true;
     const bell = sessions.get(id)?.look.bell;
     if (bell?.audible) playBell(bell.sounds);
     if (bell?.window) p.flash++;
@@ -648,7 +648,9 @@ export class App {
 
   /** Read-only panes drop input; broadcast tabs mirror it to their other panes. */
   private onInput(id: string, data: string): boolean {
-    if (this.panes[id]?.readOnly) {
+    const p = this.panes[id];
+    if (p?.bell) p.bell = false;
+    if (p?.readOnly) {
       this.toast("This pane is read-only. Disable read-only mode to type in it.", "warn");
       return false;
     }
@@ -1077,6 +1079,8 @@ export class App {
   focusPane(id: string) {
     const ti = this.tabs.findIndex((t) => tree.contains(t.root, id));
     if (ti < 0) return;
+    // Re-focusing the same pane (e.g. window regaining focus) keeps its bell; input clears it.
+    const refocus = id === this.activePane;
     const t = this.tabs[ti];
     if (t.zoom && !tree.contains(tree.find(t.root, t.zoom) ?? t.root, id)) t.zoom = null;
     const previous = t.active;
@@ -1089,7 +1093,7 @@ export class App {
     }
     const p = this.panes[id];
     if (p) {
-      p.bell = false;
+      if (!refocus) p.bell = false;
       p.activity = false;
     }
     for (const pid of tree.paneIds(t.zoom ? (tree.find(t.root, t.zoom) ?? t.root) : t.root)) {

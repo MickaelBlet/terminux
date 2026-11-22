@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Terminal scrollbar is thin with a transparent track and a thumb derived from the color scheme
 - `Shift+wheel` scrolls like the plain wheel, and is reported with the Shift modifier to programs that capture the mouse
 
+### Fixed
+
+- A bell while the window is unfocused now marks the active tab and pane too, and the indicator stays after refocusing until you type or switch panes
+
 ## [0.1.8] - 2026-11-19
 
 ### Added
