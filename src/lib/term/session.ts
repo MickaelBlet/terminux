@@ -13,8 +13,10 @@ import { FONT_FAMILIES, wordSeparatorOf, type Config } from "../config";
 import { hasVisibleText, parse133, parse633, parseCwd7, parseCwd99, parseOsc52, parseProgress, type Progress } from "../osc";
 import { mergedSettings, resolve, wantsTransparency, xtermOptions, type PaneSpec, type Resolved } from "./appearance";
 import { Marks } from "./marks";
+import { revealsOnScroll } from "./scrollbar";
 import { MarkMode, isBlockSelection } from "./markmode";
 import { ShellIntegration } from "./shell-integration";
+import { WHEEL_DOWN, WHEEL_LEFT, WHEEL_RIGHT, WHEEL_UP, encodeWheel, sgrModeChange, wheelAxis, wheelSteps } from "./wheel";
 import { fileLinkProvider } from "./file-link-provider";
 import { hideLinkTooltip, showLinkTooltip } from "./link-tooltip";
 import { resolveFilePath, type FileLink } from "../file-links";
@@ -137,6 +139,9 @@ export class TermSession {
    */
   private pendingInput: string[] | null = null;
   private skipViewportPush = false;
+  /** App requested SGR mouse encoding (DECSET 1006/1016); xterm does not expose it. */
+  private sgrMouse = false;
+  private wheelPartial = 0;
   private highlights: IDecoration[] = [];
   private renderer: { kind: Renderer; addon: WebglAddon | CanvasAddon | null } = { kind: "dom", addon: null };
 
@@ -199,6 +204,12 @@ export class TermSession {
       console.warn("image addon unavailable", e);
     }
     this.marks = new Marks(t, () => this.look.showMarksOnScrollbar);
+    let scrolledUp = false;
+    t.onScroll(() => {
+      const b = t.buffer.active;
+      if (this.look.scrollbar.state === "auto" && revealsOnScroll(b.viewportY, b.baseY, scrolledUp)) this.revealScrollbar();
+      scrolledUp = b.viewportY < b.baseY;
+    });
     this.shell = new ShellIntegration(t, this.marks);
     this.markMode = new MarkMode(
       t,
@@ -260,6 +271,14 @@ export class TermSession {
       if (params[0] !== 2 || t.buffer.active.type !== "normal" || this.skipViewportPush) return false;
       this.pushViewportToScrollback();
       return false; // fall through to the default erase
+    });
+    t.parser.registerCsiHandler({ prefix: "?", final: "h" }, (params) => {
+      this.sgrMouse = sgrModeChange(params, true, this.sgrMouse);
+      return false;
+    });
+    t.parser.registerCsiHandler({ prefix: "?", final: "l" }, (params) => {
+      this.sgrMouse = sgrModeChange(params, false, this.sgrMouse);
+      return false;
     });
     t.attachCustomKeyEventHandler((e) => {
       if (e.type !== "keydown") return true;
@@ -495,13 +514,52 @@ export class TermSession {
       }
     }, { capture: true });
     el.addEventListener("wheel", (e) => {
-      if (!e.ctrlKey || (e.altKey && e.shiftKey) || e.deltaY === 0) return;
+      if (!e.ctrlKey) {
+        if (this.handleExtraWheel(e)) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        return;
+      }
+      if ((e.altKey && e.shiftKey) || e.deltaY === 0) return;
       const kind = e.shiftKey ? "opacity" : e.altKey ? "pane-zoom" : "zoom";
       if (kind === "opacity" ? this.config.scroll_to_change_opacity === false : this.config.scroll_to_zoom === false) return;
       e.preventDefault();
       e.stopPropagation();
       this.hooks.onWheel(this.paneId, kind, e.deltaY < 0 ? 1 : -1);
     }, { capture: true, passive: false });
+  }
+
+  /** Horizontal wheel and Shift+wheel, which xterm ignores. Returns true when consumed. */
+  private handleExtraWheel(e: WheelEvent): boolean {
+    const ax = wheelAxis(e);
+    if (!ax) return false;
+    const screen = this.el.querySelector<HTMLElement>(".xterm-screen");
+    const r = screen?.getBoundingClientRect();
+    const rows = this.term.rows;
+    const rowHeight = r && r.height > 0 ? r.height / rows : 16;
+    const { steps, partial } = wheelSteps(ax.delta, e.deltaMode, rowHeight, rows, this.term.options.scrollSensitivity ?? 1, this.wheelPartial);
+    this.wheelPartial = partial;
+    const mode = this.term.modes.mouseTrackingMode;
+    const reports = mode !== "none" && mode !== "x10";
+    if (ax.axis === "x" && !reports) return false;
+    if (steps === 0) return true;
+    const n = Math.abs(steps);
+    if (reports) {
+      if (!r) return true;
+      const col = Math.min(Math.max(Math.floor(((e.clientX - r.left) / r.width) * this.term.cols), 0), this.term.cols - 1) + 1;
+      const row = Math.min(Math.max(Math.floor((e.clientY - r.top) / rowHeight), 0), rows - 1) + 1;
+      const button = ax.axis === "x" ? (steps < 0 ? WHEEL_LEFT : WHEEL_RIGHT) : steps < 0 ? WHEEL_UP : WHEEL_DOWN;
+      const seq = encodeWheel(button, { shift: e.shiftKey, alt: e.altKey, ctrl: e.ctrlKey }, col, row, this.sgrMouse);
+      if (seq) this.input(seq.repeat(n));
+    } else if (this.term.buffer.active.type === "alternate") {
+      // Like xterm's own wheel in the alt screen: arrow keys.
+      const key = this.term.modes.applicationCursorKeysMode ? (steps < 0 ? "\x1bOA" : "\x1bOB") : steps < 0 ? "\x1b[A" : "\x1b[B";
+      this.input(key.repeat(n));
+    } else {
+      this.term.scrollLines(steps);
+    }
+    return true;
   }
 
   /** Buffer cell under a mouse event. */
@@ -811,16 +869,34 @@ export class TermSession {
     if (this.hasUnfocusedLook) this.update();
   }
 
+  private scrollbarTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Auto scrollbar: show it briefly after a scroll. */
+  private revealScrollbar() {
+    this.el.classList.add("scrolling");
+    if (this.scrollbarTimer) clearTimeout(this.scrollbarTimer);
+    this.scrollbarTimer = setTimeout(() => {
+      this.scrollbarTimer = null;
+      this.el.classList.remove("scrolling");
+    }, 1000);
+  }
+
   private applyLook() {
     const r = this.look;
-    this.el.classList.toggle("no-scrollbar", r.scrollbar === "hidden");
+    const sb = r.scrollbar;
+    this.el.classList.toggle("no-scrollbar", sb.state === "hidden");
+    this.el.classList.toggle("auto-scrollbar", sb.state === "auto");
+    this.el.style.setProperty("--sb-width", `${sb.width}px`);
+    this.el.style.setProperty("--sb-thumb", sb.thumb);
+    this.el.style.setProperty("--sb-thumb-hover", sb.thumbHover);
     // Effective with the DOM renderer only: canvas text ignores CSS font features.
     this.el.style.fontFeatureSettings = r.fontFeatures;
     this.el.style.fontVariationSettings = r.fontVariations;
-    if (r.scrollbar === "hidden") {
-      // FitAddon otherwise reserves the fallback scrollbar width.
-      const viewport = (this.term as any)._core?.viewport;
-      if (viewport && "scrollBarWidth" in viewport) viewport.scrollBarWidth = 0;
+    // FitAddon reserves the width measured at creation: keep it in sync with the CSS.
+    const viewport = (this.term as any)._core?.viewport;
+    if (viewport && "scrollBarWidth" in viewport && viewport.scrollBarWidth !== sb.width) {
+      viewport.scrollBarWidth = sb.width;
+      this.scheduleFit();
     }
     if (r.ligatures && this.ligatureJoiner == null) {
       this.ligatureJoiner = this.term.registerCharacterJoiner((text) =>

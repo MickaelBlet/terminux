@@ -166,10 +166,12 @@ The terminal engine has three cursor styles, so shapes map as: `bar` is a bar, `
 padding = "8"                # all sides
 # padding = "10, 6"          # horizontal, vertical
 # padding = "10, 6, 10, 2"   # left, top, right, bottom
-scrollbar_state = "hidden"
+scrollbar_state = "auto"     # "visible" | "hidden" | "always" | "auto"
+scrollbar_width = 10         # px, 2-32 (default 8)
+scrollbar_color = "#7f849c"  # thumb (default: foreground, translucent)
 ```
 
-Default padding is `6, 4, 2, 2` (left, top, right, bottom, in px). `scrollbar_state = "hidden"` removes the scrollbar (`visible` is the default; `always` is accepted and behaves like `visible`). With [`show_marks_on_scrollbar`](../reference/profile-settings.md#show_marks_on_scrollbar) the scroll marks are drawn on the scrollbar (see [Search and navigation](09-search-and-navigation.md#scroll-marks)).
+Default padding is `6, 4, 2, 2` (left, top, right, bottom, in px). The scrollbar is thin, with a transparent track and a thumb derived from the color scheme. `scrollbar_state = "hidden"` removes it, `auto` shows the thumb only while scrolling back or hovering it (`visible` is the default; `always` is accepted and behaves like `visible`). `scrollbar_width` and `scrollbar_color` change its width and thumb color. With [`show_marks_on_scrollbar`](../reference/profile-settings.md#show_marks_on_scrollbar) the scroll marks are drawn on the scrollbar (see [Search and navigation](09-search-and-navigation.md#scroll-marks)).
 
 ## Opacity, acrylic and background images
 

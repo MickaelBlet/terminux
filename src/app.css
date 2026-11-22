@@ -161,6 +161,41 @@ body.dragging-pane * {
   height: 100%;
 }
 
+/* Terminal scrollbar: thin, transparent track, thumb from the scheme (--sb-* set per pane).
+   No standard scrollbar-color here: Chromium ignores ::-webkit-scrollbar when it is set. */
+.term-host .xterm-viewport::-webkit-scrollbar {
+  width: var(--sb-width, 8px);
+  background: transparent;
+}
+.term-host .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+.term-host .xterm-viewport::-webkit-scrollbar-thumb {
+  background: var(--sb-thumb, rgba(128, 128, 128, 0.4));
+  border-radius: var(--sb-width, 8px);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  min-height: 24px;
+}
+.term-host .xterm-viewport::-webkit-scrollbar-thumb:hover,
+.term-host .xterm-viewport::-webkit-scrollbar-thumb:active {
+  background: var(--sb-thumb-hover, rgba(128, 128, 128, 0.7));
+  background-clip: padding-box;
+}
+.term-host.auto-scrollbar .xterm-viewport::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+.term-host.auto-scrollbar.scrolling .xterm-viewport::-webkit-scrollbar-thumb,
+.term-host.auto-scrollbar .xterm-viewport:hover::-webkit-scrollbar-thumb {
+  background: var(--sb-thumb, rgba(128, 128, 128, 0.4));
+  background-clip: padding-box;
+}
+.term-host.auto-scrollbar .xterm-viewport::-webkit-scrollbar-thumb:hover,
+.term-host.auto-scrollbar .xterm-viewport::-webkit-scrollbar-thumb:active {
+  background: var(--sb-thumb-hover, rgba(128, 128, 128, 0.7));
+  background-clip: padding-box;
+}
+
 .term-host.no-scrollbar .xterm-viewport {
   scrollbar-width: none;
 }

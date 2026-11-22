@@ -71,6 +71,7 @@
   class:active
   class:zoomed
   class:grouped
+  class:belled={multi && info?.bell}
   class:retro={look?.retro}
   class:flash={flashing}
   class:dragged
@@ -144,6 +145,14 @@
   }
   .pane.grouped {
     border-color: var(--accent) !important;
+  }
+  .pane.belled {
+    animation: pane-bell 1.5s ease-in-out infinite;
+  }
+  @keyframes pane-bell {
+    50% {
+      border-color: var(--warn);
+    }
   }
   .pane.multi:not(.active):not(.grouped) {
     opacity: 0.88;

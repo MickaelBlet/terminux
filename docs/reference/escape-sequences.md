@@ -179,6 +179,7 @@ chafa -f sixel picture.png  # chafa
 | --- | --- |
 | Bracketed paste (`CSI ? 2004 h`) | The multi-line and large paste warnings (`warn unless the application enabled bracketed paste`) are not shown by default; see [`multi_line_paste_warning`](configuration.md#multi_line_paste_warning). |
 | Mouse tracking (`CSI ? 1000 h` and relatives) | Clicks go to the application (vim, htop, tmux), including middle and right clicks. Hold `Shift` to select text or to use Terminux's click actions. |
+| Horizontal wheel / `Shift+wheel` | xterm.js ignores both. With wheel-reporting mouse tracking, horizontal scrolling sends buttons 66/67 (left/right) and `Shift+wheel` sends wheel up/down with the Shift modifier (SGR when `CSI ? 1006 h` is set). Otherwise `Shift+wheel` scrolls like the plain wheel (scrollback, or arrow keys in the alternate screen). |
 | Alternate screen (`CSI ? 1049 h`) | `auto_mark_prompts` only marks lines on the normal screen. |
 | Application cursor keys (`CSI ? 1 h`) | Changes the sequences sent by click-to-move-cursor. |
 

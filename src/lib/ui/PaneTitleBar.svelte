@@ -35,6 +35,7 @@
 <div
   class="bar"
   class:active
+  class:belled={p?.bell}
   ondblclick={() => (app.renamingPane = paneId)}
   onpointerdown={(e) => !(e.target as Element).closest("button, input") && paneDrag.down(e, paneId)}
   onmousedown={(e) => e.button === 1 && e.preventDefault()}
@@ -110,6 +111,14 @@
   .bar.active {
     color: var(--fg);
     border-bottom-color: var(--accent-dim);
+  }
+  .bar.belled {
+    animation: bar-bell 1.5s ease-in-out infinite;
+  }
+  @keyframes bar-bell {
+    50% {
+      border-bottom-color: var(--warn);
+    }
   }
   .title {
     flex: 1;

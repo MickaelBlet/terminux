@@ -40,6 +40,8 @@ export interface ProfileSettings extends Appearance {
   adjust_indistinguishable_colors?: string;
   padding?: string | number;
   scrollbar_state?: string;
+  scrollbar_width?: number;
+  scrollbar_color?: string;
   unfocused_appearance?: Appearance;
   tab_title?: string;
   suppress_application_title?: boolean;

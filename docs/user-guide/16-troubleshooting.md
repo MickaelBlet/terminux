@@ -117,6 +117,7 @@ Common collisions: `Alt+Arrows` (move focus), `Alt+Shift+Arrows` (resize), `Ctrl
 - Programs that capture the mouse (vim, tmux, htop, ...) receive clicks and drags; hold `Shift` to select text yourself or `Shift+click` to paste.
 - **Right click pastes** (or copies the selection) by default; set `right_click_context_menu = true` for a menu, `Ctrl+right-click` always opens the menu.
 - Middle click pastes the **clipboard** (the X11 primary selection is not used).
+- Horizontal scrolling reaches programs that capture the mouse; `Shift+wheel` scrolls like the plain wheel (and is reported with Shift to those programs).
 - Focus-follows-mouse is `focus_follow_mouse`; `Ctrl+wheel` zooms (`scroll_to_zoom`); `Ctrl+Shift+wheel` changes opacity (`scroll_to_change_opacity`).
 
 ## Clipboard and OSC 52

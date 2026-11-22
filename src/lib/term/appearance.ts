@@ -10,6 +10,7 @@ import {
   type ProfileSettings,
 } from "../config";
 import { findScheme, luminance, schemeName, toTheme, withAlpha, DEFAULT_SCHEME } from "../schemes";
+import { scrollbarLook, type ScrollbarLook } from "./scrollbar";
 
 /** What a pane runs and how it deviates from its profile. Serializable. */
 export interface PaneSpec {
@@ -83,7 +84,7 @@ export interface Resolved {
   snapOnInput: boolean;
   /** left, top, right, bottom (px). */
   padding: [number, number, number, number];
-  scrollbar: "visible" | "hidden";
+  scrollbar: ScrollbarLook;
   tabTitle: string | null;
   suppressTitle: boolean;
   tabColor: string | null;
@@ -270,7 +271,7 @@ export function resolve(cfg: Config, spec: PaneSpec, env: ResolveEnv): Resolved 
     scrollback: Math.max(0, s.history_size ?? cfg.scrollback ?? 100000),
     snapOnInput: s.snap_on_input ?? true,
     padding: parsePadding(s.padding, [6, 4, 2, 2]),
-    scrollbar: norm(s.scrollbar_state) === "hidden" ? "hidden" : "visible",
+    scrollbar: scrollbarLook(s.scrollbar_state, s.scrollbar_width, s.scrollbar_color, theme.foreground ?? "#ffffff"),
     tabTitle: spec.tabTitle ?? s.tab_title ?? null,
     suppressTitle: spec.suppressApplicationTitle ?? s.suppress_application_title ?? false,
     tabColor: spec.tabColor ?? s.tab_color ?? null,

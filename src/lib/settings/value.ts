@@ -53,7 +53,7 @@ export type Control =
   | { kind: "map" }
   | { kind: "toml" };
 
-const COLOR_KEYS = new Set([...THEME_KEYS, "tab_color", "frame", "unfocused_frame", "unfocused_background", "unfocused_foreground", "divider", "active_border"]);
+const COLOR_KEYS = new Set([...THEME_KEYS, "tab_color", "scrollbar_color", "frame", "unfocused_frame", "unfocused_background", "unfocused_foreground", "divider", "active_border"]);
 /** String fields whose listed values are suggestions, not the only choices. */
 const OPEN_VALUES = new Set(["cmd", "bell_style"]);
 const LIST_KEYS = new Set(["args", "disabled_profile_sources", "toolbar"]);

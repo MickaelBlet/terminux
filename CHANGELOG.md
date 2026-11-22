@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Belled panes blink their border until focused (split tabs), and the bottom border of their title bar
+- `scrollbar_state = "auto"`: the scrollbar thumb shows only while scrolling back or hovering it
+- `scrollbar_width` and `scrollbar_color` profile settings
+- Horizontal wheel scrolling is reported to programs that capture the mouse (buttons 66/67)
+
+### Changed
+
+- Terminal scrollbar is thin with a transparent track and a thumb derived from the color scheme
+- `Shift+wheel` scrolls like the plain wheel, and is reported with the Shift modifier to programs that capture the mouse
+
 ## [0.1.8] - 2026-11-19
 
 ### Added

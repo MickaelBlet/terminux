@@ -319,12 +319,32 @@ padding = "8"
 
 **Type:** string | **Default:** `"visible"` | **Windows Terminal:** `scrollbarState`
 
-**Values:** `visible`, `hidden`, `always`
+**Values:** `visible`, `hidden`, `always`, `auto`
 
-Scrollbar visibility. `hidden` removes the scrollbar; `visible` and `always` show it.
+Scrollbar visibility. `hidden` removes the scrollbar; `visible` and `always` show it; `auto` keeps its space but shows the thumb only while you scroll back or hover the scrollbar (output arriving at the bottom does not reveal it).
 
 ```toml
-scrollbar_state = "hidden"
+scrollbar_state = "auto"
+```
+
+### scrollbar_width
+
+**Type:** number (px) | **Default:** `8`
+
+Scrollbar width, clamped to 2-32.
+
+```toml
+scrollbar_width = 12
+```
+
+### scrollbar_color
+
+**Type:** string (color) | **Default:** the foreground at 30% opacity
+
+Color of the scrollbar thumb; the hovered thumb blends it with the foreground. The track is transparent.
+
+```toml
+scrollbar_color = "#7f849c"
 ```
 
 ### opacity
