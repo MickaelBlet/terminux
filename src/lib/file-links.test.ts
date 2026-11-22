@@ -34,6 +34,16 @@ describe("findFileLinks", () => {
       ["Cargo.toml", undefined, undefined],
     ]);
   });
+  it("accepts dotfiles", () => {
+    expect(paths(".bashrc .gitignore:3 .config/nvim/init.lua ~/.zshrc ./.env")).toEqual([
+      [".bashrc", undefined, undefined],
+      [".gitignore", 3, undefined],
+      [".config/nvim/init.lua", undefined, undefined],
+      ["~/.zshrc", undefined, undefined],
+      ["./.env", undefined, undefined],
+    ]);
+    expect(paths("wait... . .5")).toEqual([]);
+  });
 });
 
 describe("resolveFilePath", () => {

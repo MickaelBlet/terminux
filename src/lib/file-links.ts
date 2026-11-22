@@ -17,6 +17,8 @@ const PATH_RE =
 
 const hasSep = (p: string) => /[\\/]/.test(p);
 const hasExt = (p: string) => /[^.\\/][^\\/]*\.[A-Za-z][\w-]*$/.test(p);
+// Bare dotfile name like `.bashrc` or `.gitignore`.
+const isDotfile = (p: string) => /^\.[A-Za-z][\w.-]*$/.test(p);
 
 /** Path-like tokens of one (unwrapped) terminal line. URLs are skipped. */
 export function findFileLinks(text: string): FileLink[] {
@@ -36,7 +38,7 @@ export function findFileLinks(text: string): FileLink[] {
       path = trimmed;
     }
     if (!path || /^[.\\/~]+$/.test(path)) continue;
-    if (!hasSep(path) && !hasExt(path)) continue;
+    if (!hasSep(path) && !hasExt(path) && !isDotfile(path)) continue;
     // A bare drive or a lone separator segment like "a/" is not a file.
     if (/[\\/]$/.test(path)) continue;
     if (line === 0) line = undefined;

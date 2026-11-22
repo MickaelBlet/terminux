@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scrollbar_state = "auto"`: the scrollbar thumb shows only while scrolling back or hovering it
 - `scrollbar_width` and `scrollbar_color` profile settings
 - Horizontal wheel scrolling is reported to programs that capture the mouse (buttons 66/67)
+- Bare dotfile names (`.bashrc`, `.gitignore:3`) in terminal output are Ctrl+clickable file links
 
 ### Changed
 
