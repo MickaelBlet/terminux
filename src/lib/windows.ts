@@ -8,6 +8,7 @@ import * as tree from "./layout/tree";
 import { sanitizeTab, type TabSnapshot, type WindowSnapshot } from "./snapshot";
 import type { App, NewPaneArgs, Tab } from "./state.svelte";
 import { setRootKey } from "./snippets";
+import { aggregateProgress } from "./taskbar";
 import { sessions } from "./term/session";
 
 /** What a window starts with, or receives later. */
@@ -67,6 +68,14 @@ export async function init(app: App) {
   await win.onCloseRequested((e) => {
     e.preventDefault();
     void closeWindow(app);
+  });
+  await win.onFocusChanged(({ payload: focused }) => {
+    if (!focused) return;
+    win.requestUserAttention(null).catch(() => {});
+    if (app.taskbarFlash) {
+      app.taskbarFlash = null;
+      syncProgress(app);
+    }
   });
   await win.onResized(async () => {
     if (app.config.minimize_to_tray && (await win.isMinimized().catch(() => false))) invoke("minimize_to_tray").catch(console.error);
@@ -175,12 +184,19 @@ export function syncTitle(app: App) {
 
 const STATUS = [ProgressBarStatus.None, ProgressBarStatus.Normal, ProgressBarStatus.Error, ProgressBarStatus.Indeterminate, ProgressBarStatus.Paused];
 
-/** Taskbar progress follows the active tab (OSC 9;4). */
+/** Taskbar progress: aggregate of every pane (OSC 9;4), else the unseen finished-command result. */
 export function syncProgress(app: App) {
-  const t = app.tab;
-  const ids = t?.kind === "term" ? [t.active, ...tree.paneIds(t.root)] : [];
-  const p = ids.map((id) => app.panes[id]?.progress).find((x) => !!x);
-  win.setProgressBar(p ? { status: STATUS[p.state], progress: p.value } : { status: ProgressBarStatus.None }).catch(() => {});
+  const p = aggregateProgress(Object.values(app.panes).map((x) => x.progress));
+  const flash = app.taskbarFlash;
+  // No value with indeterminate: on Windows SetProgressValue switches the state back to normal (0 %, invisible).
+  const state = p
+    ? p.state === 3
+      ? { status: ProgressBarStatus.Indeterminate }
+      : { status: STATUS[p.state], progress: Math.max(p.value, 1) }
+    : flash
+      ? { status: STATUS[flash], progress: 100 }
+      : { status: ProgressBarStatus.None };
+  win.setProgressBar(state).catch(() => {});
 }
 
 export function transparencyHint(app: App, opacity: number) {

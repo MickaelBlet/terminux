@@ -509,11 +509,11 @@ startup_retries = 0
 
 ### bell_style
 
-**Type:** string or array | **Default:** `"none"` | **Windows Terminal:** `bellStyle`
+**Type:** string or array | **Default:** `"taskbar"` | **Windows Terminal:** `bellStyle`
 
 **Values:** `audible`, `window`, `taskbar`, `all`, `none`, or a list
 
-What the bell (BEL) does: `audible` plays the bell sound, `window` flashes the pane, `taskbar` requests window attention, `all` does all three, `none` nothing visible. A list combines styles. Independent of this, a bell in an unfocused window raises a desktop notification when `notifications` is on.
+What the bell (BEL) does: `audible` plays the bell sound, `window` flashes the pane, `taskbar` requests window attention when the window is unfocused (see [`taskbar_attention`](configuration.md#taskbar_attention)), `all` does all three, `none` nothing visible. A list combines styles. Independent of this, a bell in an unfocused window raises a desktop notification when `notifications` is on.
 
 ```toml
 bell_style = ["audible", "taskbar"]

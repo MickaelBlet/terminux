@@ -13,7 +13,11 @@ interface Command {
   end?: IMarker;
   exitCode?: number;
   text?: string;
+  /** Date.now() when output started (the command ran). */
+  startedAt?: number;
 }
+
+export type CommandFinished = (exitCode: number | undefined, durationMs: number, text: string | undefined) => void;
 
 const MAX_COMMANDS = 500;
 
@@ -40,6 +44,7 @@ export class ShellIntegration {
   constructor(
     private term: Terminal,
     private marks: Marks,
+    private onFinished?: CommandFinished,
   ) {}
 
   private get current(): Command | undefined {
@@ -73,6 +78,7 @@ export class ShellIntegration {
         const marker = this.term.registerMarker(0);
         if (!cmd || !marker) return;
         cmd.output = marker;
+        cmd.startedAt = Date.now();
         cmd.text ??= this.readCommand(cmd, marker.line);
         break;
       }
@@ -83,6 +89,7 @@ export class ShellIntegration {
         cmd.exitCode = m.exitCode;
         // No output mark (empty command line): keep the neutral prompt color.
         if (cmd.mark && cmd.output && m.exitCode !== undefined) this.marks.set(cmd.mark, m.exitCode === 0 ? "success" : "error");
+        if (cmd.startedAt !== undefined) this.onFinished?.(m.exitCode, Date.now() - cmd.startedAt, cmd.text);
         break;
       }
       case "commandline":

@@ -4,6 +4,7 @@
   import { findProfile } from "../config";
   import Icon from "./Icon.svelte";
   import ProfileIcon from "./ProfileIcon.svelte";
+  import ProgressRing from "./ProgressRing.svelte";
   import { paneDrag } from "./pane-drag.svelte";
   import { paneHeaderMenu } from "./menus";
 
@@ -56,8 +57,13 @@
   title="Drag to move the pane, right-click for move options, double-click to rename, middle-click to close"
   role="presentation"
 >
-  {#if p?.bell}<span class="bell"><Icon name="bell" size={11} /></span>
-  {:else if app.ui?.iconStyle !== "hidden"}<ProfileIcon {icon} size={11} mono={app.ui?.iconStyle === "monochrome"} />{/if}
+  {#if p?.bell || p?.progress || app.ui?.iconStyle !== "hidden"}
+    <span class="lead">
+      {#if p?.bell}<span class="bell"><Icon name="bell" size={11} /></span>
+      {:else if app.ui?.iconStyle !== "hidden"}<ProfileIcon {icon} size={11} mono={app.ui?.iconStyle === "monochrome"} />{/if}
+      {#if p?.progress}<ProgressRing progress={p.progress} />{/if}
+    </span>
+  {/if}
   {#if app.renamingPane === paneId}
     <input
       use:focusInput
@@ -137,6 +143,14 @@
     border: 1px solid var(--accent);
     border-radius: 3px;
     outline: none;
+  }
+  .lead {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
   }
   .bell {
     color: var(--warn);

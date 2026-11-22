@@ -81,6 +81,28 @@ Desktop notifications for OSC 9 / OSC 777 and for the bell when the window is no
 notifications = false
 ```
 
+### taskbar_attention
+
+**Type:** string | **Default:** `"informational"`
+
+**Values:** `informational`, `critical`
+
+How the taskbar entry asks for attention (bell with `bell_style` `taskbar`, OSC 9 / OSC 777 notification or a finished command while the window is unfocused). `informational` flashes briefly on Windows; `critical` flashes until the window is focused. On Linux both set the window's urgency hint. The request is cleared when the window gets focus.
+
+```toml
+taskbar_attention = "critical"
+```
+
+### notify_command_finished
+
+**Type:** number (seconds) | **Default:** `10`
+
+When a command that ran at least this long ends while you cannot see it (window unfocused, or pane not visible), Terminux sends a desktop notification (command line, exit status, duration), marks the tab with the bell icon and, if the window is unfocused, flashes the taskbar and shows a full green (success) or red (failure) taskbar progress until the window is focused. Needs [shell integration](../user-guide/10-shell-integration.md) (OSC 133 / 633 `C` and `D` marks). `0` turns it off.
+
+```toml
+notify_command_finished = 30
+```
+
 ### renderer
 
 **Type:** string | **Default:** unset: `"canvas"` on Linux, `"webgl"` elsewhere

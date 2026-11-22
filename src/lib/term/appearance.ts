@@ -179,7 +179,7 @@ const ALIGN: Record<string, string> = {
 };
 
 function bellOf(s: ProfileSettings): Bell {
-  const styles = new Set((Array.isArray(s.bell_style) ? s.bell_style : [s.bell_style ?? "none"]).map(norm));
+  const styles = new Set((Array.isArray(s.bell_style) ? s.bell_style : [s.bell_style ?? "taskbar"]).map(norm));
   const all = styles.has("all");
   return {
     audible: all || styles.has("audible"),

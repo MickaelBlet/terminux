@@ -16,6 +16,8 @@ font_family = "'JetBrains Mono', 'Symbols Nerd Font Mono', 'Twemoji Mozilla', 'N
 emoji_font = "Segoe UI Emoji"         # color emoji font before the bundled Twemoji; default: system emoji font
 scrollback = 100000                   # lines; history_size per profile wins
 notifications = true                  # desktop notifications (OSC 9 / OSC 777 / bell) when unfocused
+taskbar_attention = "informational"   # taskbar flash: "informational" (brief) | "critical" (until focused)
+notify_command_finished = 10          # alert when a command ran >= N s and ended unseen (shell integration; 0 = off)
 renderer = "canvas"                   # "webgl" | "canvas" | "dom"; unset = canvas on Linux, webgl elsewhere
 disabled_profile_sources = ["powershell"]   # skip generated profiles: "wsl" | "ssh" | "powershell" | "windows"
 screen_reader = false                 # accessible text buffer for screen readers

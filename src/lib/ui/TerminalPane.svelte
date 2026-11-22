@@ -13,6 +13,7 @@
   import ConfigEditor from "./ConfigEditor.svelte";
   import SettingsTab from "./settings/SettingsTab.svelte";
   import Icon from "./Icon.svelte";
+  import ProgressLine from "./ProgressLine.svelte";
 
   let { paneId, tab }: { paneId: string; tab: Tab } = $props();
   let host = $state<HTMLDivElement>();
@@ -92,6 +93,7 @@
   {/if}
   {#if titleBar}<PaneTitleBar {paneId} {tab} />{/if}
   <div class="body" style:padding="{pad[1]}px {pad[2]}px {pad[3]}px {pad[0]}px">
+  {#if multi && info?.progress}<ProgressLine progress={info.progress} />{/if}
   {#if kind === "snippets"}
     <SnippetsPane {paneId} />
   {:else if kind === "config"}

@@ -14,11 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scrollbar_width` and `scrollbar_color` profile settings
 - Horizontal wheel scrolling is reported to programs that capture the mouse (buttons 66/67)
 - Bare dotfile names (`.bashrc`, `.gitignore:3`) in terminal output are Ctrl+clickable file links
+- `notify_command_finished` (default 10 s): a shell-integrated command that ends unseen sends a notification, marks its tab and, when the window is unfocused, flashes the taskbar with a green/red full progress until focused
+- `taskbar_attention`: `informational` (brief) or `critical` (until focused) taskbar flash; OSC 9 / OSC 777 notifications also flash the taskbar when unfocused
+- OSC 9;4 progress shows as a thin line along the top of split panes and a ring on the pane title bar icon
 
 ### Changed
 
 - Terminal scrollbar is thin with a transparent track and a thumb derived from the color scheme
 - `Shift+wheel` scrolls like the plain wheel, and is reported with the Shift modifier to programs that capture the mouse
+- `bell_style` defaults to `taskbar` instead of `none`
+- Taskbar progress aggregates every tab of the window (error > paused > normal > indeterminate) instead of following the active tab
 
 ### Fixed
 

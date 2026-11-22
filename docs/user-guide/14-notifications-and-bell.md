@@ -29,16 +29,16 @@ The bell is a **profile setting** (put it in `[defaults]` or a `[[profile]]`):
 
 ```toml
 [defaults]
-bell_style = "none"          # "audible" | "window" | "taskbar" | "all" | "none", or a list
+bell_style = "taskbar"       # "audible" | "window" | "taskbar" | "all" | "none", or a list
 bell_sound = "~/sounds/bell.wav"
 ```
 
 | `bell_style` | Effect |
 | --- | --- |
-| `none` (default) | no sound, no flash, no taskbar attention. The tab bell icon and the unfocused desktop notification still apply. |
+| `none` | no sound, no flash, no taskbar attention. The tab bell icon and the unfocused desktop notification still apply. |
 | `audible` | play a sound |
 | `window` | flash the pane for a quarter of a second (visual bell) |
-| `taskbar` | request the OS's "attention" state for the window, only when the window is unfocused |
+| `taskbar` (default) | request the OS's "attention" state for the window (taskbar flash), only when the window is unfocused |
 | `all` | all of the above |
 | list, e.g. `["audible", "window"]` | any combination |
 
@@ -76,12 +76,13 @@ Terminux shows the notification through the OS notification service (first use a
 - If the sending pane is not the active one, it gets the bell icon on its tab.
 - `OSC 9;4;...` is progress and `OSC 9;9;...` a directory report (see below); neither raises a notification, and neither does any other `OSC 9;<digits>;...` payload. Everything else after `OSC 9;` is the notification body.
 - Notifications are turned off globally with `notifications = false`; the tab icon still appears.
+- If the window is not focused, the taskbar entry also flashes (see [`taskbar_attention`](../reference/configuration.md#taskbar_attention)).
 
 OSC 777 forms other than `notify` are ignored.
 
 ## Progress
 
-`OSC 9;4;<state>;<value>` drives a progress ring on the tab and the taskbar progress of the window (Windows Terminal compatible):
+`OSC 9;4;<state>;<value>` drives a progress ring on the tab, a thin progress line along the top of the pane (when the tab is split) and a ring on the pane title bar icon, and the taskbar progress of the window (Windows Terminal compatible):
 
 | State | Meaning |
 | --- | --- |
@@ -97,7 +98,15 @@ printf '\e]9;4;3\a'      # busy
 printf '\e]9;4;0\a'      # done, clear
 ```
 
-The taskbar follows the active tab (the first pane with progress). Whether the OS displays taskbar progress depends on the platform; the tab ring always works. Remember to clear it (`4;0`), otherwise the ring stays.
+The taskbar shows one progress for all tabs of the window: an error wins, then paused, then normal (the lowest value), then indeterminate. Whether the OS displays taskbar progress depends on the platform (Windows taskbar; on Linux, docks implementing the Unity launcher API such as KDE Plasma, Ubuntu Dock or Dash to Dock); the tab ring always works. Remember to clear it (`4;0`), otherwise the ring stays.
+
+## Finished commands
+
+With [shell integration](10-shell-integration.md), a command that ran at least [`notify_command_finished`](../reference/configuration.md#notify_command_finished) seconds (default 10) and ended while you could not see it (window unfocused, or pane in another tab) raises a desktop notification with the command line, its exit status and duration, and puts the bell icon on its tab. If the window is unfocused the taskbar flashes and shows a full green (success) or red (failure) progress until you come back. Set it to `0` to turn it off.
+
+## Taskbar attention
+
+The bell (`bell_style` `taskbar`), notifications and finished commands request attention when the window is unfocused. [`taskbar_attention`](../reference/configuration.md#taskbar_attention) picks `informational` (brief flash) or `critical` (flashes until focused, Windows); on Linux both set the urgency hint. Focusing the window clears it.
 
 ## Tab indicators
 
@@ -125,7 +134,7 @@ Inside `tmux` or `screen` the sequences must be passed through (tmux: `set -g al
 
 - **No desktop notification**: check `notifications = true`; the window must be unfocused or another pane active; on Linux a notification daemon (D-Bus `org.freedesktop.Notifications`) must be running; the OS may have denied the permission prompt.
 - **Sound does not play**: `bell_style` must include `audible` (or `all`); a custom file must exist, be inside the config reference (a path written in `bell_sound`) and be decodable by the webview; try without `bell_sound` to hear the default tone.
-- **Beeps from tab completion**: set `bell_style = "none"` (the default), or leave only `window`.
+- **Beeps from tab completion**: set `bell_style = "none"`, or leave only `window` or `taskbar` (the default).
 - **Notification repeats**: the program is printing the sequence repeatedly.
 - More in [Troubleshooting](16-troubleshooting.md).
 

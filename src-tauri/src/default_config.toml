@@ -12,6 +12,8 @@ default_profile = "shell"
 # renderer = "canvas"   # "webgl" | "canvas" | "dom" (default: canvas on Linux, webgl elsewhere)
 # Notify (desktop) on OSC 9 / OSC 777 or bell when the window is not focused.
 # notifications = true
+# taskbar_attention = "informational"   # taskbar flash: "informational" (brief) | "critical" (until focused)
+# notify_command_finished = 10          # alert when a command ran >= N s and ended unseen (shell integration; 0 = off)
 # screen_reader = false          # accessible text buffer for screen readers
 
 # --- Appearance ---
@@ -109,7 +111,7 @@ copy_on_select = false
 # close_on_exit = "automatic"    # "automatic" | "graceful" | "always" | "never"
 # startup_timeout = 15           # restart a new shell silent for this many seconds (0 = off)
 # startup_retries = 2            # automatic restarts on spawn failure / silent startup
-# bell_style = "none"            # "audible" | "window" | "taskbar" | "all" | "none", or a list
+# bell_style = "taskbar"            # "audible" | "window" | "taskbar" | "all" | "none", or a list
 # bell_sound = "~/sounds/bell.wav"   # or a list (one is picked at random)
 # auto_mark_prompts = false
 # show_marks_on_scrollbar = false
@@ -166,7 +168,7 @@ copy_on_select = false
 # close_on_exit = "automatic"
 # startup_timeout = 15
 # startup_retries = 2
-# bell_style = "none"
+# bell_style = "taskbar"
 # bell_sound = "~/sounds/bell.wav"
 # auto_mark_prompts = false
 # show_marks_on_scrollbar = false

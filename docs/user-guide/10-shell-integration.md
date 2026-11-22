@@ -30,6 +30,7 @@ Shell integration is a handful of escape sequences that your shell prints around
 - **Click to move the cursor** on the command line ([`reposition_cursor_with_mouse`](../reference/profile-settings.md#reposition_cursor_with_mouse)).
 - **Save the command line as a snippet** ([`save_snippet`](../reference/actions.md#save_snippet)) when nothing is selected.
 - **Working directory** for new splits, duplicated tabs and restored sessions.
+- **Finished command alerts**: a long command ending unseen notifies you and flashes the taskbar ([`notify_command_finished`](../reference/configuration.md#notify_command_finished), see [Notifications and bell](14-notifications-and-bell.md#finished-commands)).
 
 ## The sequences
 
@@ -59,6 +60,7 @@ Other sequences that are not shell integration but often travel with it: `OSC 9;
 | --- | :-: | :-: | :-: | :-: | :-: |
 | Gray prompt marks, `scroll_to_*_mark` | required | | | | |
 | Green / red marks | required | | required | required | |
+| Finished command alerts (`notify_command_finished`) | | | required | required | |
 | `select_previous_command` / `select_next_command` | required | required | required | | |
 | `select_previous_output` / `select_next_output` | required | | required | required | |
 | Recent commands in `show_suggestions` | required | required | required | | (or `633;E` instead of B + C) |

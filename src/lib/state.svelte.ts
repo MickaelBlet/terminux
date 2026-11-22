@@ -13,6 +13,7 @@ import { eventKey, Keymap } from "./keys";
 import * as tree from "./layout/tree";
 import type { Dir, Direction, LayoutNode } from "./layout/tree";
 import type { Progress } from "./osc";
+import { attentionType, formatDuration, shouldAlertCommand } from "./taskbar";
 import { pasteWarning, sanitizePaste } from "./paste";
 import { droppedPaths } from "./paths";
 import { dirOf, parseFileArg, resolveFilePath } from "./file-links";
@@ -135,6 +136,8 @@ export class App {
   tabs = $state<Tab[]>([]);
   activeTab = $state(0);
   panes = $state<Record<string, PaneInfo>>({});
+  /** Taskbar progress shown after a command finished unseen (1 success, 2 error), until the window is focused. */
+  taskbarFlash: 1 | 2 | null = null;
   palette = $state.raw<PaletteView | null>(null);
   menu = $state.raw<MenuRequest | null>(null);
   dialog = $state.raw<DialogRequest | null>(null);
@@ -465,6 +468,7 @@ export class App {
       const p = this.panes[id];
       this.notify(title || p?.title || "Terminux", body);
       if (p && (id !== this.activePane || !document.hasFocus())) p.bell = true;
+      if (!document.hasFocus()) this.requestAttention();
     },
     onFocus: (id) => this.focusPane(id),
     onInput: (id, data) => this.onInput(id, data),
@@ -481,6 +485,7 @@ export class App {
       if (this.panes[id]) this.panes[id].progress = progress;
       windows.syncProgress(this);
     },
+    onCommandFinished: (id, code, ms, text) => this.commandFinished(id, code, ms, text),
     onCwd: (id, cwd) => {
       if (this.panes[id]) this.panes[id].cwd = cwd;
     },
@@ -633,6 +638,27 @@ export class App {
     if (ok) sendNotification({ title, body });
   }
 
+  /** Flash the taskbar entry (cleared when the window gets focus). */
+  requestAttention() {
+    const type = attentionType(this.config.taskbar_attention) === "critical" ? UserAttentionType.Critical : UserAttentionType.Informational;
+    getCurrentWindow().requestUserAttention(type).catch(() => {});
+  }
+
+  private commandFinished(id: string, code: number | undefined, ms: number, text: string | undefined) {
+    const p = this.panes[id];
+    if (!p) return;
+    const focused = document.hasFocus();
+    if (!shouldAlertCommand(ms, this.config.notify_command_finished ?? 10, this.isVisible(id), focused)) return;
+    const failed = code !== undefined && code !== 0;
+    if (id !== this.activePane || !focused) p.bell = true;
+    this.notify(text || p.title || this.profileName(p.spec.profileId), failed ? `Failed (exit ${code}) after ${formatDuration(ms)}` : `Done in ${formatDuration(ms)}`);
+    if (!focused) {
+      this.requestAttention();
+      this.taskbarFlash = failed ? 2 : 1;
+      windows.syncProgress(this);
+    }
+  }
+
   private bell(id: string) {
     const p = this.panes[id];
     if (!p) return;
@@ -641,7 +667,7 @@ export class App {
     if (bell?.audible) playBell(bell.sounds);
     if (bell?.window) p.flash++;
     if (!document.hasFocus()) {
-      if (bell?.taskbar) getCurrentWindow().requestUserAttention(UserAttentionType.Informational).catch(() => {});
+      if (bell?.taskbar) this.requestAttention();
       this.notify(p.title || this.profileName(p.spec.profileId), "Bell");
     }
   }

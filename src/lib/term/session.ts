@@ -36,6 +36,8 @@ export interface SessionHooks {
   onExit(paneId: string, code: number | null): void;
   onContextMenu(paneId: string, x: number, y: number): void;
   onProgress(paneId: string, progress: Progress | null): void;
+  /** A shell-integrated command ended (OSC 133;D / 633;D). */
+  onCommandFinished(paneId: string, exitCode: number | undefined, durationMs: number, text: string | undefined): void;
   onCwd(paneId: string, cwd: string): void;
   /** Resolved appearance changed (pane chrome follows it). */
   onLook(paneId: string, look: Resolved): void;
@@ -210,7 +212,7 @@ export class TermSession {
       if (this.look.scrollbar.state === "auto" && revealsOnScroll(b.viewportY, b.baseY, scrolledUp)) this.revealScrollbar();
       scrolledUp = b.viewportY < b.baseY;
     });
-    this.shell = new ShellIntegration(t, this.marks);
+    this.shell = new ShellIntegration(t, this.marks, (code, ms, text) => this.hooks.onCommandFinished(this.paneId, code, ms, text));
     this.markMode = new MarkMode(
       t,
       () => wordSeparatorOf(this.config),

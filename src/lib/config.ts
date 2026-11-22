@@ -147,6 +147,10 @@ export interface Config {
   emoji_font?: string | null;
   scrollback: number;
   notifications: boolean;
+  /** Taskbar flash on bell / notification / finished command: "informational" (brief) or "critical" (until focused). */
+  taskbar_attention?: string;
+  /** Alert when a shell-integrated command that ran at least this many seconds ends unseen (0: off). Default 10. */
+  notify_command_finished?: number;
   copy_on_select: boolean;
   copy_feedback: boolean;
   osc52_clipboard: boolean;

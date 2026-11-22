@@ -7,6 +7,7 @@
   import { shiftFor } from "./tab-shift";
   import Icon from "./Icon.svelte";
   import ProfileIcon from "./ProfileIcon.svelte";
+  import ProgressRing from "./ProgressRing.svelte";
 
   let { t, drag, variant = "equal", side = "left" }: { t: Tab; drag: TabDrag; variant?: TabVariant; side?: "left" | "right" } = $props();
 
@@ -44,8 +45,6 @@
     el.focus();
     el.select();
   }
-
-  const RING = 2 * Math.PI * 6;
 </script>
 
 <div
@@ -93,9 +92,7 @@
     {:else if f.bell}<span class="bell"><Icon name="bell" size={12} /></span>
     {:else if app.ui?.iconStyle !== "hidden" || variant === "collapsed"}<ProfileIcon icon={f.icon} size={12} mono={app.ui?.iconStyle === "monochrome"} />{/if}
     {#if f.progress}
-      <svg class="ring s{f.progress.state}" viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="8" cy="8" r="6" stroke-dasharray={f.progress.state === 3 ? `${RING / 4} ${RING}` : `${(RING * Math.max(f.progress.value, 3)) / 100} ${RING}`} />
-      </svg>
+      <ProgressRing progress={f.progress} />
     {/if}
   </span>
   {#if f.activity}<span class="dot"></span>{/if}
@@ -366,35 +363,6 @@
     width: 16px;
     height: 16px;
     flex-shrink: 0;
-  }
-  .ring {
-    position: absolute;
-    inset: -2px;
-    width: 20px;
-    height: 20px;
-    transform: rotate(-90deg);
-    fill: none;
-    stroke: var(--accent);
-    stroke-width: 1.6;
-    stroke-linecap: round;
-  }
-  .ring.s2 {
-    stroke: var(--danger);
-  }
-  .ring.s4 {
-    stroke: var(--warn);
-    opacity: 0.6;
-  }
-  .ring.s3 {
-    animation: spin 1s linear infinite;
-  }
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
   }
   .title {
     flex: 1;
