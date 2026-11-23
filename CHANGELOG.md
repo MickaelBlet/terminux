@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `bell_style` defaults to `taskbar` instead of `none`
 - Taskbar progress aggregates every tab of the window (error > paused > normal > indeterminate) instead of following the active tab
 - Vertical tabs: the collapse button moved from the panel footer to its header; on the left, the panel spans the full window height with its header beside the title bar
+- Vertical tabs: double-clicking the panel edge fits its width to the longest tab title instead of resetting to `vertical_tab_width`
 
 ### Fixed
 

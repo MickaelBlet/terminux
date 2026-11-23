@@ -212,7 +212,7 @@ vertical_tabs_collapsed = false   # start as an icon strip
 | Toggle between top and the side | `toggle_vertical_tabs` (palette; no default key). Goes to the side set in `tab_position`, or to the left if it is `top`. |
 | Choose top / left / right | Right-click the tab bar or a tab, then "Tab position". |
 | Collapse to icons | The panel's collapse button, tab menu "Collapse vertical tabs", or `toggle_vertical_tabs_collapsed`. |
-| Resize | Drag the panel's inner edge. Width is kept between 120 and 480 px. Double-click the edge to return to `vertical_tab_width` (200 px by default). |
+| Resize | Drag the panel's inner edge. Width is kept between 120 and 480 px. Double-click the edge to fit the longest tab title. |
 
 Things to know:
 

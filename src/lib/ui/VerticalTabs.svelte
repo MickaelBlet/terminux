@@ -69,6 +69,17 @@
   function onResizeUp() {
     resize = null;
   }
+  /** Fit the panel to the longest tab title (grows or shrinks; clamped by setVerticalWidth). */
+  function fitToTitles() {
+    const titles = listEl?.querySelectorAll<HTMLElement>(".title");
+    if (!titles?.length) return;
+    let delta = -Infinity;
+    for (const el of titles) {
+      const text = el.firstElementChild?.getBoundingClientRect().width ?? 0;
+      delta = Math.max(delta, text - el.getBoundingClientRect().width);
+    }
+    app.setVerticalWidth(Math.ceil(app.verticalWidth + delta));
+  }
 </script>
 
 <nav class="vtabs {side}" class:collapsed class:resizing={!!resize} style:width={collapsed ? null : `${app.verticalWidth}px`} bind:this={navEl}>
@@ -105,7 +116,7 @@
       onpointermove={onResizeMove}
       onpointerup={onResizeUp}
       onpointercancel={onResizeUp}
-      ondblclick={() => app.setVerticalWidth(app.config.vertical_tab_width ?? 200)}
+      ondblclick={fitToTitles}
     ></div>
   {/if}
 </nav>
