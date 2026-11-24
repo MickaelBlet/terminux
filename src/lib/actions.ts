@@ -23,7 +23,7 @@ const norm = (s: unknown) => (str(s) ?? "").toLowerCase().replace(/[_-]/g, "");
 /** Commands that stay global while text is being edited (settings tab, palette, inputs). */
 export const GLOBAL_COMMANDS = new Set([
   "new_tab", "new_window", "close_tab", "close_pane", "close_window", "next_tab", "prev_tab", "switch_to_tab",
-  "command_palette", "open_settings", "toggle_fullscreen", "toggle_focus_mode", "toggle_vertical_tabs", "toggle_always_on_top",
+  "command_palette", "open_settings", "toggle_fullscreen", "toggle_focus_mode", "toggle_vertical_tabs", "toggle_sidebar", "toggle_always_on_top",
   "adjust_font_size", "reset_font_size", "quit", "open_new_tab_dropdown", "tab_search", "restore_last_closed",
   "quake_mode", "global_summon", "minimize_to_tray", "identify_window", "identify_windows", "customize_toolbar",
 ]);
@@ -69,6 +69,10 @@ export const ACTIONS: Record<string, Handler> = {
     app.focusMode = !app.focusMode;
   },
   toggle_vertical_tabs: (app) => app.toggleVerticalTabs(),
+  toggle_sidebar: (app, spec) => {
+    const v = norm(spec.view);
+    app.toggleSidebar(v === "git" || v === "snippets" ? v : undefined);
+  },
   toggle_vertical_tabs_collapsed: (app) => {
     if (app.tabPosition === "top") return false;
     app.setVerticalCollapsed(!app.verticalCollapsed);

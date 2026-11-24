@@ -26,13 +26,14 @@ Terminux is a Tauri v2 + Svelte 5 terminal multiplexer with Windows Terminal fea
 8. [Text and clipboard](user-guide/08-text-and-clipboard.md): selection, mark mode, copy, paste, links, file links and the built-in editor
 9. [Search and navigation](user-guide/09-search-and-navigation.md): find, scroll marks, jumping between commands, export buffer
 10. [Shell integration](user-guide/10-shell-integration.md): OSC 133 / 633 / 7 / 9;9 setup for bash, zsh, fish, PowerShell, cmd
-11. [Command palette](user-guide/11-command-palette.md): actions, command-line mode, suggestions, snippets pane
+11. [Command palette](user-guide/11-command-palette.md): actions, command-line mode, suggestions, snippets
 12. [Custom actions](user-guide/12-custom-actions.md): `[[action]]`, `send_input`, `multiple_actions`, key bindings (also in the settings UI)
 13. [Toolbar](user-guide/13-toolbar.md): title-bar buttons, edited from the right-click menu or Settings
 14. [Notifications and bell](user-guide/14-notifications-and-bell.md): bell styles, OSC 9 / 777 notifications, progress
 15. [Recipes](user-guide/15-recipes.md): ready-made configurations
 16. [Troubleshooting](user-guide/16-troubleshooting.md): rendering, keys, clipboard, config errors, FAQ
 17. [Migrating from Windows Terminal](user-guide/17-migrating-from-windows-terminal.md): `settings.json` to `config.toml`, unsupported features
+18. [Sidebar](user-guide/18-sidebar.md): Git (source control: stage, commit, diff, branches, sync, log, stashes) and snippets views
 
 ## Reference
 

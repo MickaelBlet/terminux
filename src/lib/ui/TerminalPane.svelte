@@ -8,8 +8,8 @@
   import PaneTitleBar from "./PaneTitleBar.svelte";
   import { paneDrag } from "./pane-drag.svelte";
   import SearchBar from "./SearchBar.svelte";
-  import SnippetsPane from "./SnippetsPane.svelte";
   import FilePane from "./FilePane.svelte";
+  import DiffPane from "./DiffPane.svelte";
   import ConfigEditor from "./ConfigEditor.svelte";
   import SettingsTab from "./settings/SettingsTab.svelte";
   import Icon from "./Icon.svelte";
@@ -94,8 +94,8 @@
   {#if titleBar}<PaneTitleBar {paneId} {tab} />{/if}
   <div class="body" style:padding="{pad[1]}px {pad[2]}px {pad[3]}px {pad[0]}px">
   {#if multi && info?.progress}<ProgressLine progress={info.progress} />{/if}
-  {#if kind === "snippets"}
-    <SnippetsPane {paneId} />
+  {#if kind === "diff"}
+    <DiffPane {paneId} />
   {:else if kind === "config"}
     <SettingsTab {paneId} />
   {:else if kind === "defaults"}

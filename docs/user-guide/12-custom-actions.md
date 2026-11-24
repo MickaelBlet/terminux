@@ -1,6 +1,6 @@
 # Custom actions
 
-`[[action]]` tables define your own commands: they show up in the [command palette](11-command-palette.md), can be bound to keys, put on the [toolbar](13-toolbar.md), listed in the `new_tab_menu` and in the snippets pane. They are the equivalent of Windows Terminal's `actions` array.
+`[[action]]` tables define your own commands: they show up in the [command palette](11-command-palette.md), can be bound to keys, put on the [toolbar](13-toolbar.md), listed in the `new_tab_menu` and in the snippets sidebar. They are the equivalent of Windows Terminal's `actions` array.
 
 ## Contents
 
@@ -22,7 +22,7 @@
 id      = "gs"                 # optional: lets [keys], toolbar and new_tab_menu refer to it
 name    = "Git status"         # label in the palette (default: a description of the command)
 icon    = "terminal"           # optional built-in icon name
-keys    = "Ctrl+Shift+G"       # optional: one combo or a list
+keys    = "Ctrl+Alt+G"       # optional: one combo or a list
 command = "send_input"         # any command name (see actions reference)
 input   = "git status\r"       # the command's arguments sit in the same table
 ```
@@ -60,7 +60,7 @@ command = "send_input"
 input = "git status\r"
 
 [keys]
-gs = "Ctrl+Shift+G"          # an action id works like a command name
+gs = "Ctrl+Alt+G"          # an action id works like a command name
 ```
 
 - Easiest of all: **Settings** > **Keyboard** (`Ctrl+,`) lists every built-in command and your `[[action]]` entries with their key combos. Click `+` and press a combo to add it, `x` on a combo to remove it, the reset button to go back to the default keys. Conflicting combos are flagged, "Only customized" filters to what you changed, and the search box matches names and combos. Edits are written to `[keys]` (named commands) or to the action's `keys`, keeping the comments of `config.toml`. The **Actions** page edits the `[[action]]` tables themselves (name, id, icon, keys, command and arguments).
@@ -68,7 +68,7 @@ gs = "Ctrl+Shift+G"          # an action id works like a command name
 ![Settings Keyboard page: actions and their key combos, with add / remove / reset controls](../images/settings-keys.svg)
 
 - The TOML editor only knows command names inside `[keys]`: an action id there is underlined as an unknown key unless it contains a dot (`user.gs`). The binding works either way; putting `keys` in the `[[action]]` avoids the warning.
-- Several combos: `keys = ["Ctrl+Shift+G", "F9"]`.
+- Several combos: `keys = ["Ctrl+Alt+G", "F9"]`.
 - Combos are case-insensitive: `ctrl+shift+g` works, as do `Win`, `Super`, `Meta`, `Cmd` for the logo key. See [keybindings](../reference/keybindings.md) for the grammar (`Plus`, `Period`, `Space`, `PgUp`, ...).
 - Precedence: built-in defaults < `[keys]` overrides of named commands < `[[action]]` bindings. A combo bound by an action therefore **replaces** a default binding of the same combo, without having to unbind it.
 - Unbind a default: `[keys]` with `new_tab = ""`. An unbound key reaches the terminal.
@@ -89,7 +89,7 @@ input = "git status\r"          # \r = Enter
 - Without a trailing `\r` the text is typed and left on the prompt: handy for commands you want to edit first.
 - The text goes through the normal input path: it respects **read-only** panes and is mirrored by **broadcast input**.
 - An empty `input` makes the action "not handled".
-- Actions with a string `input` appear in the [snippets pane](11-command-palette.md#snippets-pane) and in the [suggestions](11-command-palette.md#suggestions) palette (`source = "tasks"`).
+- Actions with a string `input` appear in the [snippets sidebar](11-command-palette.md#snippets) and in the [suggestions](11-command-palette.md#suggestions) palette (`source = "tasks"`).
 
 ## multiple_actions
 
@@ -147,7 +147,7 @@ Both `command` and `action` are read as the command name. The names must be Term
 | Key | `keys`, or `[keys]` by `id` |
 | Toolbar | `toolbar = ["gs", ...]` by `id`, see [Toolbar](13-toolbar.md) |
 | New-tab dropdown | `[[new_tab_menu]]` entry `type = "action"`, `id = "..."` (built-in command names work too) |
-| Snippets pane / suggestions | `send_input` with a string `input` |
+| Snippets sidebar / suggestions | `send_input` with a string `input` |
 | Fragments | `[[action]]` tables in `fragments/*.toml` are merged in, see [Profiles](06-profiles.md) |
 
 ## Recipes

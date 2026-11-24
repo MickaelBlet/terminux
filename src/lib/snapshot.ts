@@ -1,11 +1,12 @@
 // Serializable captures of panes and tabs: undo close, session persistence, moving between windows.
-import type { LayoutNode } from "./layout/tree";
+import { remove, type LayoutNode } from "./layout/tree";
 import type { PaneSpec } from "./term/appearance";
 import type { Restore } from "./term/session";
 
 export interface PaneSnapshot {
   id: string;
-  kind: "term" | "snippets" | "file" | "config" | "defaults";
+  /** "snippets" / "git": side panes of older versions (now sidebar views), dropped on restore. */
+  kind: "term" | "snippets" | "git" | "diff" | "file" | "config" | "defaults";
   spec: PaneSpec;
   title: string;
   /** Name given by the user (pane title bar). */
@@ -32,6 +33,20 @@ export interface WindowSnapshot {
   /** Set when the active tab is an editor tab (activeTab then is ignored). */
   activeEditor?: "config" | "defaults";
   bounds?: { x: number; y: number; width: number; height: number; maximized: boolean };
+  /** Open sidebar view. */
+  sidebar?: "git" | "snippets" | null;
+}
+
+/** The tab without its panes of the given kinds; null when nothing is left. */
+export function dropPanes(t: TabSnapshot, kinds: string[]): TabSnapshot | null {
+  const gone = t.panes.filter((p) => kinds.includes(p.kind));
+  if (!gone.length) return t;
+  let root: LayoutNode | null = t.root;
+  for (const p of gone) root = root && remove(root, p.id);
+  const panes = t.panes.filter((p) => !kinds.includes(p.kind));
+  if (!root || !panes.length) return null;
+  const active = panes.some((p) => p.id === t.active) ? t.active : panes[0].id;
+  return { ...t, root, panes, active };
 }
 
 /** Drop what a persisted session cannot reuse (live ptys) and check the shape. */

@@ -182,6 +182,14 @@ export interface Config {
   show_zoom_badge?: boolean;
   /** "never" | "multiple" | "always" (booleans accepted). */
   show_pane_title_bar?: string | boolean;
+  /** Window sidebar (Git, snippets): "left" | "right" (default). */
+  sidebar_position?: string;
+  /** Initial sidebar width in px (default 300; resizable). */
+  sidebar_width?: number;
+  /** Git sidebar: status polling interval in seconds while the window is focused (0: off, default 5). */
+  git_pane_refresh_interval?: number;
+  /** Git sidebar: list untracked files (default true). */
+  git_pane_show_untracked?: boolean;
   show_terminal_title_in_titlebar?: boolean;
   always_on_top?: boolean;
   disable_animations?: boolean;

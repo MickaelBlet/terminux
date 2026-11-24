@@ -6,6 +6,7 @@
   import TabBar from "$lib/ui/TabBar.svelte";
   import VerticalTabs from "$lib/ui/VerticalTabs.svelte";
   import SplitView from "$lib/ui/SplitView.svelte";
+  import Sidebar from "$lib/ui/Sidebar.svelte";
   import Palette from "$lib/ui/Palette.svelte";
   import Menu from "$lib/ui/Menu.svelte";
   import Overlays from "$lib/ui/Overlays.svelte";
@@ -52,6 +53,7 @@
     <div class="error">Config error, using defaults — {app.config.error}</div>
   {/if}
   <div class="body">
+    {#if app.sidebarSide === "left"}<Sidebar />{/if}
     <div class="tabs" style:background={windowImage ? (look?.paneBackground ?? "") : ""}>
       {#if windowImage && look?.backgroundImage}
         <div
@@ -76,6 +78,7 @@
         </section>
       {/each}
     </div>
+    {#if app.sidebarSide === "right"}<Sidebar />{/if}
     {#if app.tabBarVisible && app.tabPosition === "right"}<VerticalTabs side="right" />{/if}
   </div>
   </div>

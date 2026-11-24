@@ -241,7 +241,7 @@ Rules:
 - Rebind or unbind built-in commands in `[keys]`: `find = "F3"`, `new_window = ""`.
 - Nested palette entries built with `iterateOn` / nested `commands` are not implemented; use [`[[new_tab_menu]]`](../reference/configuration.md#new_tab_menu) for the new-tab dropdown and plain `[[action]]`s for the palette.
 - Action `id` is used to refer to an action from `[keys]`, `toolbar` and `new_tab_menu` (`type = "action"`). In `new_tab_menu`, built-in command names (`open_settings`, …) work too, in place of WT's `Terminal.*` ids.
-- Extra Terminux commands: `show_suggestions`, `save_snippet`, `toggle_vertical_tabs`, `customize_toolbar`, `toggle_snippets_pane`, `open_cwd`, ... see [actions](../reference/actions.md).
+- Extra Terminux commands: `show_suggestions`, `save_snippet`, `toggle_vertical_tabs`, `customize_toolbar`, `toggle_git_sidebar`, `toggle_snippets_sidebar`, `open_cwd`, ... see [actions](../reference/actions.md).
 - Old Terminux names (`split_right`, `zoom`, `tab_1`, ...) predating the Windows Terminal parity are still accepted in `[keys]`.
 
 See [Custom actions](12-custom-actions.md).
@@ -268,7 +268,7 @@ Supported: `new-tab`/`nt`, `split-pane`/`sp`, `focus-tab`/`ft`, `move-focus`/`mf
 - **Quake mode**: `quake_mode` (`Win+``) docks a window at the top of the monitor, full width and half height. Terminux also offers `global_summon`.
 - **Directory inheritance**: splits and duplicated tabs inherit the directory from the shell's OSC 7 / 9;9 on Windows and from the process on Linux; see [Shell integration](10-shell-integration.md).
 - **Clipboard**: `Ctrl+C` copies only with a selection (as in Windows Terminal). OSC 52 writes are opt-in (`osc52_clipboard`).
-- **Extra features** Windows Terminal does not have: vertical tabs, customizable toolbar, pane title bars and drag-and-drop panes, snippets pane, Ctrl+click file links with a built-in editor (also over SSH), suggestions from shell integration, per-profile startup retries, `renderer` choice, SSH profiles. See [Getting started](02-getting-started.md).
+- **Extra features** Windows Terminal does not have: vertical tabs, customizable toolbar, pane title bars and drag-and-drop panes, Git / snippets sidebar, Ctrl+click file links with a built-in editor (also over SSH), suggestions from shell integration, per-profile startup retries, `renderer` choice, SSH profiles. See [Getting started](02-getting-started.md).
 
 ## Not supported
 

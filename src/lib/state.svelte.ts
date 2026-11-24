@@ -19,8 +19,8 @@ import { droppedPaths } from "./paths";
 import { dirOf, parseFileArg, resolveFilePath } from "./file-links";
 import { applyCompletion, commonPrefix, completionQuery, filterEntries, separatorOf, type PathEntry } from "./path-complete";
 import { baseName } from "./file-langs";
-import type { PaneSnapshot, TabSnapshot } from "./snapshot";
-import type { PaneSpec, Resolved } from "./term/appearance";
+import { dropPanes, type PaneSnapshot, type TabSnapshot } from "./snapshot";
+import type { DiffSpec, PaneSpec, Resolved } from "./term/appearance";
 import { sessionByPty, sessions, TermSession, type Restore, type SessionHooks } from "./term/session";
 import { applyUiTheme, isDarkTheme, type UiLook } from "./ui-theme";
 import type { Completion, DialogRequest, MenuRequest, PaletteView, Toast } from "./ui/types";
@@ -30,7 +30,10 @@ import { setRootKey, tomlStringArray } from "./config-edit";
 import * as windows from "./windows";
 
 /** "config" / "defaults": the settings editor shown as a pane. */
-export type PaneKind = "term" | "snippets" | "file" | "config" | "defaults";
+export type PaneKind = "term" | "diff" | "file" | "config" | "defaults";
+/** Views of the window sidebar. */
+export type SidebarView = "git" | "snippets";
+export const SIDEBAR_VIEWS: SidebarView[] = ["git", "snippets"];
 export const isEditorPane = (k: PaneKind | undefined): k is "config" | "defaults" => k === "config" || k === "defaults";
 
 export interface PaneInfo {
@@ -106,6 +109,9 @@ export type TabPosition = "top" | "left" | "right";
 
 export const VERTICAL_TAB_MIN = 120;
 export const VERTICAL_TAB_MAX = 480;
+export const SIDEBAR_MIN = 180;
+export const SIDEBAR_MAX = 900;
+const clampSidebar = (px: number) => Math.round(Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Number.isFinite(px) ? px : 300)));
 const clampWidth = (px: number) =>
   Math.round(Math.min(VERTICAL_TAB_MAX, Math.max(VERTICAL_TAB_MIN, Number.isFinite(px) ? px : 200)));
 
@@ -175,6 +181,13 @@ export class App {
   private toolbarQueue: Promise<void> = Promise.resolve();
   alwaysOnTop = $state(false);
   windowFocused = $state(true);
+  /** Open sidebar view (window-wide), null when closed. */
+  sidebar = $state<SidebarView | null>(null);
+  private sidebarLast: SidebarView = (lsGet("terminux.sidebarView", "string") as SidebarView | null) ?? "git";
+  private sidebarWidthOverride = $state<number | null>(lsGet("terminux.sidebarWidth", "number"));
+  private sidebarSideOverride = $state<string | null>(lsGet("terminux.sidebarSide", "string"));
+  /** Bumped when a shell-integrated command ends (Git sidebar refresh). */
+  commandsDone = $state(0);
   windowName = $state<string | null>(null);
   windowId = $state(1);
   /** Text of the "identify window" overlay. */
@@ -209,6 +222,50 @@ export class App {
     if (this.tabPositionOverride) return this.tabPositionOverride;
     const p = (this.config.tab_position ?? "top").toLowerCase();
     return p === "left" || p === "right" ? p : "top";
+  }
+
+  // ---------- sidebar ----------
+
+  get sidebarSide(): "left" | "right" {
+    const s = (this.sidebarSideOverride ?? this.config.sidebar_position ?? "right").toLowerCase();
+    return s === "left" ? "left" : "right";
+  }
+
+  setSidebarSide(side: "left" | "right") {
+    this.sidebarSideOverride = side;
+    lsSet("terminux.sidebarSide", side);
+  }
+
+  get sidebarWidth(): number {
+    return clampSidebar(this.sidebarWidthOverride ?? this.config.sidebar_width ?? 300);
+  }
+
+  setSidebarWidth(px: number) {
+    this.sidebarWidthOverride = clampSidebar(px);
+    lsSet("terminux.sidebarWidth", this.sidebarWidthOverride);
+  }
+
+  /** Show `view` (the last one when omitted); closes the sidebar when it already shows it. */
+  toggleSidebar(view?: SidebarView) {
+    const v = view ?? this.sidebarLast;
+    this.showSidebar(this.sidebar === v ? null : v);
+  }
+
+  showSidebar(view: SidebarView | null) {
+    this.sidebar = view;
+    if (view) {
+      this.sidebarLast = view;
+      lsSet("terminux.sidebarView", view);
+    } else {
+      const id = this.activePane;
+      if (id) queueMicrotask(() => (sessions.get(id)?.focus(), this.paneEditors.get(id)?.focus()));
+    }
+  }
+
+  /** Terminal pane the sidebar works on: last focused one of the active tab, else of the last terminal tab. */
+  get recentTerminal(): string | undefined {
+    const inTab = (t: Tab | undefined) => t?.mru.find((p) => sessions.has(p)) ?? (t ? tree.paneIds(t.root).find((p) => sessions.has(p)) : undefined);
+    return inTab(this.tab) ?? inTab(this.recentTermTab());
   }
 
   /** top ↔ vertical (configured side, else left). */
@@ -368,7 +425,7 @@ export class App {
     const p = this.panes[id];
     if (!p) return "";
     if (p.name) return p.name;
-    if (p.kind === "snippets") return "Snippets";
+    if (p.kind === "diff") return p.spec.diff?.title ?? "Diff";
     if (p.kind === "config") return "Settings" + (this.configDirty ? " ●" : "");
     if (p.kind === "defaults") return "Default settings";
     if (p.kind === "file") return baseName(p.spec.remoteLabel ?? p.spec.file ?? "") + (p.dirty ? " ●" : "");
@@ -623,6 +680,21 @@ export class App {
     });
   }
 
+  /** Diff in its own tab; the window's diff tab is reused while it is open. */
+  openDiff(diff: DiffSpec) {
+    const existing = Object.values(this.panes).find((p) => p.kind === "diff" && this.tabOf(p.id));
+    if (existing) {
+      existing.spec = { ...existing.spec, diff };
+      this.focusPane(existing.id);
+      return;
+    }
+    const id = this.addPaneInfo("diff", { profileId: this.config.default_profile, diff }).id;
+    this.insertTab({
+      id: tree.newId("t"), kind: "term", root: tree.pane(id), active: id, zoom: null,
+      name: null, color: null, broadcast: false, mru: [id], group: null,
+    });
+  }
+
   /** Ask before dropping unsaved file editor changes. */
   private async confirmUnsaved(ids: string[]): Promise<boolean> {
     const dirty = ids.map((id) => this.panes[id]).filter((p) => (p?.kind === "file" && p.dirty) || (p?.kind === "config" && this.configDirty));
@@ -647,6 +719,7 @@ export class App {
   private commandFinished(id: string, code: number | undefined, ms: number, text: string | undefined) {
     const p = this.panes[id];
     if (!p) return;
+    this.commandsDone++;
     const focused = document.hasFocus();
     if (!shouldAlertCommand(ms, this.config.notify_command_finished ?? 10, this.isVisible(id), focused)) return;
     const failed = code !== undefined && code !== 0;
@@ -812,7 +885,7 @@ export class App {
   /** Recreate a captured pane; returns its new id. */
   adoptPane(snap: PaneSnapshot): string {
     if (snap.kind !== "term") {
-      const info = this.addPaneInfo(snap.kind, snap.spec);
+      const info = this.addPaneInfo(snap.kind as PaneKind, snap.spec);
       info.name = snap.name ?? null;
       return info.id;
     }
@@ -829,6 +902,10 @@ export class App {
   }
 
   adoptTab(snap: TabSnapshot, at = this.tabs.length, focus = true): Tab | null {
+    // Snippets / git panes of older versions are sidebar views now.
+    const kept = dropPanes(snap, ["snippets", "git"]);
+    if (!kept) return null;
+    snap = kept;
     if (!snap.panes.length) return null;
     const ids = new Map(snap.panes.map((p) => [p.id, this.adoptPane(p)]));
     const active = ids.get(snap.active) ?? [...ids.values()][0];
@@ -1157,11 +1234,11 @@ export class App {
     const source = this.panes[t.active];
     const side = this.splitSide(a.split, t.active);
     let id: string;
-    if (norm(a.type) === "snippets") {
-      // One snippets pane per tab: opening it again closes it.
-      const existing = tree.paneIds(t.root).find((p) => this.panes[p]?.kind === "snippets");
-      if (existing) return this.closePane(existing, { force: true, record: false });
-      id = this.addPaneInfo("snippets", { profileId: this.config.default_profile }).id;
+    // Former side panes (configs written for older versions): now sidebar views.
+    const view = norm(a.type) === "snippets" ? "snippets" : norm(a.type) === "git" ? "git" : null;
+    if (view) {
+      this.toggleSidebar(view);
+      return true;
     } else {
       const inheritCwd = (await sessions.get(t.active)?.cwdNow()) ?? null;
       // Without an explicit profile a split continues the pane it comes from.
@@ -1177,8 +1254,7 @@ export class App {
       id = this.createPane(follow ? spec : duplicate ? { ...spec, cwd: spec.cwd ?? inheritCwd } : { ...spec, inheritCwd });
     }
     t.zoom = null;
-    // The snippets pane is a side panel: narrow unless a size is given.
-    const size = typeof a.size === "number" ? a.size : norm(a.type) === "snippets" ? 0.2 : undefined;
+    const size = typeof a.size === "number" ? a.size : undefined;
     t.root = tree.split(t.root, t.active, side.dir, id, { before: side.before, size });
     this.focusPane(id);
     return true;

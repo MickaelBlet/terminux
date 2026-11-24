@@ -14,7 +14,7 @@
   const active = $derived(tab.active === paneId);
   const split = $derived(tab.root.kind === "split");
   const icon = $derived(
-    p?.kind === "file" ? "📝" : p?.kind === "snippets" ? "snippet" : p?.kind === "config" || p?.kind === "defaults" ? "gear" : (p?.look?.icon ?? findProfile(app.config, p?.spec.profileId)?.icon ?? null),
+    p?.kind === "file" ? "📝" : p?.kind === "diff" ? "git" : p?.kind === "config" || p?.kind === "defaults" ? "gear" : (p?.look?.icon ?? findProfile(app.config, p?.spec.profileId)?.icon ?? null),
   );
 
   let editValue = $state("");

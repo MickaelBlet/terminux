@@ -77,6 +77,8 @@ struct Session {
     reaped: bool,
     /// The spawned command is an interactive `ssh` (fallback where `/proc` is unavailable).
     spawned_ssh: Option<SshTarget>,
+    /// The spawned command is `wsl.exe`: program and distro/user selection arguments.
+    spawned_wsl: Option<(String, Vec<String>)>,
 }
 
 /// A session that exited while detached: output and exit code wait for the next attach.
@@ -141,6 +143,23 @@ fn is_linux_path(p: &str) -> bool {
 }
 
 /// wsl.exe arguments with `--cd <dir>` replacing any existing `--cd`.
+/// Distro and user selection (`-d X`, `--distribution X`, `-u X`, `--user X`) of a wsl.exe argv.
+fn wsl_selection(args: &[String]) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "-d" | "--distribution" | "-u" | "--user" => {
+                out.push(a.clone());
+                out.extend(it.next().cloned());
+            }
+            "--" | "-e" | "--exec" => break,
+            _ => {}
+        }
+    }
+    out
+}
+
 fn with_wsl_cd(args: &[String], dir: &str) -> Vec<String> {
     let mut out = vec!["--cd".to_string(), dir.to_string()];
     let mut it = args.iter();
@@ -270,6 +289,7 @@ impl PtyManager {
             }
         }
         let id = self.next_id.fetch_add(1, Ordering::Relaxed) + 1;
+        let spawned_wsl = is_wsl(&profile.cmd).then(|| (profile.cmd.clone(), wsl_selection(&profile.args)));
         let spawned_ssh = parse_ssh_argv(&[&[profile.cmd.clone()], &profile.args[..]].concat());
         let mut cmd = build_command(&profile);
         cmd.env("TERMINUX_SESSION", id.to_string());
@@ -335,6 +355,7 @@ impl PtyManager {
                 detach_gen: 0,
                 reaped: false,
                 spawned_ssh,
+            spawned_wsl,
             },
         );
 
@@ -518,6 +539,11 @@ impl PtyManager {
         self.sessions.lock().unwrap().get(&id)?.spawned_ssh.clone()
     }
 
+    /// `wsl.exe` and its distro/user selection arguments when the pty runs WSL.
+    pub fn wsl_target(&self, id: u32) -> Option<(String, Vec<String>)> {
+        self.sessions.lock().unwrap().get(&id)?.spawned_wsl.clone()
+    }
+
     /// Current working directory of the pty's foreground process (Linux only).
     pub fn cwd(&self, id: u32) -> Option<String> {
         #[cfg(target_os = "linux")]
@@ -548,6 +574,7 @@ mod tests {
         assert!(is_wsl("wsl.exe") && is_wsl(r"C:\Windows\System32\WSL.EXE") && !is_wsl("bash"));
         assert_eq!(with_wsl_cd(&v(&["-d", "Ubuntu", "--cd", "~"]), "/srv/x"), v(&["--cd", "/srv/x", "-d", "Ubuntu"]));
         assert_eq!(with_wsl_cd(&v(&["-e", "ls", "--cd", "y"]), "/a"), v(&["--cd", "/a", "-e", "ls", "--cd", "y"]));
+        assert_eq!(wsl_selection(&v(&["--cd", "~", "-d", "Ubuntu", "-u", "me", "-e", "-d", "x"])), v(&["-d", "Ubuntu", "-u", "me"]));
     }
 
     #[test]

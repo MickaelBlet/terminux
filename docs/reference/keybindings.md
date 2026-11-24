@@ -78,7 +78,9 @@ Names from before Windows Terminal parity are still accepted in `[keys]` and map
 | `font_reset` | `reset_font_size` |
 | `open_config` | `open_settings` |
 | `open_config_external` | `open_settings_file` |
-| `open_snippets_pane` | `toggle_snippets_pane` |
+| `open_snippets_pane` | `toggle_snippets_sidebar` |
+| `toggle_snippets_pane` | `toggle_snippets_sidebar` |
+| `toggle_git_pane` | `toggle_git_sidebar` |
 | `focus_left` | `move_focus_left` |
 | `resize_left` | `resize_pane_left` |
 | `focus_right` | `move_focus_right` |
@@ -165,6 +167,7 @@ Every command with default keys. All other commands (`toggle_focus_mode`, `toggl
 | [`move_pane_right`](actions.md#move_pane_right) | `Ctrl+Alt+Shift+Right` |
 | [`move_pane_up`](actions.md#move_pane_up) | `Ctrl+Alt+Shift+Up` |
 | [`move_pane_down`](actions.md#move_pane_down) | `Ctrl+Alt+Shift+Down` |
+| [`toggle_git_sidebar`](actions.md#toggle_git_sidebar) | `Ctrl+Shift+G` |
 
 ### Clipboard and selection
 

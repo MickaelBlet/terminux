@@ -58,6 +58,7 @@ export function paneMenu(app: App, paneId: string, x: number, y: number): MenuRe
   groups.push([
     act(app, "Find…", "find"),
     act(app, "Add scroll mark", "add_mark"),
+    act(app, "Source control (Git)", "toggle_git_sidebar"),
     act(app, "Clear buffer", "clear_buffer"),
     act(app, "Export text…", "export_buffer"),
   ]);

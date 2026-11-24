@@ -9,7 +9,7 @@ The command palette lists every action, lets you drill into nested menus (profil
 - [Nested menus](#nested-menus)
 - [Other palettes](#other-palettes)
 - [Suggestions](#suggestions)
-- [Snippets pane](#snippets-pane)
+- [Snippets](#snippets)
 - [Keys inside the palette](#keys-inside-the-palette)
 - [Customizing](#customizing)
 
@@ -101,15 +101,15 @@ use_commandline = true
 
 Without shell integration and without `send_input` actions the palette shows "No suggestions: enable shell integration or add send_input actions".
 
-## Snippets pane
+## Snippets
 
-A snippet is a `send_input` action. The **snippets pane** is a pane type that lists them in a side panel so you can click to send:
+A snippet is a `send_input` action. The **Snippets** view of the [sidebar](18-sidebar.md) lists them so you can click to send:
 
-![Snippets pane on the right of a terminal](../images/snippets.svg)
+![Snippets list beside a terminal](../images/snippets.svg)
 
-- Toggle it with [`toggle_snippets_pane`](../reference/actions.md#toggle_snippets_pane) (palette: "Toggle snippets pane"): a tab has at most one snippets pane, and running the action again closes it (so does the × button in its header). It splits to the right, taking 20% of the width (set `size` to change it), with `split_pane` `type = "snippets"`. Equivalent action: `command = "split_pane"`, `type = "snippets"`, `split = "right"`.
+- Toggle it with [`toggle_snippets_sidebar`](../reference/actions.md#toggle_snippets_sidebar) (palette: "Toggle snippets sidebar"), or switch to it from the sidebar bar.
 - A filter box matches both the action name and the text it sends.
-- Clicking a snippet writes its `input` to the last focused terminal of that tab (the most recently used terminal pane other than the snippets pane itself) and focuses it. With no terminal in the tab you get a "No terminal in this tab." toast.
+- Clicking a snippet writes its `input` to the last focused terminal and focuses it. With no terminal you get a "No terminal." toast.
 - Only `[[action]]` entries with `command = "send_input"` and a string `input` are listed.
 - **Save as snippet**: [`save_snippet`](../reference/actions.md#save_snippet) saves the current selection, or the command line being typed when nothing is selected (needs [shell integration](10-shell-integration.md)), as a new `[[action]]`. It asks for a name and appends the block to `config.toml` just before the first `[keys]` / `[theme]` table:
 

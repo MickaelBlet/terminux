@@ -105,7 +105,7 @@ fn follow_shell(words: &[&str]) -> Option<Option<String>> {
 }
 
 /// Quote one argument for the remote POSIX shell.
-fn sh_quote(s: &str) -> String {
+pub fn sh_quote(s: &str) -> String {
     format!("'{}'", s.replace('\'', r"'\''"))
 }
 

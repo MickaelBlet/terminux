@@ -3,6 +3,7 @@ mod complete;
 mod config;
 mod dynamic_profiles;
 mod editor;
+mod git;
 mod pty;
 mod remote_files;
 mod session_store;
@@ -165,6 +166,28 @@ async fn file_write(state: State<'_, AppState>, path: String, text: String) -> C
 async fn remote_file_fetch(state: State<'_, AppState>, id: u32, path: String) -> CmdResult<remote_files::Fetched> {
     let target = state.pty.ssh_target(id).ok_or("the pane is not running ssh")?;
     state.remote_files.fetch(target, &path)
+}
+
+/// Git pane: run `git <args>` in `dir`, on the ssh host or in the WSL distro of pane `id`
+/// when it runs one (the subcommand and options are checked by `git::validate`).
+#[tauri::command]
+async fn git_run(
+    state: State<'_, AppState>,
+    id: Option<u32>,
+    dir: String,
+    args: Vec<String>,
+    stdin: Option<String>,
+) -> CmdResult<git::Output> {
+    let host = match id {
+        Some(id) => match state.pty.ssh_target(id) {
+            Some(t) => git::Host::Ssh(t),
+            None => state.pty.wsl_target(id).map_or(git::Host::Local, |(p, sel)| git::Host::Wsl(p, sel)),
+        },
+        None => git::Host::Local,
+    };
+    tauri::async_runtime::spawn_blocking(move || git::run(&host, &dir, &args, stdin))
+        .await
+        .map_err(err)?
 }
 
 /// Entries of directory `dir` for path completion: on the ssh host when pane `id` runs ssh.
@@ -589,6 +612,7 @@ pub fn run() {
             pty_ssh_resume,
             remote_file_fetch,
             path_complete,
+            git_run,
             window_init,
             window_new,
             window_send,

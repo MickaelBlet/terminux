@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Window sidebar fixed on the left or right of the panes (`sidebar_position`, `sidebar_width`, resizable, side switchable from its menu), with Git and Snippets views; `toggle_sidebar` (`view` = `git` / `snippets`), `toggle_git_sidebar` (`Ctrl+Shift+G`), `toggle_snippets_sidebar`
+- Git sidebar view (VS Code-style source control) for the last focused terminal's repository, locally, over SSH and in WSL: stage / unstage / discard, commit / amend / undo last commit, branch switch / create / delete, fetch / pull / push / publish with ahead/behind counts, last 100 commits, stashes, "Run in terminal" fallback when git needs credentials; auto refresh (`git_pane_refresh_interval`, `git_pane_show_untracked`)
+- Diff tab for file, commit and stash diffs opened from the Git sidebar
+- Pane context menu: "Source control (Git)"
+
+### Changed
+
+- The snippets pane is now the Snippets view of the sidebar; `toggle_snippets_pane` / `open_snippets_pane` and `split_pane` with `type = "snippets"` toggle it, and snippets panes of saved sessions are dropped on restore
+
 ## [0.1.9] - 2026-11-23
 
 ### Added

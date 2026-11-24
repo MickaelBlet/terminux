@@ -17,7 +17,7 @@ export function tabInfo(app: App, t: Tab, i: number) {
     count: ids.length,
     readOnly: panes.some((p) => p.readOnly),
     progress: active?.progress ?? panes.find((p) => p.progress)?.progress ?? null,
-    icon: active?.kind === "file" ? "📝" : active?.kind === "config" || active?.kind === "defaults" ? "gear" : (active?.look?.icon ?? findProfile(app.config, active?.spec.profileId)?.icon ?? null),
+    icon: active?.kind === "file" ? "📝" : active?.kind === "diff" ? "git" : active?.kind === "config" || active?.kind === "defaults" ? "gear" : (active?.look?.icon ?? findProfile(app.config, active?.spec.profileId)?.icon ?? null),
     background: active?.look?.background ?? null,
   };
 }

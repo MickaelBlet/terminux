@@ -13,6 +13,20 @@ import { findScheme, luminance, schemeName, toTheme, withAlpha, DEFAULT_SCHEME }
 import { scrollbarLook, type ScrollbarLook } from "./scrollbar";
 
 /** What a pane runs and how it deviates from its profile. Serializable. */
+export interface DiffSpec {
+  /** Repository root. */
+  root: string;
+  /** Terminal pane whose host (local, ssh, wsl) runs git; the tab's last terminal when gone. */
+  source?: string;
+  title: string;
+  /** File diff (repo-relative), against the index or HEAD (`staged`). */
+  path?: string;
+  staged?: boolean;
+  /** Commit or stash to show. */
+  commit?: string;
+  stash?: string;
+}
+
 export interface PaneSpec {
   profileId: string;
   commandline?: string;
@@ -31,6 +45,8 @@ export interface PaneSpec {
   remoteLabel?: string;
   line?: number;
   col?: number;
+  /** Diff pane: what to show (re-fetched with git on mount). */
+  diff?: DiffSpec;
   /** Runtime overrides (adjust_opacity, toggle_shader_effects, adjust_font_size with pane = true). */
   opacity?: number;
   retro?: boolean;

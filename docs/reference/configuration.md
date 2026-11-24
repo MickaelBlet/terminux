@@ -264,6 +264,46 @@ Title bar above each pane: profile icon, title, read-only flag, zoom and close b
 show_pane_title_bar = "multiple"
 ```
 
+### sidebar_position
+
+**Type:** string | **Default:** `"right"`
+
+Side of the window where the [sidebar](../user-guide/18-sidebar.md) (Git, snippets) opens: `"left"` or `"right"`. "Move sidebar left / right" in its menu overrides it on this machine.
+
+```toml
+sidebar_position = "left"
+```
+
+### sidebar_width
+
+**Type:** number (px) | **Default:** `300`
+
+Initial width of the sidebar (180 to 900). Dragging its edge overrides it on this machine.
+
+```toml
+sidebar_width = 360
+```
+
+### git_pane_refresh_interval
+
+**Type:** number (seconds) | **Default:** `5`
+
+How often the [Git sidebar](../user-guide/18-sidebar.md#git) refreshes the status while the window is focused and the Git view is open. `0` disables polling (it still refreshes after its own actions, on focus, on directory changes and when a shell-integrated command ends). In SSH panes each refresh opens a short `ssh` connection.
+
+```toml
+git_pane_refresh_interval = 10
+```
+
+### git_pane_show_untracked
+
+**Type:** boolean | **Default:** `true`
+
+List untracked files in the Git sidebar's Changes (`git status --untracked-files=all`). With `false`, "Stage all" only stages tracked files.
+
+```toml
+git_pane_show_untracked = false
+```
+
 ### show_terminal_title_in_titlebar
 
 **Type:** boolean | **Default:** `true` | **Windows Terminal:** `showTerminalTitleInTitlebar`
@@ -848,7 +888,7 @@ commands = [
 ]
 ```
 
-`send_input` actions are also listed as *tasks* in the suggestions palette and the snippets pane. Because `name` is reserved metadata, an `[[action]]` cannot pass a `name` argument to its command.
+`send_input` actions are also listed as *tasks* in the suggestions palette and the snippets sidebar. Because `name` is reserved metadata, an `[[action]]` cannot pass a `name` argument to its command.
 
 ### keys
 

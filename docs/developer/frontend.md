@@ -72,7 +72,7 @@ Core state:
 | `dark`, `ui` | Effective brightness and the resolved `UiLook` |
 | `fullscreen`, `focusMode`, `alwaysOnTop`, `windowFocused`, `windowName`, `windowId` | Window state |
 
-A pane is usually a terminal, but `PaneKind` also covers the snippets pane, a file editor pane (`FilePane.svelte`, `spec.file`) and the settings editor shown as a pane (`config` / `defaults`, see `open_settings_pane`). `Tab` fields: `id`, `kind`, `root` (layout tree), `active` (focused pane id), `zoom` (node shown alone), `name`, `color`, `broadcast`, `mru` (pane ids by recency), `group` (split selected with "move focus to parent").
+A pane is usually a terminal, but `PaneKind` also covers a diff view (`DiffPane.svelte`, `spec.diff`, opened in its own tab by the Git sidebar), a file editor pane (`FilePane.svelte`, `spec.file`) and the settings editor shown as a pane (`config` / `defaults`, see `open_settings_pane`). `Tab` fields: `id`, `kind`, `root` (layout tree), `active` (focused pane id), `zoom` (node shown alone), `name`, `color`, `broadcast`, `mru` (pane ids by recency), `group` (split selected with "move focus to parent").
 
 Responsibilities, grouped as in the file:
 
@@ -297,7 +297,8 @@ Components in `src/lib/ui/` (Svelte 5):
 | `TabBar.svelte` / `TabItem.svelte` | Top tab bar with the title-bar toolbar, window controls, new-tab dropdown; a tab (title, icon, progress ring, bell/activity, close, color, drag) |
 | `VerticalTabs.svelte` | Vertical tab panel (resizable, collapsible to icons) |
 | `SplitView.svelte` | Recursive split rendering with draggable separators |
-| `TerminalPane.svelte` | A pane leaf: by `PaneInfo.kind` it renders a terminal (attaches `TermSession` to the DOM, background image, zoom badge, search bar), the snippets pane, `FilePane` or `ConfigEditor` |
+| `Sidebar.svelte` | Window sidebar (`app.sidebar`, `sidebarSide`, `sidebarWidth`; `toggle_sidebar`): view bar, resize grip, `GitPane` (git via the `git_run` IPC command, `git.ts` parsers, `ui/git/run.ts`) or `SnippetsPane`; both work on `app.recentTerminal` |
+| `TerminalPane.svelte` | A pane leaf: by `PaneInfo.kind` it renders a terminal (attaches `TermSession` to the DOM, background image, zoom badge, search bar), `DiffPane`, `FilePane` or `ConfigEditor` |
 | `SearchBar.svelte` | Find UI (regex, case, whole word, match count) |
 | `SnippetsPane.svelte` | Snippets (saved `send_input` actions) as a pane type |
 | `Palette.svelte` | Command palette, tab search, scheme picker, suggestions; nested items, live preview, command-line mode |

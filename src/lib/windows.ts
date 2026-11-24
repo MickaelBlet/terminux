@@ -148,6 +148,7 @@ async function applyPayload(app: App, p: Payload) {
     }
     const active = snap.activeEditor ? app.tabs.findIndex((t) => t.kind === snap.activeEditor) : -1;
     app.gotoTab(active >= 0 ? active : target ? app.tabs.indexOf(target) : app.tabs.length - 1);
+    if (snap.sidebar === "git" || snap.sidebar === "snippets") app.showSidebar(snap.sidebar);
   }
   if (p.actions?.length) {
     for (const a of p.actions) await app.run(a);
@@ -234,6 +235,7 @@ export async function snapshotWindow(app: App): Promise<WindowSnapshot> {
     activeTab: Math.max(0, termTabs.indexOf(app.tab!)),
     editors,
     activeEditor: cur === "config" || cur === "defaults" ? cur : undefined,
+    sidebar: app.sidebar,
     bounds: await bounds(),
   };
 }
@@ -266,6 +268,7 @@ function keepForReload(app: App) {
       activeTab: Math.max(0, tabs.length ? app.tabs.filter((t) => t.kind === "term").indexOf(app.tab!) : 0),
       editors,
       activeEditor: cur === "config" || cur === "defaults" ? cur : undefined,
+      sidebar: app.sidebar,
     };
     sessionStorage.setItem(RELOAD_KEY, JSON.stringify(snap));
   } catch (e) {

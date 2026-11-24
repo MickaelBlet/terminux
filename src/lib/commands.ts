@@ -37,6 +37,9 @@ export const COMMANDS: Record<string, NamedCommand> = {
   toggle_fullscreen: n("Toggle fullscreen", "toggle_fullscreen", {}, ["Alt+Enter", "F11"]),
   toggle_focus_mode: n("Toggle focus mode", "toggle_focus_mode"),
   toggle_vertical_tabs: n("Toggle vertical tabs", "toggle_vertical_tabs"),
+  toggle_sidebar: n("Toggle sidebar", "toggle_sidebar"),
+  toggle_git_sidebar: n("Toggle Git sidebar (source control)", "toggle_sidebar", { view: "git" }, ["Ctrl+Shift+G"]),
+  toggle_snippets_sidebar: n("Toggle snippets sidebar", "toggle_sidebar", { view: "snippets" }),
   toggle_vertical_tabs_collapsed: n("Collapse/expand vertical tabs", "toggle_vertical_tabs_collapsed"),
   toggle_always_on_top: n("Toggle always on top", "toggle_always_on_top"),
   open_new_tab_dropdown: n("Open new tab dropdown", "open_new_tab_dropdown", {}, ["Ctrl+Shift+Space"]),
@@ -102,7 +105,6 @@ export const COMMANDS: Record<string, NamedCommand> = {
   move_pane_to_new_tab: n("Move pane to new tab", "move_pane", { index: -1 }),
   move_pane_to_new_window: n("Move pane to new window", "move_pane", { window: "new" }),
   restart_connection: n("Restart connection", "restart_connection"),
-  toggle_snippets_pane: n("Toggle snippets pane", "split_pane", { type: "snippets", split: "right" }),
   equalize_panes: n("Equalize panes", "equalize_panes"),
 
   // Clipboard and selection
@@ -271,7 +273,12 @@ export function actionIcon(spec: ActionSpec): string {
   switch (spec.command) {
     case "split_pane":
       if (spec.type === "snippets") return "snippet";
+      if (spec.type === "git") return "git";
       return spec.split === "down" || spec.split === "up" ? "split-down" : "split-right";
+    case "toggle_sidebar":
+      if (spec.view === "git") return "git";
+      if (spec.view === "snippets") return "snippet";
+      return "sidebar";
     case "move_focus":
       return ARROWS[dir] ?? "focus";
     case "resize_pane":
@@ -330,7 +337,9 @@ export const LEGACY_NAMES: Record<string, string> = {
   font_reset: "reset_font_size",
   open_config: "open_settings",
   open_config_external: "open_settings_file",
-  open_snippets_pane: "toggle_snippets_pane",
+  open_snippets_pane: "toggle_snippets_sidebar",
+  toggle_snippets_pane: "toggle_snippets_sidebar",
+  toggle_git_pane: "toggle_git_sidebar",
   ...Object.fromEntries(DIRS.flatMap((d) => [[`focus_${d}`, `move_focus_${d}`], [`resize_${d}`, `resize_pane_${d}`]])),
   ...Object.fromEntries(Array.from({ length: 8 }, (_, i) => [`tab_${i + 1}`, `switch_to_tab_${i + 1}`])),
   tab_9: "switch_to_last_tab",

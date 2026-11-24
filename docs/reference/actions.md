@@ -43,7 +43,7 @@ commands = [
 - A handler that cannot act returns "not handled" and the key press then reaches the terminal (for example `copy` without a selection sends `Ctrl+C` to the program).
 - While text is being edited (settings editor, palette, dialogs) only window-level commands stay active: `new_tab`, `new_window`, `close_tab`, `close_pane`, `close_window`, `next_tab`, `prev_tab`, `switch_to_tab`, `command_palette`, `open_settings`, `toggle_fullscreen`, `toggle_focus_mode`, `toggle_vertical_tabs`, `toggle_always_on_top`, `adjust_font_size`, `reset_font_size`, `quit`, `open_new_tab_dropdown`, `tab_search`, `restore_last_closed`, `quake_mode`, `global_summon`, `minimize_to_tray`, `identify_window`, `identify_windows`, `customize_toolbar`.
 - In `[keys]`, old pre-parity names are still accepted (listed under each command as *Legacy names*).
-- Terminux-specific additions with no Windows Terminal counterpart: `toggle_vertical_tabs`, `toggle_vertical_tabs_collapsed`, `save_snippet`, `open_cwd`, `open_file`, `customize_toolbar`, `toggle_snippets_pane`, `equalize_panes`, `show_recent_commands`.
+- Terminux-specific additions with no Windows Terminal counterpart: `toggle_vertical_tabs`, `toggle_vertical_tabs_collapsed`, `save_snippet`, `open_cwd`, `open_file`, `customize_toolbar`, `toggle_sidebar`, `toggle_git_sidebar`, `toggle_snippets_sidebar`, `equalize_panes`, `show_recent_commands`.
 
 ## Parameterised actions
 
@@ -166,7 +166,7 @@ window = "main"
 
 Split the active pane.
 
-Named commands using it: [`duplicate_pane_auto`](#duplicate_pane_auto), [`duplicate_pane_down`](#duplicate_pane_down), [`duplicate_pane_right`](#duplicate_pane_right), [`toggle_snippets_pane`](#toggle_snippets_pane), [`split_pane_left`](#split_pane_left), [`split_pane_right`](#split_pane_right), [`split_pane_up`](#split_pane_up), [`split_pane_down`](#split_pane_down).
+Named commands using it: [`duplicate_pane_auto`](#duplicate_pane_auto), [`duplicate_pane_down`](#duplicate_pane_down), [`duplicate_pane_right`](#duplicate_pane_right), [`split_pane_left`](#split_pane_left), [`split_pane_right`](#split_pane_right), [`split_pane_up`](#split_pane_up), [`split_pane_down`](#split_pane_down).
 
 Windows Terminal: `splitPane`.
 
@@ -175,7 +175,7 @@ Windows Terminal: `splitPane`.
 | `split` | string | `auto` | `auto` (direction with most room), `right`, `down`, `left`, `up`; also `vertical` (= right) and `horizontal` (= down). |
 | `split_mode` | string | none | `duplicate` copies the source pane's profile and settings. Without `profile`/`index` a split continues the source pane anyway. |
 | `size` | number | `0.5` | Share of the **new** pane, 0.05 to 0.95. |
-| `type` | string | terminal | `snippets` opens the snippets pane instead of a terminal (default `size` 0.2); if the tab already has one, it is closed instead (toggle). |
+| `type` | string | terminal | `snippets` / `git`: toggle that [sidebar](../user-guide/18-sidebar.md) view instead of splitting (configs of older versions, where these were panes). |
 | `profile / index / commandline / starting_directory / tab_title / tab_color / color_scheme / suppress_application_title` |  |  | Same as `new_tab`. A split inherits the working directory of the pane it comes from unless `starting_directory` is given. |
 
 ```toml
@@ -1827,18 +1827,53 @@ Kill the pane's process and start it again in the same pane.
 restart_connection = "Ctrl+Alt+X"   # example binding
 ```
 
-### toggle_snippets_pane
+### toggle_sidebar
 
-Toggle the snippets pane: open it in a split to the right (lists `send_input` actions; click to run), or close it if the tab already has one. A tab has at most one snippets pane.
+Open the [sidebar](../user-guide/18-sidebar.md) on its last used view, or close it. A Terminux command.
 
-- Action: `split_pane`, `type = "snippets"`, `split = "right"` ([parameters](#split_pane))
-- Label: Toggle snippets pane
+- Action: `toggle_sidebar`
+- Label: Toggle sidebar
 - Default keys: none
-- Legacy names: `open_snippets_pane`
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `view` | string | last used | `git` or `snippets`: show that view, or close the sidebar when it already shows it. |
+
+```toml
+[[action]]
+command = "toggle_sidebar"
+view = "snippets"
+keys = "Ctrl+Alt+S"
+```
+
+Named commands using it: [`toggle_git_sidebar`](#toggle_git_sidebar), [`toggle_snippets_sidebar`](#toggle_snippets_sidebar).
+
+### toggle_git_sidebar
+
+Show the Git view of the [sidebar](../user-guide/18-sidebar.md#git) (source control: status, staging, commit, branches, sync, log, stashes for the last focused terminal), or close the sidebar when it already shows it.
+
+- Action: `toggle_sidebar`, `view = "git"` ([parameters](#toggle_sidebar))
+- Label: Toggle Git sidebar (source control)
+- Default keys: `Ctrl+Shift+G`
+- Legacy names: `toggle_git_pane`
 
 ```toml
 [keys]
-toggle_snippets_pane = "Ctrl+Alt+X"   # example binding
+toggle_git_sidebar = "Ctrl+Alt+G"   # example binding
+```
+
+### toggle_snippets_sidebar
+
+Show the Snippets view of the [sidebar](../user-guide/18-sidebar.md#snippets) (lists `send_input` actions; click to send), or close the sidebar when it already shows it.
+
+- Action: `toggle_sidebar`, `view = "snippets"` ([parameters](#toggle_sidebar))
+- Label: Toggle snippets sidebar
+- Default keys: none
+- Legacy names: `open_snippets_pane`, `toggle_snippets_pane`
+
+```toml
+[keys]
+toggle_snippets_sidebar = "Ctrl+Alt+X"   # example binding
 ```
 
 ### equalize_panes
