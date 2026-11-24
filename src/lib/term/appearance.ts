@@ -1,4 +1,5 @@
 // Effective settings of a pane: root (legacy) ⊕ [defaults] ⊕ profile ⊕ per-pane overrides.
+import type { DiffOptions } from "../diff";
 import type { ITerminalOptions, ITheme } from "@xterm/xterm";
 import {
   findProfile,
@@ -25,6 +26,13 @@ export interface DiffSpec {
   /** Commit or stash to show. */
   commit?: string;
   stash?: string;
+  /** Compare `base` with `target` (a ref), or with the working tree when `target` is unset; `path` limits it to a file. */
+  base?: string;
+  target?: string;
+  /** Source shown before a compare was picked in the diff tab (restored by "Reset"). */
+  origin?: Omit<DiffSpec, "origin" | "options" | "root" | "source">;
+  /** Per-tab view options, over the `diff_*` config defaults. */
+  options?: Partial<DiffOptions>;
 }
 
 export interface PaneSpec {

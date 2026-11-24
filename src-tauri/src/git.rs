@@ -28,7 +28,7 @@ pub struct Output {
 
 const SUBCOMMANDS: &[&str] = &[
     "status", "diff", "show", "log", "add", "restore", "reset", "rm", "commit", "branch", "switch",
-    "fetch", "pull", "push", "stash", "rev-parse", "for-each-ref", "clean", "init", "revert",
+    "fetch", "pull", "push", "stash", "rev-parse", "for-each-ref", "clean", "init", "revert", "apply",
 ];
 
 /// Options accepted as is.
@@ -39,10 +39,12 @@ const FLAGS: &[&str] = &[
     "--prune", "--rebase", "--no-rebase", "--ff-only", "--set-upstream", "--force-with-lease", "--include-untracked",
     "--index", "--show-toplevel", "--abbrev-ref", "--verify", "--short", "--git-dir", "--is-inside-work-tree",
     "--root", "--stat", "--no-renames", "--find-renames", "--ignore-submodules", "--first-parent",
+    "--ignore-all-space", "--ignore-space-change", "--ignore-blank-lines", "--recount", "--reverse", "--unidiff-zero",
+    "--whitespace=nowarn",
 ];
 
 /// Options taking an inline value (`--format=…`).
-const VALUE_FLAGS: &[&str] = &["--format=", "--pretty=", "--sort=", "--max-count=", "--message=", "--unified="];
+const VALUE_FLAGS: &[&str] = &["--format=", "--pretty=", "--sort=", "--max-count=", "--message=", "--unified=", "--diff-algorithm="];
 
 /// Check the argv (without the leading `git`): known subcommand, then only known options
 /// before `--`; anything after `--` is a path.
@@ -183,6 +185,10 @@ mod tests {
         assert!(validate(&v(&["log", "--format=%H%x1f%s", "-n", "100"])).is_ok());
         assert!(validate(&v(&["add", "--", "-rf weird", "--output=x"])).is_ok());
         assert!(validate(&v(&["commit", "-F", "-", "--amend"])).is_ok());
+        assert!(validate(&v(&["diff", "--ignore-all-space", "--unified=5", "--diff-algorithm=histogram", "--find-renames", "HEAD", "--", "x"])).is_ok());
+        assert!(validate(&v(&["apply", "--recount", "--cached", "--reverse", "--unidiff-zero", "--whitespace=nowarn", "-"])).is_ok());
+        assert!(validate(&v(&["apply", "--unsafe-paths", "-"])).is_err());
+        assert!(validate(&v(&["apply", "--directory=/etc", "-"])).is_err());
         assert!(validate(&v(&[])).is_err());
         assert!(validate(&v(&["config", "core.sshCommand", "x"])).is_err());
         assert!(validate(&v(&["fetch", "--upload-pack=touch /tmp/x"])).is_err());

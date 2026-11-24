@@ -216,6 +216,7 @@ Mouse wheel (not rebindable, toggled by [`scroll_to_zoom`](configuration.md#scro
 | Exited pane | `Enter` restarts the process, `Ctrl+D` closes the pane |
 | Mouse | `Alt+drag` rectangular selection, `Ctrl`/`Shift`+right click opens the pane menu, `Shift` held bypasses applications that grab the mouse |
 | Settings (UI or TOML editor) | `Ctrl+S` save, `Ctrl+F` find, `Ctrl+A` select all, `Ctrl+Space` completion |
+| Diff tab | `n`/`F7` and `p`/`Shift+F7` next / previous change, `]`/`[` next / previous file, `u` unified ⇄ split, `w` wrap, `+`/`-` context, `r` refresh, `Ctrl+F` or `/` find, `Escape` clear selection / close search (see [Diff tab](../user-guide/18-sidebar.md#diff-tab)) |
 
 ## Global (OS-level) shortcuts
 

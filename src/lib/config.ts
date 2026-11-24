@@ -192,6 +192,17 @@ export interface Config {
   git_pane_refresh_interval?: number;
   /** Git sidebar: list untracked files (default true). */
   git_pane_show_untracked?: boolean;
+  /** Diff tab defaults (each can be changed per tab from its toolbar). */
+  diff_view_mode?: "unified" | "split";
+  diff_ignore_whitespace?: "none" | "change" | "all";
+  diff_ignore_blank_lines?: boolean;
+  diff_context_lines?: number;
+  diff_algorithm?: "default" | "minimal" | "patience" | "histogram";
+  diff_detect_renames?: boolean;
+  diff_word_highlight?: boolean;
+  diff_syntax_highlight?: boolean;
+  diff_word_wrap?: boolean;
+  diff_line_numbers?: boolean;
   show_terminal_title_in_titlebar?: boolean;
   always_on_top?: boolean;
   disable_animations?: boolean;

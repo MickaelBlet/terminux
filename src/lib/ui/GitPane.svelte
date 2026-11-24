@@ -295,6 +295,7 @@
       items: [
         { label: "Create new branch…", icon: "plus", run: () => void createBranch() },
         { label: "Create new branch from…", icon: "plus", children: () => branches.map((b) => branchItem(b, () => void createBranch(b.name))) },
+        { label: "Compare with current branch…", icon: "swap", children: () => branches.filter((b) => !b.current).map((b) => branchItem(b, () => diff({ title: `HEAD ↔ ${b.name}`, base: "HEAD", target: b.name }))) },
         ...branches.map((b) => branchItem(b, () => void switchTo(b))),
       ],
     };
@@ -394,6 +395,7 @@
     const items: MenuItem[][] = [
       [
         { label: "Open changes", disabled: f.kind === "untracked" || f.kind === "conflict", run: () => openChange(f) },
+        { label: "Compare with HEAD", icon: "swap", disabled: f.kind === "untracked", run: () => diff({ title: `HEAD ↔ working tree · ${splitPath(f.path).name}`, path: f.path, base: "HEAD" }) },
         { label: "Open file", icon: "file", disabled: f.code === "D", run: () => void openFile(f) },
       ],
       f.kind === "staged"
@@ -412,7 +414,11 @@
 
   function commitMenu(e: MouseEvent, c: Commit) {
     showMenu(e, [
-      [{ label: "Open changes", run: () => diff({ title: `${c.short} ${c.subject}`, commit: c.sha }) }],
+      [
+        { label: "Open changes", run: () => diff({ title: `${c.short} ${c.subject}`, commit: c.sha }) },
+        { label: "Compare with working tree", icon: "swap", run: () => diff({ title: `${c.short} ↔ working tree`, base: c.sha }) },
+        { label: "Compare with HEAD", icon: "swap", run: () => diff({ title: `${c.short} ↔ HEAD`, base: c.sha, target: "HEAD" }) },
+      ],
       [
         { label: "Copy commit id", icon: "copy", run: () => void copy(c.sha) },
         { label: "Copy message", icon: "copy", run: () => void copy(c.subject) },

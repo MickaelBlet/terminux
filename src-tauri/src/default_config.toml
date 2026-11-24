@@ -34,6 +34,16 @@ default_profile = "shell"
 # explorer_show_hidden = true      # list dotfiles in the Explorer sidebar
 # git_pane_refresh_interval = 5     # Git sidebar status polling in seconds while focused (0: off)
 # git_pane_show_untracked = true    # list untracked files in the Git sidebar
+# diff_view_mode = "unified"         # diff tab: "unified" | "split" (side by side)
+# diff_ignore_whitespace = "none"    # "none" | "change" (-b) | "all" (-w)
+# diff_ignore_blank_lines = false
+# diff_context_lines = 3            # unchanged lines around changes (0-100)
+# diff_algorithm = "default"         # "default" | "minimal" | "patience" | "histogram"
+# diff_detect_renames = true
+# diff_word_highlight = true         # highlight changed words in modified lines
+# diff_syntax_highlight = true
+# diff_word_wrap = false
+# diff_line_numbers = true
 # Title-bar buttons: command names, [[action]] ids or "separator". Toolbar edits in the UI (right-click, drag) are saved here.
 # toolbar = ["duplicate_pane_right", "duplicate_pane_down", "toggle_pane_zoom", "find", "separator", "open_settings"]
 # always_on_top = false

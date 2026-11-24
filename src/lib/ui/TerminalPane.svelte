@@ -114,7 +114,7 @@
       </button>
     {/if}
   </div>
-  {#if app.searchPane === paneId}
+  {#if app.searchPane === paneId && kind !== "diff"}
     <SearchBar {paneId} />
   {/if}
   </div>

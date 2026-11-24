@@ -51,16 +51,6 @@ export interface Stash {
   date: string;
 }
 
-export type DiffLineKind = "file" | "meta" | "hunk" | "add" | "del" | "ctx";
-
-export interface DiffLine {
-  kind: DiffLineKind;
-  text: string;
-  /** Line numbers in the old/new file (context and changed lines). */
-  old?: number;
-  new?: number;
-}
-
 const US = "\x1f";
 const RS = "\x1e";
 
@@ -89,11 +79,17 @@ export const cmd = {
   commit: (o: { amend?: boolean; all?: boolean } = {}) => ["commit", "-F", "-", ...(o.amend ? ["--amend"] : []), ...(o.all ? ["-a"] : [])],
   lastMessage: () => ["log", "-n", "1", "--format=%B"],
   undoCommit: () => ["reset", "--soft", "HEAD~1"],
-  diff: (path: string, staged: boolean) => ["diff", "--no-ext-diff", "--no-color", ...(staged ? ["--cached"] : []), ...paths([path])],
-  show: (sha: string) => ["show", "--no-ext-diff", "--no-color", "--patch", "--stat", "--format=commit %H%nAuthor: %an <%ae>%nDate:   %ad%n%n%w(0,4,4)%B", sha],
-  stashShow: (ref: string) => ["stash", "show", "--patch", "--stat", ref],
+  diff: (path: string, staged: boolean, flags: string[] = []) => ["diff", "--no-ext-diff", "--no-color", ...flags, ...(staged ? ["--cached"] : []), ...paths([path])],
+  /** `base` against `target`, or against the working tree when `target` is omitted. */
+  diffRefs: (base: string, target?: string, path?: string, flags: string[] = []) => ["diff", "--no-ext-diff", "--no-color", ...flags, base, ...(target ? [target] : []), ...(path ? paths([path]) : ["--"])],
+  show: (sha: string, flags: string[] = []) => ["show", "--no-ext-diff", "--no-color", ...flags, "--patch", "--stat", "--format=commit %H%nAuthor: %an <%ae>%nDate:   %ad%n%n%w(0,4,4)%B", sha],
+  stashShow: (ref: string, flags: string[] = []) => ["stash", "show", "--no-color", ...flags, "--patch", "--stat", ref],
+  /** Apply a patch read from stdin (hunk / line staging). */
+  apply: (o: { cached?: boolean; reverse?: boolean; zeroContext?: boolean } = {}) => ["apply", "--recount", "--whitespace=nowarn", ...(o.cached ? ["--cached"] : []), ...(o.reverse ? ["--reverse"] : []), ...(o.zeroContext ? ["--unidiff-zero"] : []), "-"],
   log: (n = 100) => ["log", "-n", String(n), `--format=%H%x1f%h%x1f%an%x1f%ar%x1f%D%x1f%s%x1e`],
   branches: () => ["for-each-ref", "--sort=-committerdate", "--format=%(refname)%1f%(refname:short)%1f%(HEAD)%1f%(upstream:short)%1f%(committerdate:relative)", "refs/heads", "refs/remotes"],
+  /** Tags, newest first (annotated: tag date and message; lightweight: commit's). */
+  tags: () => ["for-each-ref", "--sort=-creatordate", "--format=%(refname:short)%1f%(creatordate:relative)%1f%(subject)", "refs/tags"],
   switch: (name: string) => ["switch", name],
   /** Local branch tracking a remote one (`origin/x` → `x`). */
   track: (remoteRef: string) => ["switch", "--track", remoteRef],
@@ -198,6 +194,22 @@ export function parseLog(out: string): Commit[] {
     });
 }
 
+export interface Tag {
+  name: string;
+  date: string;
+  subject: string;
+}
+
+export function parseTags(out: string): Tag[] {
+  return out
+    .split("\n")
+    .filter((l) => l.includes(US))
+    .map((l) => {
+      const [name, date, subject] = l.split(US);
+      return { name, date: date ?? "", subject: subject ?? "" };
+    });
+}
+
 export function parseBranches(out: string): Branch[] {
   return out
     .split("\n")
@@ -223,36 +235,6 @@ export function parseStashes(out: string): Stash[] {
 export function remotesOf(branches: Branch[]): string[] {
   const set = new Set(branches.filter((b) => b.remote).map((b) => b.ref.slice("refs/remotes/".length).split("/")[0]));
   return [...set].sort((a, b) => (a === "origin" ? -1 : b === "origin" ? 1 : a.localeCompare(b)));
-}
-
-/** Unified diff (one or several files) → classified lines with old/new line numbers. */
-export function parseDiff(out: string): DiffLine[] {
-  const lines: DiffLine[] = [];
-  let oldNo = 0;
-  let newNo = 0;
-  let inHunk = false;
-  const src = out.endsWith("\n") ? out.slice(0, -1) : out;
-  if (!src) return lines;
-  for (const text of src.split("\n")) {
-    if (text.startsWith("diff --git ") || text.startsWith("commit ")) {
-      inHunk = false;
-      lines.push({ kind: "file", text });
-      continue;
-    }
-    const h = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(text);
-    if (h) {
-      inHunk = true;
-      oldNo = Number(h[1]);
-      newNo = Number(h[2]);
-      lines.push({ kind: "hunk", text });
-      continue;
-    }
-    if (inHunk && text.startsWith("+")) lines.push({ kind: "add", text, new: newNo++ });
-    else if (inHunk && text.startsWith("-")) lines.push({ kind: "del", text, old: oldNo++ });
-    else if (inHunk && (text.startsWith(" ") || text === "")) lines.push({ kind: "ctx", text, old: oldNo++, new: newNo++ });
-    else lines.push({ kind: "meta", text });
-  }
-  return lines;
 }
 
 // ---------- errors ----------

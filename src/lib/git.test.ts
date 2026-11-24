@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyError, cmd, errorMessage, joinRepo, parseBranches, parseDiff, parseLog, parseStashes, parseStatus, remotesOf, shellLine, splitPath } from "./git";
+import { classifyError, cmd, errorMessage, joinRepo, parseBranches, parseLog, parseTags, parseStashes, parseStatus, remotesOf, shellLine, splitPath } from "./git";
 
 const H = "0123456789abcdef0123456789abcdef01234567";
 
@@ -64,24 +64,15 @@ it("parses branches and remotes", () => {
   expect(remotesOf(b)).toEqual(["origin", "upstream"]);
 });
 
-it("parses stashes", () => {
-  expect(parseStashes("stash@{0}\x1fOn main: wip\x1f5 minutes ago\n")).toEqual([{ ref: "stash@{0}", message: "On main: wip", date: "5 minutes ago" }]);
+it("parses tags", () => {
+  expect(parseTags("v1.0\x1f2 days ago\x1fRelease 1.0\nv0.9\x1f3 weeks ago\x1f\n")).toEqual([
+    { name: "v1.0", date: "2 days ago", subject: "Release 1.0" },
+    { name: "v0.9", date: "3 weeks ago", subject: "" },
+  ]);
 });
 
-it("parses diffs with line numbers", () => {
-  const out = "diff --git a/x b/x\nindex 1..2 100644\n--- a/x\n+++ b/x\n@@ -1,3 +1,3 @@ f()\n a\n-b\n+c\n d\n";
-  expect(parseDiff(out)).toEqual([
-    { kind: "file", text: "diff --git a/x b/x" },
-    { kind: "meta", text: "index 1..2 100644" },
-    { kind: "meta", text: "--- a/x" },
-    { kind: "meta", text: "+++ b/x" },
-    { kind: "hunk", text: "@@ -1,3 +1,3 @@ f()" },
-    { kind: "ctx", text: " a", old: 1, new: 1 },
-    { kind: "del", text: "-b", old: 2 },
-    { kind: "add", text: "+c", new: 2 },
-    { kind: "ctx", text: " d", old: 3, new: 3 },
-  ]);
-  expect(parseDiff("")).toEqual([]);
+it("parses stashes", () => {
+  expect(parseStashes("stash@{0}\x1fOn main: wip\x1f5 minutes ago\n")).toEqual([{ ref: "stash@{0}", message: "On main: wip", date: "5 minutes ago" }]);
 });
 
 it("classifies errors", () => {

@@ -314,6 +314,32 @@ List untracked files in the Git sidebar's Changes (`git status --untracked-files
 git_pane_show_untracked = false
 ```
 
+### Diff tab
+
+Defaults of the [diff tab](../user-guide/18-sidebar.md#diff-tab). Each one can be changed per tab from its toolbar or view options menu; per-tab choices are saved with the session.
+
+| Key | Type | Default | Meaning |
+| --- | --- | --- | --- |
+| `diff_view_mode` | `"unified"` \| `"split"` | `"unified"` | One column, or old and new side by side |
+| `diff_ignore_whitespace` | `"none"` \| `"change"` \| `"all"` | `"none"` | Ignore changes in the amount of whitespace (`git diff -b`) or all whitespace (`-w`) |
+| `diff_ignore_blank_lines` | boolean | `false` | Ignore changes made of blank lines (`--ignore-blank-lines`) |
+| `diff_context_lines` | number | `3` | Unchanged lines around each change (0–100, `-U`) |
+| `diff_algorithm` | `"default"` \| `"minimal"` \| `"patience"` \| `"histogram"` | `"default"` | `--diff-algorithm`; `default` keeps git's (and `diff.algorithm`) |
+| `diff_detect_renames` | boolean | `true` | Show renamed files as renames (`-M`) |
+| `diff_word_highlight` | boolean | `true` | Highlight the changed words inside modified lines |
+| `diff_syntax_highlight` | boolean | `true` | Syntax highlighting, by file type (same languages as the file editor) |
+| `diff_word_wrap` | boolean | `false` | Wrap long lines |
+| `diff_line_numbers` | boolean | `true` | Old / new line numbers |
+
+Hunk and line staging is disabled while whitespace changes are ignored (the patch would not match the files).
+
+```toml
+diff_view_mode = "split"
+diff_ignore_whitespace = "change"
+diff_context_lines = 5
+diff_algorithm = "histogram"
+```
+
 ### show_terminal_title_in_titlebar
 
 **Type:** boolean | **Default:** `true` | **Windows Terminal:** `showTerminalTitleInTitlebar`

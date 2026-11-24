@@ -62,9 +62,43 @@ What it shows and does:
 | Commit box | Message (kept per repository until committed), `Ctrl+Enter` commits, **Amend** (prefills the last message). With nothing staged it offers to stage everything and commit |
 | Merge changes / Staged changes / Changes | Status letter (M, A, D, R, U = untracked, ! = conflict). Click: diff (untracked and conflicted files open the file); double-click: open the file; hover buttons: open file, discard, stage / unstage; right-click: same plus copy path. Section buttons: stage all, unstage all, discard all |
 | Stashes | Click: diff; apply, pop, drop; `+` stashes the changes (optional message) |
-| Commits | Last 100 commits with branch / tag badges. Click: commit diff; right-click: copy id / message, create branch from it, switch to it (detached), revert |
+| Commits | Last 100 commits with branch / tag badges. Click: commit diff; right-click: copy id / message, compare with the working tree or `HEAD`, create branch from it, switch to it (detached), revert |
 
-Diffs open in a **diff tab** (one per window, reused for the next diff; the tab icon is the Git icon): file diffs against the index or `HEAD` with old/new line numbers, commit and stash patches with their stats. Its header can stage / unstage the file and open it.
+Files also have **Compare with HEAD** (staged and unstaged changes together) in their right-click menu, and the branch menu has **Compare with current branch…**.
+
+### Diff tab
+
+Diffs open in a **diff tab** (one per window, reused for the next diff; the tab icon is the Git icon): file diffs against the index or `HEAD`, commit and stash patches with their message and stats, or a comparison between two refs.
+
+| Toolbar | |
+| --- | --- |
+| Summary | Number of files, added / removed lines |
+| Compare chips | In compare mode: base ↔ target. Click a side to pick a branch, a tag, a recent commit, the working tree or any ref (`HEAD~3`…); swap; back to the original changes |
+| Working tree / Index | For a file diff: switch between unstaged and staged changes |
+| Unified / Split | One column, or old and new side by side (`u`) |
+| Context `−` `n` `+` | Unchanged lines around changes (`-` / `+`); the options menu also has **Whole file** |
+| `␣` | Ignore all whitespace on / off |
+| `↑` `↓` | Previous / next change |
+| File list | Side list of the files (commits, stashes, compares); click to jump |
+| Find | Search in the diff (`Ctrl+F`, `Ctrl+Shift+F` or `/`); `Enter` / `Shift+Enter` next / previous, match case, `Escape` closes |
+| View options | Layout, whitespace (ignore amount changes `-b`, all whitespace `-w`, blank lines), context lines, diff algorithm (minimal, patience, histogram), rename detection, changed-word highlight, syntax highlighting, wrap, line numbers, expand / collapse all files, compare with…, reset to the defaults |
+
+Changed words inside modified lines are highlighted, and code is syntax highlighted by file type. Each file has a sticky, collapsible header with its status, `old → new` path for renames, counts and buttons (stage / discard / unstage the file, open it at its first change). Big files (over 2000 lines, or past 20 000 lines in total) start collapsed.
+
+**Staging hunks and lines** (working tree and index diffs): each hunk header has **Stage hunk** and **Discard hunk** (or **Unstage hunk** in the index). Click line numbers of added / removed lines to select them (`Shift`+click selects a range, `Escape` clears): the buttons then act on the selected lines only. Discarding asks for confirmation. This is off while whitespace changes are ignored.
+
+| Key (diff tab focused) | Action |
+| --- | --- |
+| `n` / `F7`, `p` / `Shift+F7` | Next / previous change |
+| `]` / `[` | Next / previous file |
+| `u` | Unified ⇄ split |
+| `w` | Wrap lines |
+| `+` / `-` | More / less context |
+| `r` | Refresh |
+| `Ctrl+F`, `/` | Find |
+| `Escape` | Clear the line selection, close the search |
+
+Defaults come from the `diff_*` [settings](../reference/configuration.md#diff-tab); changes made in a tab apply to that tab only and are restored with the session. Working tree diffs refresh after Git sidebar actions and finished shell commands.
 
 Discard, delete, force push and branch deletion ask for confirmation. git never prompts: when an operation needs credentials or a host key confirmation (or fails for another reason during fetch / pull / push), the error toast has a **Run in terminal** button that types the same `git -C <root> …` command in the tracked terminal. The view only runs a fixed set of git subcommands and options.
 
