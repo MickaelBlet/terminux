@@ -1,12 +1,14 @@
 <script lang="ts">
-  // Window sidebar, fixed on the left or right of the panes: Git and snippets views.
+  // Window sidebar, fixed on the left or right of the panes: Explorer, Git and snippets views.
   import { app, type SidebarView } from "../state.svelte";
   import type { MenuItem } from "./types";
+  import ExplorerPane from "./ExplorerPane.svelte";
   import GitPane from "./GitPane.svelte";
   import SnippetsPane from "./SnippetsPane.svelte";
   import Icon from "./Icon.svelte";
 
   const VIEWS: { id: SidebarView; label: string; icon: string; command: string }[] = [
+    { id: "explorer", label: "Explorer", icon: "folder", command: "toggle_explorer_sidebar" },
     { id: "git", label: "Source control", icon: "git", command: "toggle_git_sidebar" },
     { id: "snippets", label: "Snippets", icon: "snippet", command: "toggle_snippets_sidebar" },
   ];
@@ -54,7 +56,7 @@
 {#if view}
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <aside class="sidebar {side}" class:resizing={!!resize} style:width="{app.sidebarWidth}px" onkeydown={onKey} aria-label="Sidebar">
-    <div class="bar" role="tablist" tabindex="-1" oncontextmenu={menu}>
+    <div class="bar" role="tablist" tabindex="-1" data-tauri-drag-region oncontextmenu={menu}>
       {#each VIEWS as v (v.id)}
         {@const hint = app.keymap.hint(v.command)}
         <button
@@ -69,12 +71,12 @@
           {#if view === v.id}<span>{v.label}</span>{/if}
         </button>
       {/each}
-      <span class="spacer"></span>
+      <span class="spacer" data-tauri-drag-region></span>
       <button class="view" title="Sidebar options" aria-label="Sidebar options" onclick={menu}><Icon name="menu" size={13} /></button>
       <button class="view" title="Close sidebar" aria-label="Close sidebar" onclick={() => app.showSidebar(null)}><Icon name="close" size={12} /></button>
     </div>
     <div class="content">
-      {#if view === "git"}<GitPane />{:else if view === "snippets"}<SnippetsPane />{/if}
+      {#if view === "explorer"}<ExplorerPane />{:else if view === "git"}<GitPane />{:else if view === "snippets"}<SnippetsPane />{/if}
     </div>
     <div
       class="grip"
@@ -112,8 +114,12 @@
   .bar {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
     gap: 2px;
-    padding: 4px 6px;
+    /* Same height as the title bar, which it sits next to. */
+    box-sizing: border-box;
+    height: var(--tab-height, 34px);
+    padding: 0 6px;
     border-bottom: 1px solid var(--border);
     user-select: none;
     outline: none;

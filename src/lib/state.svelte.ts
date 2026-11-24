@@ -10,6 +10,7 @@ import { playBell } from "./audio";
 import { COMMANDS, commandName, parseUserActions, type ActionSpec, type UserAction } from "./commands";
 import { DEFAULT_SEARCH_URL, FALLBACK_CONFIG, findProfile, visibleProfiles, type Config, type UiTheme } from "./config";
 import { eventKey, Keymap } from "./keys";
+import * as groups from "./layout/groups";
 import * as tree from "./layout/tree";
 import type { Dir, Direction, LayoutNode } from "./layout/tree";
 import type { Progress } from "./osc";
@@ -20,6 +21,7 @@ import { dirOf, parseFileArg, resolveFilePath } from "./file-links";
 import { applyCompletion, commonPrefix, completionQuery, filterEntries, separatorOf, type PathEntry } from "./path-complete";
 import { baseName } from "./file-langs";
 import { dropPanes, type PaneSnapshot, type TabSnapshot } from "./snapshot";
+import type { GroupsSnapshot } from "./layout/groups";
 import type { DiffSpec, PaneSpec, Resolved } from "./term/appearance";
 import { sessionByPty, sessions, TermSession, type Restore, type SessionHooks } from "./term/session";
 import { applyUiTheme, isDarkTheme, type UiLook } from "./ui-theme";
@@ -32,8 +34,8 @@ import * as windows from "./windows";
 /** "config" / "defaults": the settings editor shown as a pane. */
 export type PaneKind = "term" | "diff" | "file" | "config" | "defaults";
 /** Views of the window sidebar. */
-export type SidebarView = "git" | "snippets";
-export const SIDEBAR_VIEWS: SidebarView[] = ["git", "snippets"];
+export type SidebarView = "explorer" | "git" | "snippets";
+export const SIDEBAR_VIEWS: SidebarView[] = ["explorer", "git", "snippets"];
 export const isEditorPane = (k: PaneKind | undefined): k is "config" | "defaults" => k === "config" || k === "defaults";
 
 export interface PaneInfo {
@@ -74,6 +76,8 @@ export interface Tab {
   mru: string[];
   /** Split selected by "move focus to parent": pane commands apply to the whole subtree. */
   group: string | null;
+  /** Tab group (leaf of `App.groupLayout`) holding the tab. */
+  groupId: string;
 }
 
 /** Arguments shared by new_tab / split_pane / new_window (and the CLI). */
@@ -96,7 +100,7 @@ export interface SplitArgs extends NewPaneArgs {
 }
 
 type Closed =
-  | { kind: "tab"; snap: TabSnapshot; index: number }
+  | { kind: "tab"; snap: TabSnapshot; index: number; groupId: string }
   | { kind: "pane"; snap: PaneSnapshot; tabId: string; neighbor: string | null; dir: Dir; before: boolean };
 
 const norm = (s: unknown) => (typeof s === "string" ? s : "").toLowerCase().replace(/[_-]/g, "");
@@ -140,7 +144,13 @@ const asTabPosition = (v: string | null): TabPosition | null => (v === "top" || 
 export class App {
   config = $state<Config>(FALLBACK_CONFIG);
   tabs = $state<Tab[]>([]);
-  activeTab = $state(0);
+  #activeTab = $state(0);
+  /** Tab at `activeTab` when it was last set (survives reordering). */
+  #focusedTab: Tab | undefined;
+  /** Tab groups: split tree whose leaves are group ids. */
+  groupLayout = $state<LayoutNode>(tree.pane("g0"));
+  /** Tab shown in each group, by group id. */
+  groupActive = $state<Record<string, string>>({});
   panes = $state<Record<string, PaneInfo>>({});
   /** Taskbar progress shown after a command finished unseen (1 success, 2 error), until the window is focused. */
   taskbarFlash: 1 | 2 | null = null;
@@ -205,8 +215,159 @@ export class App {
   private paneSeq = 0;
   private toastSeq = 0;
 
+  /** Index of the focused tab (the shown tab of the focused group). */
+  get activeTab(): number {
+    return this.#activeTab;
+  }
+
+  set activeTab(i: number) {
+    const prev = this.#focusedTab;
+    this.#activeTab = i;
+    const t = this.tabs[i];
+    this.#focusedTab = t;
+    if (!t) return;
+    if (this.groupActive[t.groupId] !== t.id) this.groupActive[t.groupId] = t.id;
+    // Another group's terminal stays visible: show it unfocused.
+    if (prev && prev !== t && prev.kind === "term") sessions.get(prev.active)?.setFocused(false);
+  }
+
   get tab(): Tab | undefined {
     return this.tabs[this.activeTab];
+  }
+
+  // ---------- tab groups ----------
+
+  get activeGroup(): string {
+    return this.tab?.groupId ?? tree.firstPane(this.groupLayout);
+  }
+
+  get groupIds(): string[] {
+    return groups.groupIds(this.groupLayout);
+  }
+
+  /** Tab shown in group `gid`. */
+  shownTab(gid: string): Tab | undefined {
+    return groups.shownTab(this.tabs, gid, this.groupActive[gid]);
+  }
+
+  /** True when `t` is the tab shown in its group. */
+  isShown(t: Tab): boolean {
+    return this.shownTab(t.groupId) === t;
+  }
+
+  focusGroup(gid: string): boolean {
+    const t = this.shownTab(gid);
+    return !!t && this.gotoTab(this.tabs.indexOf(t));
+  }
+
+  /** focus_group: a direction, or a 0-based group index in layout order. */
+  focusGroupAt(target: Direction | number): boolean {
+    const gid = typeof target === "number" ? this.groupIds[target] : tree.neighbor(this.groupLayout, this.activeGroup, target);
+    return !!gid && this.focusGroup(gid);
+  }
+
+  /** Move tab `i` into group `gid` (at row position `at`, default: the group's end) and show it. */
+  moveTabToGroup(i: number, gid: string, at?: number): boolean {
+    const t = this.tabs[i];
+    if (!t || !this.groupIds.includes(gid)) return false;
+    const from = t.groupId;
+    if (from === gid && at === undefined) return false;
+    this.tabs.splice(i, 1);
+    t.groupId = gid;
+    const to = at === undefined ? groups.insertIndex(this.tabs, gid) : Math.max(0, Math.min(at > i ? at - 1 : at, this.tabs.length));
+    this.tabs.splice(to, 0, t);
+    if (this.groupActive[from] === t.id) delete this.groupActive[from];
+    this.pruneGroups();
+    this.gotoTab(this.tabs.indexOf(t));
+    return true;
+  }
+
+  /** move_tab_to_group: into the neighbor group toward `side` (created when there is none) or the group at `index`. */
+  moveTabToGroupAt(i: number, target: Direction | number): boolean {
+    const t = this.tabs[i];
+    if (!t) return false;
+    if (typeof target === "number") return target >= 0 && target < this.groupIds.length && this.moveTabToGroup(i, this.groupIds[target]);
+    const next = tree.neighbor(this.groupLayout, t.groupId, target);
+    if (next) return this.moveTabToGroup(i, next);
+    return this.splitTabGroup(target, { tab: i });
+  }
+
+  /**
+   * Add a group beside `target` (default: the tab's group) on `side`, holding tab `opts.tab` (moved),
+   * a duplicate of the active tab, or a new tab opened with `opts.args`.
+   */
+  splitTabGroup(side: Direction, opts: { tab?: number; duplicate?: boolean; args?: NewPaneArgs; target?: string } = {}): boolean {
+    const moved = opts.tab !== undefined ? this.tabs[opts.tab] : undefined;
+    if (opts.tab !== undefined && !moved) return false;
+    const target = opts.target ?? moved?.groupId ?? this.activeGroup;
+    // A lone tab moved beside its own group: nothing would change.
+    if (moved && moved.groupId === target && groups.tabsOf(this.tabs, target).length < 2) return false;
+    const gid = tree.newId("g");
+    const before = this.groupLayout;
+    this.groupLayout = groups.splitGroup(before, target, side, gid);
+    if (moved) return this.moveTabToGroup(this.tabs.indexOf(moved), gid);
+    if (opts.duplicate) {
+      if (this.tab?.kind !== "term") {
+        this.groupLayout = before;
+        return false;
+      }
+      void this.duplicateTab(this.activeTab, gid).finally(() => this.pruneGroups());
+      return true;
+    }
+    if (this.newTab(opts.args ?? {}, gid)) return true;
+    this.groupLayout = before;
+    return false;
+  }
+
+  /** Close every tab of group `gid`. */
+  async closeGroup(gid = this.activeGroup) {
+    await this.closeTabs((t) => t.groupId !== gid);
+  }
+
+  /** Put every tab back into one group (the focused one). */
+  joinGroups() {
+    const gid = this.activeGroup;
+    for (const t of this.tabs) t.groupId = gid;
+    this.groupLayout = tree.pane(gid);
+    this.groupActive = this.tab ? { [gid]: this.tab.id } : {};
+  }
+
+  setGroupSizes(splitId: string, sizes: number[]) {
+    this.groupLayout = tree.setSizes(this.groupLayout, splitId, sizes);
+  }
+
+  equalizeGroups() {
+    this.groupLayout = tree.equalize(this.groupLayout);
+  }
+
+  /** Remove groups left without tabs (the last group always stays). */
+  private pruneGroups() {
+    for (const gid of this.groupIds) {
+      if (this.groupIds.length < 2) break;
+      if (this.tabs.some((t) => t.groupId === gid)) continue;
+      this.groupLayout = groups.removeGroup(this.groupLayout, gid);
+      delete this.groupActive[gid];
+    }
+  }
+
+  /** Persisted group layout; undefined with a single group. */
+  groupsSnapshot(): GroupsSnapshot | undefined {
+    if (this.groupIds.length < 2) return undefined;
+    const active: Record<string, number> = {};
+    for (const gid of this.groupIds) {
+      const t = this.shownTab(gid);
+      if (t) active[gid] = this.tabs.indexOf(t);
+    }
+    return { layout: $state.snapshot(this.groupLayout) as LayoutNode, of: this.tabs.map((t) => t.groupId), active };
+  }
+
+  /** Restore a persisted group layout onto every tab of the (freshly restored) window. */
+  applyGroups(snap: GroupsSnapshot | undefined) {
+    const r = groups.restoreGroups(snap, this.tabs.length);
+    if (!r) return;
+    this.tabs.forEach((t, i) => (t.groupId = r.of[i]));
+    this.groupLayout = r.layout;
+    this.groupActive = Object.fromEntries(Object.entries(r.active).map(([g, i]) => [g, this.tabs[i].id]));
   }
 
   get activePane(): string | undefined {
@@ -265,7 +426,15 @@ export class App {
   /** Terminal pane the sidebar works on: last focused one of the active tab, else of the last terminal tab. */
   get recentTerminal(): string | undefined {
     const inTab = (t: Tab | undefined) => t?.mru.find((p) => sessions.has(p)) ?? (t ? tree.paneIds(t.root).find((p) => sessions.has(p)) : undefined);
-    return inTab(this.tab) ?? inTab(this.recentTermTab());
+    const found = inTab(this.tab);
+    if (found) return found;
+    // Diff/editor-only tabs (kind "term" without a session) are skipped.
+    for (const id of this.tabMru) {
+      const t = this.tabs.find((x) => x.id === id);
+      const p = t?.kind === "term" ? inTab(t) : undefined;
+      if (p) return p;
+    }
+    return undefined;
   }
 
   /** top ↔ vertical (configured side, else left). */
@@ -676,7 +845,7 @@ export class App {
     }
     this.insertTab({
       id: tree.newId("t"), kind: "term", root: tree.pane(id), active: id, zoom: null,
-      name: null, color: null, broadcast: false, mru: [id], group: null,
+      name: null, color: null, broadcast: false, mru: [id], group: null, groupId: this.activeGroup,
     });
   }
 
@@ -691,7 +860,7 @@ export class App {
     const id = this.addPaneInfo("diff", { profileId: this.config.default_profile, diff }).id;
     this.insertTab({
       id: tree.newId("t"), kind: "term", root: tree.pane(id), active: id, zoom: null,
-      name: null, color: null, broadcast: false, mru: [id], group: null,
+      name: null, color: null, broadcast: false, mru: [id], group: null, groupId: this.activeGroup,
     });
   }
 
@@ -775,8 +944,8 @@ export class App {
   }
 
   private isVisible(paneId: string) {
-    const t = this.tab;
-    if (!t) return false;
+    const t = this.tabOf(paneId);
+    if (!t || !this.isShown(t)) return false;
     const shown = t.zoom ? tree.find(t.root, t.zoom) : t.root;
     return !!shown && tree.contains(shown, paneId);
   }
@@ -901,7 +1070,7 @@ export class App {
     return id;
   }
 
-  adoptTab(snap: TabSnapshot, at = this.tabs.length, focus = true): Tab | null {
+  adoptTab(snap: TabSnapshot, at = this.tabs.length, focus = true, group?: string): Tab | null {
     // Snippets / git panes of older versions are sidebar views now.
     const kept = dropPanes(snap, ["snippets", "git"]);
     if (!kept) return null;
@@ -912,6 +1081,7 @@ export class App {
     const tab: Tab = {
       id: tree.newId("t"), kind: "term", root: tree.remap(snap.root, ids), active, zoom: null,
       name: snap.name, color: snap.color, broadcast: false, mru: [active], group: null,
+      groupId: group && this.groupIds.includes(group) ? group : this.activeGroup,
     };
     const i = Math.max(0, Math.min(at, this.tabs.length));
     const current = this.tab;
@@ -930,7 +1100,7 @@ export class App {
     const entry = this.closed.pop();
     if (!entry) return false;
     if (entry.kind === "tab") {
-      this.adoptTab(entry.snap, entry.index);
+      this.adoptTab(entry.snap, entry.index, true, entry.groupId);
       return true;
     }
     const t = this.tabs.find((x) => x.id === entry.tabId);
@@ -947,26 +1117,28 @@ export class App {
 
   // ---------- tabs ----------
 
-  newTab(args: NewPaneArgs = {}): boolean {
+  newTab(args: NewPaneArgs = {}, group?: string): boolean {
     const spec = this.specFrom(args);
     if (!spec) return false;
     const paneId = this.createPane(spec);
     this.insertTab({
       id: tree.newId("t"), kind: "term", root: tree.pane(paneId), active: paneId, zoom: null,
-      name: null, color: null, broadcast: false, mru: [paneId], group: null,
-    });
+      name: null, color: null, broadcast: false, mru: [paneId], group: null, groupId: this.activeGroup,
+    }, group);
     return true;
   }
 
-  private insertTab(tab: Tab) {
-    const after = norm(this.config.new_tab_position) === "aftercurrenttab" && this.tabs.length > 0;
-    const at = after ? this.activeTab + 1 : this.tabs.length;
+  /** Add `tab` to `group` (default: the focused one) and show it. */
+  private insertTab(tab: Tab, group = this.activeGroup) {
+    tab.groupId = group;
+    const after = norm(this.config.new_tab_position) === "aftercurrenttab" ? this.tab?.id : null;
+    const at = groups.insertIndex(this.tabs, group, after);
     this.tabs.splice(at, 0, tab);
     this.gotoTab(at);
   }
 
   /** Open (or focus) the settings editor, or the read-only default settings. */
-  openEditor(kind: "config" | "defaults" = "config", at = this.tabs.length, focus = true) {
+  openEditor(kind: "config" | "defaults" = "config", at = groups.insertIndex(this.tabs, this.activeGroup), focus = true) {
     const pane = this.editorPane(kind);
     if (pane) {
       if (focus) this.focusPane(pane);
@@ -978,7 +1150,7 @@ export class App {
       i = Math.max(0, Math.min(at, this.tabs.length));
       this.tabs.splice(i, 0, {
         id: tree.newId("t"), kind, root: tree.pane(pane), active: pane, zoom: null,
-        name: null, color: null, broadcast: false, mru: [], group: null,
+        name: null, color: null, broadcast: false, mru: [], group: null, groupId: this.activeGroup,
       });
     }
     if (focus) this.gotoTab(i);
@@ -1032,7 +1204,7 @@ export class App {
       host.root = tree.insert(host.root, target, dir, tree.pane(id), { before });
     } else {
       this.tabs.push({
-        id: tree.newId("t"), kind: "term", root: tree.pane(id), active: id, zoom: null, name: null, color: null, broadcast: false, mru: [id], group: null,
+        id: tree.newId("t"), kind: "term", root: tree.pane(id), active: id, zoom: null, name: null, color: null, broadcast: false, mru: [id], group: null, groupId: this.activeGroup,
       });
     }
     const i = this.tabs.findIndex((t) => t.kind === kind);
@@ -1070,7 +1242,8 @@ export class App {
     if (!n) return;
     const m = mode ?? this.config.tab_switcher_mode;
     if (!(m === true || norm(m) === "mru") || n < 2) {
-      this.gotoTab((this.activeTab + delta + n) % n);
+      const next = this.tab && groups.cycleIn(this.tabs, this.tab.id, delta);
+      if (next) this.gotoTab(this.tabs.indexOf(next));
       return;
     }
     if (!this.tabSwitcher) {
@@ -1103,7 +1276,7 @@ export class App {
     if (t.kind === "config") this.configDirty = false;
     if (t.kind === "term" && opts.record !== false) {
       const snap = await this.captureTab(t, false);
-      this.remember({ kind: "tab", snap, index: this.tabs.indexOf(t) });
+      this.remember({ kind: "tab", snap, index: this.tabs.indexOf(t), groupId: t.groupId });
     }
     i = this.tabs.indexOf(t);
     if (i < 0) return false;
@@ -1118,17 +1291,24 @@ export class App {
     const [gone] = this.tabs.splice(i, 1);
     this.tabMru = this.tabMru.filter((id) => id !== gone.id);
     if (this.colorPicker?.tabId === gone.id) this.colorPicker = null;
+    if (this.groupActive[gone.groupId] === gone.id) delete this.groupActive[gone.groupId];
     if (this.tabs.length === 0) {
       windows.lastTabClosed(this);
       return;
     }
+    // Focus moves to the closest group when the active tab's group goes away.
+    const emptied = !this.tabs.some((t) => t.groupId === gone.groupId);
+    const neighbor = emptied ? groups.neighborGroup(this.groupLayout, gone.groupId) : null;
+    if (emptied) this.pruneGroups();
     if (active && active !== gone) {
       this.activeTab = this.tabs.indexOf(active);
       return;
     }
-    // The active tab was closed: go back to the most recently used one.
-    const next = this.tabs.findIndex((t) => t.id === this.tabMru[0]);
-    this.gotoTab(next >= 0 ? next : Math.min(i, this.tabs.length - 1));
+    // The active tab was closed: the most recently used tab of its group, else of the closest group.
+    const live = (id: string) => this.tabs.find((t) => t.id === id);
+    const inGroup = this.tabMru.map(live).find((t) => t?.groupId === gone.groupId);
+    const next = inGroup ?? (neighbor ? this.shownTab(neighbor) : live(this.tabMru[0]));
+    this.gotoTab(next ? this.tabs.indexOf(next) : Math.min(i, this.tabs.length - 1));
   }
 
   async closeTabs(keep: (t: Tab, i: number) => boolean) {
@@ -1159,7 +1339,7 @@ export class App {
     if (this.tabs[i]) this.tabs[i].color = color || null;
   }
 
-  async duplicateTab(i = this.activeTab) {
+  async duplicateTab(i = this.activeTab, group?: string) {
     const t = this.tabs[i];
     if (!t || t.kind !== "term") return;
     const snap = await this.captureTab(t, false);
@@ -1174,7 +1354,7 @@ export class App {
     if (!tab) return;
     tab.color = t.color;
     this.tabs.splice(this.tabs.indexOf(tab), 1);
-    this.insertTab(tab);
+    this.insertTab(tab, group ?? t.groupId);
   }
 
   // ---------- panes ----------
@@ -1205,7 +1385,13 @@ export class App {
     }
     if (previous !== id) sessions.get(previous)?.setFocused(false);
     sessions.get(id)?.setFocused(this.windowFocused);
-    queueMicrotask(() => (sessions.get(id)?.focus(), this.paneEditors.get(id)?.focus()));
+    // Skipped when another pane got the focus meanwhile: two visible panes (tab groups, splits) would
+    // otherwise steal it from each other forever (an unfocused look rebuilds the terminal, refocusing it).
+    queueMicrotask(() => {
+      if (this.activePane !== id) return;
+      sessions.get(id)?.focus();
+      this.paneEditors.get(id)?.focus();
+    });
     windows.syncTitle(this);
   }
 
@@ -1429,7 +1615,7 @@ export class App {
     this.removeNode(from, id, "keep");
     {
       this.tabs.push({
-        id: tree.newId("t"), kind: "term", root: moved, active, zoom: null, name: null, color: null, broadcast: false, mru: [active], group: null,
+        id: tree.newId("t"), kind: "term", root: moved, active, zoom: null, name: null, color: null, broadcast: false, mru: [active], group: null, groupId: this.activeGroup,
       });
       this.gotoTab(this.tabs.length - 1);
     }

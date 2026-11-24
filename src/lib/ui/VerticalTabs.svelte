@@ -1,10 +1,8 @@
 <script lang="ts">
   import { app } from "../state.svelte";
   import { newTabMenu, tabBarMenu } from "./menus";
-  import { TabDrag } from "./tab-drag.svelte";
-  import { useFlip } from "./flip.svelte";
   import Icon from "./Icon.svelte";
-  import TabItem from "./TabItem.svelte";
+  import VerticalGroupTabs from "./VerticalGroupTabs.svelte";
   import { trackActiveTab } from "./tab-baseline";
 
   let { side }: { side: "left" | "right" } = $props();
@@ -16,12 +14,7 @@
   });
 
   let listEl = $state<HTMLDivElement>();
-  const drag = new TabDrag(app, () => "y", () => listEl);
-  useFlip(
-    () => listEl,
-    () => app.tabs.map((t) => t.id).join() + (drag.state?.active ? "|drag" : ""),
-    () => !!drag.state?.active,
-  );
+  const multi = $derived(app.groupIds.length > 1);
 
   let dropdownBtn = $state<HTMLButtonElement>();
   let navEl = $state<HTMLElement>();
@@ -38,9 +31,10 @@
     void app.tab?.id;
     void (app.tab && app.tabColor(app.tab));
     void app.tabs.map((t) => t.id).join();
+    void app.groupIds.join();
     void collapsed;
     if (!navEl || !listEl) return;
-    return trackActiveTab(navEl, listEl, "y");
+    return trackActiveTab(navEl, listEl, "y", ".tab.current");
   });
 
   function openDropdown(e: MouseEvent) {
@@ -94,8 +88,8 @@
     >
   </div>
   <div class="list" role="tablist" tabindex="-1" aria-orientation="vertical" bind:this={listEl} oncontextmenu={onBarMenu}>
-    {#each app.tabs as t (t.id)}
-      <TabItem {t} {drag} {side} variant={collapsed ? "collapsed" : "vertical"} />
+    {#each app.groupIds as gid, gi (gid)}
+      <VerticalGroupTabs {gid} {side} {collapsed} label={multi ? `Group ${gi + 1}` : null} onmenu={onBarMenu} />
     {/each}
     <div class="add">
       <button class="plus" title="New tab ({app.keymap.hint('new_tab') ?? ''})" onclick={() => app.newTab()}><Icon name="plus" /></button>

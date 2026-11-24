@@ -1,5 +1,5 @@
-//! Path completion for the `open_file` prompt: entry names of one directory, local or on the ssh
-//! host of a pane. Only names and the directory flag are returned, never file contents.
+//! Directory listing for the `open_file` prompt and the Explorer sidebar: entry names of one
+//! directory, local, on the ssh host or in the WSL distro of a pane. Only names and the directory flag are returned, never file contents.
 
 use std::process::Stdio;
 
@@ -47,9 +47,26 @@ pub fn list_remote(target: &SshTarget, dir: &str) -> Result<Vec<Entry>, String> 
         .stdin(Stdio::null())
         .output()
         .map_err(|e| format!("ssh: {e}"))?;
-    if !out.status.success() {
+    // `ls -L` fails on a dangling symlink but still lists the other entries.
+    if !out.status.success() && out.stdout.is_empty() {
         let msg = String::from_utf8_lossy(&out.stderr).trim().to_string();
         return Err(format!("ssh: {}", if msg.is_empty() { "failed" } else { &msg }));
+    }
+    Ok(parse_ls(&String::from_utf8_lossy(&out.stdout)))
+}
+
+/// Entries of a directory in a WSL distro (`wsl.exe <selection> --cd <dir> --exec ls`).
+pub fn list_wsl(program: &str, sel: &[String], dir: &str) -> Result<Vec<Entry>, String> {
+    let out = ssh::quiet_command(program)
+        .args(sel)
+        .args(["--cd", dir, "--exec", "ls", "-1ApL", "--", "."])
+        .stdin(Stdio::null())
+        .output()
+        .map_err(|e| format!("wsl: {e}"))?;
+    // `ls -L` fails on a dangling symlink but still lists the other entries.
+    if !out.status.success() && out.stdout.is_empty() {
+        let msg = String::from_utf8_lossy(&out.stderr).trim().to_string();
+        return Err(format!("wsl: {}", if msg.is_empty() { "failed" } else { &msg }));
     }
     Ok(parse_ls(&String::from_utf8_lossy(&out.stdout)))
 }

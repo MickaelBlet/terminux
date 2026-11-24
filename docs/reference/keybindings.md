@@ -167,6 +167,7 @@ Every command with default keys. All other commands (`toggle_focus_mode`, `toggl
 | [`move_pane_right`](actions.md#move_pane_right) | `Ctrl+Alt+Shift+Right` |
 | [`move_pane_up`](actions.md#move_pane_up) | `Ctrl+Alt+Shift+Up` |
 | [`move_pane_down`](actions.md#move_pane_down) | `Ctrl+Alt+Shift+Down` |
+| [`toggle_explorer_sidebar`](actions.md#toggle_explorer_sidebar) | `Ctrl+Shift+E` |
 | [`toggle_git_sidebar`](actions.md#toggle_git_sidebar) | `Ctrl+Shift+G` |
 
 ### Clipboard and selection

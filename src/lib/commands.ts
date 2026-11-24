@@ -38,6 +38,7 @@ export const COMMANDS: Record<string, NamedCommand> = {
   toggle_focus_mode: n("Toggle focus mode", "toggle_focus_mode"),
   toggle_vertical_tabs: n("Toggle vertical tabs", "toggle_vertical_tabs"),
   toggle_sidebar: n("Toggle sidebar", "toggle_sidebar"),
+  toggle_explorer_sidebar: n("Toggle explorer sidebar (files)", "toggle_sidebar", { view: "explorer" }, ["Ctrl+Shift+E"]),
   toggle_git_sidebar: n("Toggle Git sidebar (source control)", "toggle_sidebar", { view: "git" }, ["Ctrl+Shift+G"]),
   toggle_snippets_sidebar: n("Toggle snippets sidebar", "toggle_sidebar", { view: "snippets" }),
   toggle_vertical_tabs_collapsed: n("Collapse/expand vertical tabs", "toggle_vertical_tabs_collapsed"),
@@ -87,6 +88,11 @@ export const COMMANDS: Record<string, NamedCommand> = {
   move_tab_backward: n("Move tab backward", "move_tab", { direction: "backward" }),
   move_tab_to_new_window: n("Move tab to new window", "move_tab", { window: "new" }),
   tab_search: n("Search tabs…", "tab_search"),
+
+  // Tab groups
+  close_group: n("Close tab group", "close_group"),
+  join_groups: n("Join all tab groups", "join_groups"),
+  equalize_groups: n("Equalize tab groups", "equalize_groups"),
 
   // Panes
   close_pane: n("Close pane", "close_pane", {}, ["Ctrl+Shift+W"]),
@@ -161,6 +167,12 @@ for (const d of DIRS) {
   COMMANDS[`swap_pane_${d}`] = n(`Swap pane ${d}`, "swap_pane", { direction: d });
   COMMANDS[`move_pane_${d}`] = n(`Move pane ${d}`, "move_pane", { direction: d }, [`Ctrl+Alt+Shift+${cap(d)}`]);
 }
+for (const d of DIRS) {
+  COMMANDS[`split_tab_group_${d}`] = n(`Split tab group ${d}`, "split_tab_group", { direction: d });
+  COMMANDS[`duplicate_tab_to_group_${d}`] = n(`Duplicate tab into new group ${d}`, "split_tab_group", { direction: d, duplicate: true });
+  COMMANDS[`move_tab_to_group_${d}`] = n(`Move tab to group ${d}`, "move_tab_to_group", { direction: d });
+  COMMANDS[`focus_group_${d}`] = n(`Focus tab group ${d}`, "focus_group", { direction: d });
+}
 for (const d of FOCUS_EXTRA) {
   COMMANDS[`move_focus_${d}`] = n(`Move focus to ${words(d)} pane`, "move_focus", { direction: d }, d === "previous" ? ["Ctrl+Alt+Left"] : []);
 }
@@ -170,6 +182,7 @@ for (const d of SWAP_EXTRA) {
 for (let i = 1; i <= 9; i++) {
   COMMANDS[`new_tab_profile_${i}`] = n(`New tab: profile ${i}`, "new_tab", { index: i - 1 }, [`Ctrl+Shift+${i}`], true);
   COMMANDS[`move_pane_to_tab_${i}`] = n(`Move pane to tab ${i}`, "move_pane", { index: i - 1 }, [], true);
+  if (i <= 8) COMMANDS[`focus_group_${i}`] = n(`Focus tab group ${i}`, "focus_group", { index: i - 1 }, [], true);
   if (i <= 8) COMMANDS[`switch_to_tab_${i}`] = n(`Switch to tab ${i}`, "switch_to_tab", { index: i - 1 }, [`Ctrl+Alt+${i}`], true);
 }
 
@@ -216,6 +229,12 @@ const ICON_BY_ACTION: Record<string, string> = {
   prev_tab: "left",
   switch_to_tab: "tab",
   tab_search: "search",
+  split_tab_group: "split-right",
+  move_tab_to_group: "move-right",
+  focus_group: "focus",
+  close_group: "close",
+  join_groups: "tab",
+  equalize_groups: "equalize",
   close_pane: "close",
   close_other_panes: "close-others",
   split_pane: "split-right",
@@ -285,6 +304,12 @@ export function actionIcon(spec: ActionSpec): string {
       return dir === "up" || dir === "down" ? "resize-v" : "resize-h";
     case "find_match":
       return dir === "prev" ? "up" : "down";
+    case "split_tab_group":
+      return dir === "down" || dir === "up" ? "split-down" : "split-right";
+    case "move_tab_to_group":
+      return dir === "left" || dir === "up" ? "move-left" : "move-right";
+    case "focus_group":
+      return ARROWS[dir] ?? "focus";
     case "move_tab":
       if (spec.window) return "window-out";
       return dir === "backward" ? "move-left" : "move-right";

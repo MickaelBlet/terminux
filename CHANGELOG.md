@@ -9,13 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Window sidebar fixed on the left or right of the panes (`sidebar_position`, `sidebar_width`, resizable, side switchable from its menu), with Git and Snippets views; `toggle_sidebar` (`view` = `git` / `snippets`), `toggle_git_sidebar` (`Ctrl+Shift+G`), `toggle_snippets_sidebar`
+- Window sidebar fixed on the left or right of the panes (`sidebar_position`, `sidebar_width`, resizable, side switchable from its menu), with Explorer, Git and Snippets views; `toggle_sidebar` (`view` = `explorer` / `git` / `snippets`), `toggle_explorer_sidebar` (`Ctrl+Shift+E`), `toggle_git_sidebar` (`Ctrl+Shift+G`), `toggle_snippets_sidebar`
 - Git sidebar view (VS Code-style source control) for the last focused terminal's repository, locally, over SSH and in WSL: stage / unstage / discard, commit / amend / undo last commit, branch switch / create / delete, fetch / pull / push / publish with ahead/behind counts, last 100 commits, stashes, "Run in terminal" fallback when git needs credentials; auto refresh (`git_pane_refresh_interval`, `git_pane_show_untracked`)
+- Explorer sidebar view: file tree of the last focused terminal (rooted at its Git repository, else its directory; local, SSH and WSL), opens files in the built-in editor, `cd` here / insert or copy path / reveal in file manager, keyboard navigation (`explorer_show_hidden`)
 - Diff tab for file, commit and stash diffs opened from the Git sidebar
-- Pane context menu: "Source control (Git)"
+- Pane context menu: "Explorer", "Source control (Git)"
+- Tab groups (VS Code-style editor groups): split the window into groups, each with its own tab strip; drag a tab onto a content edge / another group / its strip, drag a pane title bar onto a strip, tab context menu "Move to new group" / "Move to group"; `split_tab_group_*`, `duplicate_tab_to_group_*`, `move_tab_to_group_*`, `focus_group_*` / `focus_group_1`..`8`, `close_group`, `join_groups`, `equalize_groups`; vertical tabs list tabs per group; groups saved with the session
 
 ### Changed
 
+- Dragging a tab onto a pane now requires **Shift** (without it, dropping on the content area splits tab groups)
+- Tab commands (`next_tab` / `prev_tab`, `switch_to_tab*`, `move_tab_*`, close other / to the right) act within the focused tab group
 - The snippets pane is now the Snippets view of the sidebar; `toggle_snippets_pane` / `open_snippets_pane` and `split_pane` with `type = "snippets"` toggle it, and snippets panes of saved sessions are dropped on restore
 
 ## [0.1.9] - 2026-11-23

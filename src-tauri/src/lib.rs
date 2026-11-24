@@ -199,6 +199,21 @@ async fn path_complete(state: State<'_, AppState>, id: Option<u32>, dir: String)
     }
 }
 
+/// Explorer sidebar: entries of directory `dir`, on the ssh host or in the WSL distro of pane
+/// `id` when it runs one. Names and directory flags only.
+#[tauri::command]
+async fn dir_list(state: State<'_, AppState>, id: Option<u32>, dir: String) -> CmdResult<Vec<complete::Entry>> {
+    let ssh = id.and_then(|id| state.pty.ssh_target(id));
+    let wsl = if ssh.is_none() { id.and_then(|id| state.pty.wsl_target(id)) } else { None };
+    tauri::async_runtime::spawn_blocking(move || match (ssh, wsl) {
+        (Some(t), _) => complete::list_remote(&t, &dir),
+        (None, Some((p, sel))) => complete::list_wsl(&p, &sel, &dir),
+        _ => complete::list_local(&dir),
+    })
+    .await
+    .map_err(err)?
+}
+
 /// Write exported text to `path` (only when named in the config, e.g. an `export_buffer` action)
 /// or to a file the user picks in a save dialog. Returns the written path, `None` if cancelled.
 #[tauri::command]
@@ -612,6 +627,7 @@ pub fn run() {
             pty_ssh_resume,
             remote_file_fetch,
             path_complete,
+            dir_list,
             git_run,
             window_init,
             window_new,

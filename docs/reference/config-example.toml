@@ -41,6 +41,7 @@ sidebar_position = "right"            # Git / snippets sidebar: "left" | "right"
 sidebar_width = 300                   # px, resizable
 git_pane_refresh_interval = 5         # Git sidebar polling in seconds (0: off)
 git_pane_show_untracked = true
+explorer_show_hidden = true
 always_on_top = false
 disable_animations = false
 confirm_close_all_tabs = true         # confirm closing a window with several tabs

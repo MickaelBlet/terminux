@@ -1,5 +1,6 @@
 // Serializable captures of panes and tabs: undo close, session persistence, moving between windows.
 import { remove, type LayoutNode } from "./layout/tree";
+import type { GroupsSnapshot } from "./layout/groups";
 import type { PaneSpec } from "./term/appearance";
 import type { Restore } from "./term/session";
 
@@ -34,7 +35,9 @@ export interface WindowSnapshot {
   activeEditor?: "config" | "defaults";
   bounds?: { x: number; y: number; width: number; height: number; maximized: boolean };
   /** Open sidebar view. */
-  sidebar?: "git" | "snippets" | null;
+  sidebar?: "explorer" | "git" | "snippets" | null;
+  /** Tab groups (absent with a single group); positions are in the tab row, editors included. */
+  groups?: GroupsSnapshot;
 }
 
 /** The tab without its panes of the given kinds; null when nothing is left. */

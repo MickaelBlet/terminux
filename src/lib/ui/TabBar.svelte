@@ -25,15 +25,17 @@
     return () => void un.then((f) => f());
   });
 
-  /** Vertical tabs: this bar is only the title bar, the tab list lives in VerticalTabs. */
-  const vertical = $derived(app.tabPosition !== "top");
+  /** Vertical tabs or several tab groups: this bar is only the title bar, the tab lists live in VerticalTabs / TabStrip. */
+  const vertical = $derived(app.tabPosition !== "top" || app.groupIds.length > 1);
   const curInfo = $derived(vertical && app.tab ? tabInfo(app, app.tab, app.activeTab) : null);
 
   let dropdownBtn = $state<HTMLButtonElement>();
   $effect(() => {
-    if (vertical) return;
+    if (app.tabPosition !== "top") return;
     app.dropdownAnchor = () => {
-      const r = dropdownBtn?.getBoundingClientRect();
+      // Several groups: under the focused group's strip.
+      const strip = app.groupIds.length > 1 ? document.querySelector(`[role="tablist"][data-group-id="${app.activeGroup}"]`) : null;
+      const r = (strip ?? dropdownBtn)?.getBoundingClientRect();
       return r ? { x: r.left, y: r.bottom + 2 } : { x: 40, y: 34 };
     };
   });
@@ -170,7 +172,7 @@
       {/if}
     </div>
   {:else}
-    <div class="tabs" role="tablist" tabindex="-1" data-tauri-drag-region bind:this={tabsEl} oncontextmenu={onBarMenu}>
+    <div class="tabs" role="tablist" tabindex="-1" data-group-id={app.groupIds[0]} data-tauri-drag-region bind:this={tabsEl} oncontextmenu={onBarMenu}>
       {#each app.tabs as t (t.id)}
         <TabItem {t} {drag} {variant} />
       {/each}

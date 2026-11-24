@@ -6,7 +6,7 @@ import { ProgressBarStatus } from "@tauri-apps/api/window";
 import type { ActionSpec } from "./commands";
 import * as tree from "./layout/tree";
 import { sanitizeTab, type TabSnapshot, type WindowSnapshot } from "./snapshot";
-import type { App, NewPaneArgs, Tab } from "./state.svelte";
+import { SIDEBAR_VIEWS, type App, type NewPaneArgs, type Tab } from "./state.svelte";
 import { setRootKey } from "./snippets";
 import { aggregateProgress } from "./taskbar";
 import { sessions } from "./term/session";
@@ -146,9 +146,10 @@ async function applyPayload(app: App, p: Payload) {
     for (const e of editors) {
       if (e.kind === "config" || e.kind === "defaults") app.openEditor(e.kind, before + e.index, false);
     }
+    if (before === 0) app.applyGroups(snap.groups);
     const active = snap.activeEditor ? app.tabs.findIndex((t) => t.kind === snap.activeEditor) : -1;
     app.gotoTab(active >= 0 ? active : target ? app.tabs.indexOf(target) : app.tabs.length - 1);
-    if (snap.sidebar === "git" || snap.sidebar === "snippets") app.showSidebar(snap.sidebar);
+    if (snap.sidebar && SIDEBAR_VIEWS.includes(snap.sidebar)) app.showSidebar(snap.sidebar);
   }
   if (p.actions?.length) {
     for (const a of p.actions) await app.run(a);
@@ -236,6 +237,7 @@ export async function snapshotWindow(app: App): Promise<WindowSnapshot> {
     editors,
     activeEditor: cur === "config" || cur === "defaults" ? cur : undefined,
     sidebar: app.sidebar,
+    groups: app.groupsSnapshot(),
     bounds: await bounds(),
   };
 }
@@ -269,6 +271,7 @@ function keepForReload(app: App) {
       editors,
       activeEditor: cur === "config" || cur === "defaults" ? cur : undefined,
       sidebar: app.sidebar,
+      groups: app.groupsSnapshot(),
     };
     sessionStorage.setItem(RELOAD_KEY, JSON.stringify(snap));
   } catch (e) {

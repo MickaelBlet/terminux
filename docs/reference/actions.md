@@ -43,7 +43,7 @@ commands = [
 - A handler that cannot act returns "not handled" and the key press then reaches the terminal (for example `copy` without a selection sends `Ctrl+C` to the program).
 - While text is being edited (settings editor, palette, dialogs) only window-level commands stay active: `new_tab`, `new_window`, `close_tab`, `close_pane`, `close_window`, `next_tab`, `prev_tab`, `switch_to_tab`, `command_palette`, `open_settings`, `toggle_fullscreen`, `toggle_focus_mode`, `toggle_vertical_tabs`, `toggle_always_on_top`, `adjust_font_size`, `reset_font_size`, `quit`, `open_new_tab_dropdown`, `tab_search`, `restore_last_closed`, `quake_mode`, `global_summon`, `minimize_to_tray`, `identify_window`, `identify_windows`, `customize_toolbar`.
 - In `[keys]`, old pre-parity names are still accepted (listed under each command as *Legacy names*).
-- Terminux-specific additions with no Windows Terminal counterpart: `toggle_vertical_tabs`, `toggle_vertical_tabs_collapsed`, `save_snippet`, `open_cwd`, `open_file`, `customize_toolbar`, `toggle_sidebar`, `toggle_git_sidebar`, `toggle_snippets_sidebar`, `equalize_panes`, `show_recent_commands`.
+- Terminux-specific additions with no Windows Terminal counterpart: `toggle_vertical_tabs`, `toggle_vertical_tabs_collapsed`, `save_snippet`, `open_cwd`, `open_file`, `customize_toolbar`, `toggle_sidebar`, `toggle_explorer_sidebar`, `toggle_git_sidebar`, `toggle_snippets_sidebar`, `equalize_panes`, `show_recent_commands`.
 
 ## Parameterised actions
 
@@ -124,7 +124,7 @@ color = "#c50f1f"
 
 ### switch_to_tab
 
-Switch to a tab by index.
+Switch to a tab by index. With several [tab groups](../user-guide/03-tabs.md#tab-groups), the index counts the tabs of the focused group.
 
 Named commands using it: [`switch_to_last_tab`](#switch_to_last_tab), [`switch_to_tab_1`](#switch_to_tab_1), [`switch_to_tab_2`](#switch_to_tab_2), [`switch_to_tab_3`](#switch_to_tab_3), [`switch_to_tab_4`](#switch_to_tab_4), [`switch_to_tab_5`](#switch_to_tab_5), [`switch_to_tab_6`](#switch_to_tab_6), [`switch_to_tab_7`](#switch_to_tab_7), [`switch_to_tab_8`](#switch_to_tab_8).
 
@@ -152,7 +152,7 @@ Windows Terminal: `moveTab`.
 
 | Argument | Type | Default | Description |
 | --- | --- | --- | --- |
-| `direction` | string | `forward` | `forward` or `backward` (ignored when `window` is set). |
+| `direction` | string | `forward` | `forward` or `backward`, within the tab's group (ignored when `window` is set). |
 | `window` | string or integer | none | Target window: id, name, `new` / `-1` (new window), `last` / `0` (most recently focused other window). |
 
 ```toml
@@ -160,6 +160,61 @@ Windows Terminal: `moveTab`.
 name = "Tab to window main"
 command = "move_tab"
 window = "main"
+```
+
+### split_tab_group
+
+Add a [tab group](../user-guide/03-tabs.md#tab-groups) beside the focused one, holding a new tab (or a duplicate of the active tab). Also takes the [`new_tab`](#new_tab) arguments (`profile`, `commandline`, …).
+
+Named commands using it: `split_tab_group_{left,right,up,down}`, `duplicate_tab_to_group_{left,right,up,down}`.
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `direction` | string | `right` | `left`, `right`, `up` or `down`. |
+| `duplicate` | boolean | `false` | Duplicate the active tab instead of opening a new one. |
+
+```toml
+[[action]]
+name = "PowerShell group below"
+command = "split_tab_group"
+direction = "down"
+profile = "PowerShell"
+```
+
+### move_tab_to_group
+
+Move the active tab to the neighbor tab group in a direction (a new group is created when there is none), or to the group at an index.
+
+Named commands using it: `move_tab_to_group_{left,right,up,down}`.
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `direction` | string | `right` | `left`, `right`, `up` or `down`. |
+| `index` | integer | none | 0-based group index (layout order, left to right / top to bottom); used when `direction` is absent. |
+
+```toml
+[[action]]
+keys = "Ctrl+Shift+F8"
+command = "move_tab_to_group"
+direction = "right"
+```
+
+### focus_group
+
+Focus the neighbor tab group in a direction, or the group at an index.
+
+Named commands using it: `focus_group_{left,right,up,down}`, `focus_group_1` … `focus_group_8`.
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `direction` | string | none | `left`, `right`, `up` or `down`. |
+| `index` | integer | none | 0-based group index (layout order). |
+
+```toml
+[[action]]
+keys = "Ctrl+Shift+F7"
+command = "focus_group"
+direction = "right"
 ```
 
 ### split_pane
@@ -1308,6 +1363,365 @@ Open the tab search palette (type to filter open tabs).
 tab_search = "Ctrl+Alt+X"   # example binding
 ```
 
+### close_group
+
+Close every tab of the focused tab group (the group goes away).
+
+- Action: `close_group`
+- Label: Close tab group
+- Default keys: none
+
+```toml
+[keys]
+close_group = "Ctrl+Alt+X"   # example binding
+```
+
+### join_groups
+
+Put every tab back into a single tab group (the focused one).
+
+- Action: `join_groups`
+- Label: Join all tab groups
+- Default keys: none
+
+```toml
+[keys]
+join_groups = "Ctrl+Alt+X"   # example binding
+```
+
+### equalize_groups
+
+Give every tab group the same size. Double-clicking a divider between groups does the same.
+
+- Action: `equalize_groups`
+- Label: Equalize tab groups
+- Default keys: none
+
+```toml
+[keys]
+equalize_groups = "Ctrl+Alt+X"   # example binding
+```
+
+### split_tab_group_left
+
+Open a new tab in a new tab group to the left the focused one.
+
+- Action: `split_tab_group`, `direction = "left"` ([parameters](#split_tab_group))
+- Label: Split tab group left
+- Default keys: none
+
+```toml
+[keys]
+split_tab_group_left = "Ctrl+Alt+X"   # example binding
+```
+
+### duplicate_tab_to_group_left
+
+Duplicate the active tab into a new tab group to the left the focused one.
+
+- Action: `split_tab_group`, `direction = "left"`, `duplicate = true` ([parameters](#split_tab_group))
+- Label: Duplicate tab into new group left
+- Default keys: none
+
+```toml
+[keys]
+duplicate_tab_to_group_left = "Ctrl+Alt+X"   # example binding
+```
+
+### move_tab_to_group_left
+
+Move the active tab to the tab group on the left (created when there is none).
+
+- Action: `move_tab_to_group`, `direction = "left"` ([parameters](#move_tab_to_group))
+- Label: Move tab to group left
+- Default keys: none
+
+```toml
+[keys]
+move_tab_to_group_left = "Ctrl+Alt+X"   # example binding
+```
+
+### focus_group_left
+
+Focus the tab group on the left.
+
+- Action: `focus_group`, `direction = "left"` ([parameters](#focus_group))
+- Label: Focus tab group left
+- Default keys: none
+
+```toml
+[keys]
+focus_group_left = "Ctrl+Alt+X"   # example binding
+```
+
+### split_tab_group_right
+
+Open a new tab in a new tab group to the right the focused one.
+
+- Action: `split_tab_group`, `direction = "right"` ([parameters](#split_tab_group))
+- Label: Split tab group right
+- Default keys: none
+
+```toml
+[keys]
+split_tab_group_right = "Ctrl+Alt+X"   # example binding
+```
+
+### duplicate_tab_to_group_right
+
+Duplicate the active tab into a new tab group to the right the focused one.
+
+- Action: `split_tab_group`, `direction = "right"`, `duplicate = true` ([parameters](#split_tab_group))
+- Label: Duplicate tab into new group right
+- Default keys: none
+
+```toml
+[keys]
+duplicate_tab_to_group_right = "Ctrl+Alt+X"   # example binding
+```
+
+### move_tab_to_group_right
+
+Move the active tab to the tab group on the right (created when there is none).
+
+- Action: `move_tab_to_group`, `direction = "right"` ([parameters](#move_tab_to_group))
+- Label: Move tab to group right
+- Default keys: none
+
+```toml
+[keys]
+move_tab_to_group_right = "Ctrl+Alt+X"   # example binding
+```
+
+### focus_group_right
+
+Focus the tab group on the right.
+
+- Action: `focus_group`, `direction = "right"` ([parameters](#focus_group))
+- Label: Focus tab group right
+- Default keys: none
+
+```toml
+[keys]
+focus_group_right = "Ctrl+Alt+X"   # example binding
+```
+
+### split_tab_group_up
+
+Open a new tab in a new tab group above the focused one.
+
+- Action: `split_tab_group`, `direction = "up"` ([parameters](#split_tab_group))
+- Label: Split tab group up
+- Default keys: none
+
+```toml
+[keys]
+split_tab_group_up = "Ctrl+Alt+X"   # example binding
+```
+
+### duplicate_tab_to_group_up
+
+Duplicate the active tab into a new tab group above the focused one.
+
+- Action: `split_tab_group`, `direction = "up"`, `duplicate = true` ([parameters](#split_tab_group))
+- Label: Duplicate tab into new group up
+- Default keys: none
+
+```toml
+[keys]
+duplicate_tab_to_group_up = "Ctrl+Alt+X"   # example binding
+```
+
+### move_tab_to_group_up
+
+Move the active tab to the tab group above (created when there is none).
+
+- Action: `move_tab_to_group`, `direction = "up"` ([parameters](#move_tab_to_group))
+- Label: Move tab to group up
+- Default keys: none
+
+```toml
+[keys]
+move_tab_to_group_up = "Ctrl+Alt+X"   # example binding
+```
+
+### focus_group_up
+
+Focus the tab group above.
+
+- Action: `focus_group`, `direction = "up"` ([parameters](#focus_group))
+- Label: Focus tab group up
+- Default keys: none
+
+```toml
+[keys]
+focus_group_up = "Ctrl+Alt+X"   # example binding
+```
+
+### split_tab_group_down
+
+Open a new tab in a new tab group below the focused one.
+
+- Action: `split_tab_group`, `direction = "down"` ([parameters](#split_tab_group))
+- Label: Split tab group down
+- Default keys: none
+
+```toml
+[keys]
+split_tab_group_down = "Ctrl+Alt+X"   # example binding
+```
+
+### duplicate_tab_to_group_down
+
+Duplicate the active tab into a new tab group below the focused one.
+
+- Action: `split_tab_group`, `direction = "down"`, `duplicate = true` ([parameters](#split_tab_group))
+- Label: Duplicate tab into new group down
+- Default keys: none
+
+```toml
+[keys]
+duplicate_tab_to_group_down = "Ctrl+Alt+X"   # example binding
+```
+
+### move_tab_to_group_down
+
+Move the active tab to the tab group below (created when there is none).
+
+- Action: `move_tab_to_group`, `direction = "down"` ([parameters](#move_tab_to_group))
+- Label: Move tab to group down
+- Default keys: none
+
+```toml
+[keys]
+move_tab_to_group_down = "Ctrl+Alt+X"   # example binding
+```
+
+### focus_group_down
+
+Focus the tab group below.
+
+- Action: `focus_group`, `direction = "down"` ([parameters](#focus_group))
+- Label: Focus tab group down
+- Default keys: none
+
+```toml
+[keys]
+focus_group_down = "Ctrl+Alt+X"   # example binding
+```
+
+### focus_group_1
+
+Focus tab group 1 (layout order). Hidden from the palette.
+
+- Action: `focus_group`, `index = 0` ([parameters](#focus_group))
+- Label: Focus tab group 1
+- Default keys: none
+- Hidden from the palette
+
+```toml
+[keys]
+focus_group_1 = "Ctrl+Alt+X"   # example binding
+```
+
+### focus_group_2
+
+Focus tab group 2 (layout order). Hidden from the palette.
+
+- Action: `focus_group`, `index = 1` ([parameters](#focus_group))
+- Label: Focus tab group 2
+- Default keys: none
+- Hidden from the palette
+
+```toml
+[keys]
+focus_group_2 = "Ctrl+Alt+X"   # example binding
+```
+
+### focus_group_3
+
+Focus tab group 3 (layout order). Hidden from the palette.
+
+- Action: `focus_group`, `index = 2` ([parameters](#focus_group))
+- Label: Focus tab group 3
+- Default keys: none
+- Hidden from the palette
+
+```toml
+[keys]
+focus_group_3 = "Ctrl+Alt+X"   # example binding
+```
+
+### focus_group_4
+
+Focus tab group 4 (layout order). Hidden from the palette.
+
+- Action: `focus_group`, `index = 3` ([parameters](#focus_group))
+- Label: Focus tab group 4
+- Default keys: none
+- Hidden from the palette
+
+```toml
+[keys]
+focus_group_4 = "Ctrl+Alt+X"   # example binding
+```
+
+### focus_group_5
+
+Focus tab group 5 (layout order). Hidden from the palette.
+
+- Action: `focus_group`, `index = 4` ([parameters](#focus_group))
+- Label: Focus tab group 5
+- Default keys: none
+- Hidden from the palette
+
+```toml
+[keys]
+focus_group_5 = "Ctrl+Alt+X"   # example binding
+```
+
+### focus_group_6
+
+Focus tab group 6 (layout order). Hidden from the palette.
+
+- Action: `focus_group`, `index = 5` ([parameters](#focus_group))
+- Label: Focus tab group 6
+- Default keys: none
+- Hidden from the palette
+
+```toml
+[keys]
+focus_group_6 = "Ctrl+Alt+X"   # example binding
+```
+
+### focus_group_7
+
+Focus tab group 7 (layout order). Hidden from the palette.
+
+- Action: `focus_group`, `index = 6` ([parameters](#focus_group))
+- Label: Focus tab group 7
+- Default keys: none
+- Hidden from the palette
+
+```toml
+[keys]
+focus_group_7 = "Ctrl+Alt+X"   # example binding
+```
+
+### focus_group_8
+
+Focus tab group 8 (layout order). Hidden from the palette.
+
+- Action: `focus_group`, `index = 7` ([parameters](#focus_group))
+- Label: Focus tab group 8
+- Default keys: none
+- Hidden from the palette
+
+```toml
+[keys]
+focus_group_8 = "Ctrl+Alt+X"   # example binding
+```
+
 ### new_tab_profile_1
 
 Open a new tab with the 1st visible (non-hidden) profile. Hidden from the palette; listed in the new-tab menus with its key.
@@ -1837,7 +2251,7 @@ Open the [sidebar](../user-guide/18-sidebar.md) on its last used view, or close 
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `view` | string | last used | `git` or `snippets`: show that view, or close the sidebar when it already shows it. |
+| `view` | string | last used | `explorer`, `git` or `snippets`: show that view, or close the sidebar when it already shows it. |
 
 ```toml
 [[action]]
@@ -1846,7 +2260,20 @@ view = "snippets"
 keys = "Ctrl+Alt+S"
 ```
 
-Named commands using it: [`toggle_git_sidebar`](#toggle_git_sidebar), [`toggle_snippets_sidebar`](#toggle_snippets_sidebar).
+Named commands using it: [`toggle_explorer_sidebar`](#toggle_explorer_sidebar), [`toggle_git_sidebar`](#toggle_git_sidebar), [`toggle_snippets_sidebar`](#toggle_snippets_sidebar).
+
+### toggle_explorer_sidebar
+
+Show the Explorer view of the [sidebar](../user-guide/18-sidebar.md#explorer) (file tree of the last focused terminal's repository or directory; click a file to open it in the built-in editor), or close the sidebar when it already shows it.
+
+- Action: `toggle_sidebar`, `view = "explorer"` ([parameters](#toggle_sidebar))
+- Label: Toggle explorer sidebar (files)
+- Default keys: `Ctrl+Shift+E`
+
+```toml
+[keys]
+toggle_explorer_sidebar = "Ctrl+Alt+E"   # example binding
+```
 
 ### toggle_git_sidebar
 

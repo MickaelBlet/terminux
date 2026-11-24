@@ -33,7 +33,7 @@ Terminux is a Tauri v2 + Svelte 5 terminal multiplexer with Windows Terminal fea
 15. [Recipes](user-guide/15-recipes.md): ready-made configurations
 16. [Troubleshooting](user-guide/16-troubleshooting.md): rendering, keys, clipboard, config errors, FAQ
 17. [Migrating from Windows Terminal](user-guide/17-migrating-from-windows-terminal.md): `settings.json` to `config.toml`, unsupported features
-18. [Sidebar](user-guide/18-sidebar.md): Git (source control: stage, commit, diff, branches, sync, log, stashes) and snippets views
+18. [Sidebar](user-guide/18-sidebar.md): Explorer (file tree), Git (source control: stage, commit, diff, branches, sync, log, stashes) and snippets views
 
 ## Reference
 

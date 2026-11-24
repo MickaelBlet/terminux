@@ -34,6 +34,7 @@ src/
     keys.ts                  Keymap: combo parsing and matching
     actions.ts               ACTIONS: command name -> handler
     layout/tree.ts           pure split-tree operations
+    layout/groups.ts         pure tab-group helpers (tested)
     term/                    session.ts, appearance.ts, marks.ts, markmode.ts, shell-integration.ts,
                              file-link-provider.ts, link-tooltip.ts
     osc.ts                   pure OSC parsers
@@ -62,7 +63,8 @@ Core state:
 | Field | Meaning |
 | --- | --- |
 | `config` | Current `Config` (from `get_config`, replaced on `config-changed`) |
-| `tabs: Tab[]`, `activeTab` | Tab list (`kind` is `"term"`, `"config"` (settings tab) or `"defaults"` (read-only defaults); the last two are editor tabs) |
+| `tabs: Tab[]`, `activeTab` | Tab list (`kind` is `"term"`, `"config"` (settings tab) or `"defaults"` (read-only defaults); the last two are editor tabs). One flat row for the whole window; `activeTab` is the focused tab (its setter records it as the shown tab of its group) |
+| `groupLayout`, `groupActive`, `activeGroup` | Tab groups: a layout tree (`layout/tree.ts`) whose leaves are group ids, the tab shown per group, the focused group (`tab.groupId`). `Tab.groupId` places a tab; a group's tabs are the row filtered by it (`layout/groups.ts`). Empty groups are pruned (`pruneGroups`), the last one always stays. `Tab.group` is unrelated (subtree selected by "move focus to parent") |
 | `panes: Record<string, PaneInfo>` | Per-pane UI state: `kind` (`"term"`, `"snippets"`, `"file"`, `"config"`, `"defaults"`), spec, title, user `name`, bell/activity flags, read-only, progress, cwd, resolved `look`, mark mode, visual-bell `flash`, `dirty` (file pane) |
 | `keymap`, `userActions` | Rebuilt from the config (`setConfig`) |
 | `palette`, `menu`, `dialog`, `toasts`, `tabSwitcher`, `colorPicker`, `renaming`, `renamingPane`, `about`, `identify` | Overlays and transient UI |
@@ -168,7 +170,7 @@ interface SplitNode { kind: "split"; id: string; dir: Dir; sizes: number[]; chil
 | `resize(root, target, d, delta)` | Moves a separator (min share 0.05); prefers the edge facing `d`, else the opposite edge, like Windows Terminal |
 | `setSizes`, `equalize` | Set sizes of one split / equalize all |
 
-`SplitView.svelte` renders the tree recursively (with separator dragging through `app.setSizes`), and `TerminalPane.svelte` renders a leaf.
+`SplitView.svelte` renders the tree recursively (with separator dragging through `app.setSizes`), and `TerminalPane.svelte` renders a leaf. The same tree type holds the tab-group layout: `GroupView.svelte` renders it (`app.setGroupSizes`), `TabGroup.svelte` a group (its `TabStrip` when there are several groups, and one `<section>` per tab of the group).
 
 ## TermSession and SessionHooks
 
@@ -260,7 +262,7 @@ Sequences are registered in `TermSession.createTerminal` and parsed by pure func
 - `snapshot.ts`: types `PaneSnapshot`, `TabSnapshot`, `WindowSnapshot`; `sanitizeTab` validates a persisted tab and strips live PTY ids (a restored session starts fresh processes but replays the saved buffer).
 - `windows.ts`:
   - `init(app)`: `window_init`, registers `window-payload`, `identify`, `persist` listeners and the close-requested handler, applies the launch mode (`focus`, `maximized`, `maximized_focus`, `fullscreen`) and sizes the window to `initial_cols` x `initial_rows` from the measured cell size (`sizeToGrid`), shows the window and starts the periodic session save (every 30 s).
-  - `applyPayload`: adopts a received `snapshot` (tabs, editors, active tab) and runs received `actions`.
+  - `applyPayload`: adopts a received `snapshot` (tabs, editors, active tab; into an empty window also its tab groups via `app.applyGroups`, else everything lands in the focused group) and runs received `actions`. `WindowSnapshot.groups` (`GroupsSnapshot`: layout, group id per tab-row position, shown tab per group) is absent with a single group, so older sessions load as one group.
   - Moving: `moveTabToWindow`, `movePaneToWindow`, `handOff` (re-adopts locally if the send fails), `windowAt`.
   - Persistence: `snapshotWindow`, `saveSession` (skipped unless `first_window_preference` is `persisted_window_layout`).
   - Closing: `closeWindow` (confirms with a "Don't ask again" checkbox that writes `confirm_close_all_tabs = false` to the config), `lastTabClosed`, `quit`.
@@ -293,11 +295,12 @@ Components in `src/lib/ui/` (Svelte 5):
 
 | File | Role |
 | --- | --- |
-| `routes/+page.svelte` | Root: tab bar, optional vertical tab panel (left/right), one `<section>` per tab (terminal tabs render `SplitView`; the settings tab renders `SettingsTab`, the defaults tab a read-only `ConfigEditor`), `Palette`, `Menu`, `Overlays`, `ResizeHandles`, config-error banner, window background image |
+| `routes/+page.svelte` | Root: tab bar, optional vertical tab panel (left/right), `GroupView` (tab groups; `TabGroup` renders one `<section>` per tab: terminal tabs render `SplitView`, the settings tab `SettingsTab`, the defaults tab a read-only `ConfigEditor`), `Palette`, `Menu`, `Overlays`, `ResizeHandles`, config-error banner, window background image |
 | `TabBar.svelte` / `TabItem.svelte` | Top tab bar with the title-bar toolbar, window controls, new-tab dropdown; a tab (title, icon, progress ring, bell/activity, close, color, drag) |
-| `VerticalTabs.svelte` | Vertical tab panel (resizable, collapsible to icons) |
+| `VerticalTabs.svelte` / `VerticalGroupTabs.svelte` | Vertical tab panel (resizable, collapsible to icons); one list per tab group |
+| `GroupView.svelte` / `TabGroup.svelte` / `TabStrip.svelte` | Tab groups: split layout, one group (strip + tab bodies + drop hint), a group's tab strip (with several groups the `TabBar` keeps only the title) |
 | `SplitView.svelte` | Recursive split rendering with draggable separators |
-| `Sidebar.svelte` | Window sidebar (`app.sidebar`, `sidebarSide`, `sidebarWidth`; `toggle_sidebar`): view bar, resize grip, `GitPane` (git via the `git_run` IPC command, `git.ts` parsers, `ui/git/run.ts`) or `SnippetsPane`; both work on `app.recentTerminal` |
+| `Sidebar.svelte` | Window sidebar (`app.sidebar`, `sidebarSide`, `sidebarWidth`; `toggle_sidebar`): view bar, resize grip, `ExplorerPane` (read-only tree via the `dir_list` IPC command, pure helpers in `explorer.ts`), `GitPane` (git via the `git_run` IPC command, `git.ts` parsers, `ui/git/run.ts`) or `SnippetsPane`; all work on `app.recentTerminal` |
 | `TerminalPane.svelte` | A pane leaf: by `PaneInfo.kind` it renders a terminal (attaches `TermSession` to the DOM, background image, zoom badge, search bar), `DiffPane`, `FilePane` or `ConfigEditor` |
 | `SearchBar.svelte` | Find UI (regex, case, whole word, match count) |
 | `SnippetsPane.svelte` | Snippets (saved `send_input` actions) as a pane type |
@@ -314,7 +317,7 @@ Components in `src/lib/ui/` (Svelte 5):
 | `palettes.ts` | Builders: `commandPalette`, `colorSchemePalette`, `suggestionsPalette`, `tabSearchPalette` |
 | `types.ts` | `PaletteItem`, `PaletteView`, `MenuItem`, `MenuRequest`, `DialogRequest`, `Toast` |
 | `pane-drag.svelte.ts`, `pane-drag.ts`, `pane-title.ts` | Pane drag by its title bar (dock beside / swap with another pane, drop on a tab, as a new tab, or outside the window); `pane-drag.ts` is the pure drop-zone geometry and `pane-title.ts` the pure `show_pane_title_bar` rule (both tested) |
-| `tab-drag.svelte.ts`, `tab-shift.ts`, `tab-baseline.ts`, `flip.svelte.ts`, `tab-info.ts` | Tab dragging (reorder, tear-out, drop on another window), pure slot geometry (tested), FLIP animation, shared per-tab display data |
+| `tab-drag.svelte.ts`, `group-drop.svelte.ts`, `tab-shift.ts`, `tab-baseline.ts`, `flip.svelte.ts`, `tab-info.ts` | Tab dragging (reorder within a strip, move to another group's strip, group edge / center zones, Shift: dock onto a pane, tear-out, drop on another window), group hit-testing, pure slot geometry (tested), FLIP animation, shared per-tab display data |
 
 ## Frontend conventions
 

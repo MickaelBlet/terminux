@@ -12,15 +12,18 @@
 
   const i = $derived(app.tabs.indexOf(t));
   const f = $derived(tabInfo(app, t, i));
-  const active = $derived(i === app.activeTab);
+  /** Shown in its group; `current`: the focused tab of the window. */
+  const active = $derived(app.isShown(t));
+  const current = $derived(i === app.activeTab);
+  const slot = $derived(drag.slot(t));
   const vertical = $derived(variant === "vertical" || variant === "collapsed");
   const closeMode = $derived(app.ui?.closeButton ?? "hover");
   const ellipsisStart = $derived(app.config?.tab_title_ellipsis === "start");
   const d = $derived(drag.state);
   const live = $derived(!!d?.active && !d.outside);
-  const dragged = $derived(!!d?.active && d.from === i);
+  const dragged = $derived(!!d?.active && d.from === slot);
   /** Live drag: the dragged tab follows the pointer, neighbors slide aside. */
-  const shift = $derived(!live || !d ? 0 : dragged ? d.offset : shiftFor(i, d.from, d.to, d.size));
+  const shift = $derived(!live || !d ? 0 : dragged ? d.offset : shiftFor(slot, d.from, d.to, d.size));
   const style = $derived.by(() => {
     const base = tabStyle(app, t, active, f.background);
     if (!shift) return base;
@@ -51,6 +54,7 @@
   class:vertical
   class:right={vertical && side === "right"}
   class:active
+  class:current
   class:drag-live={live}
   class:dragging={dragged}
   class:torn={dragged && d?.outside}
@@ -64,7 +68,7 @@
   title={app.tabTitle(t)}
   {style}
   onclick={() => app.gotoTab(i)}
-  onpointerdown={(e) => drag.down(e, i)}
+  onpointerdown={(e) => drag.down(e, t)}
   onpointermove={(e) => drag.move(e)}
   onpointerup={(e) => drag.up(e)}
   onmousedown={(e) => e.button === 1 && e.preventDefault()}

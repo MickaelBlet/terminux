@@ -6,7 +6,7 @@ import { dropZone, zoneBox, type Box, type DropZone } from "./pane-drag";
 export type PaneDropTarget =
   | { kind: "pane"; paneId: string; zone: DropZone; box: Box }
   | { kind: "tab"; tabId: string }
-  | { kind: "new_tab" }
+  | { kind: "new_tab"; group?: string }
   | { kind: "outside" };
 
 interface PaneDragState {
@@ -79,7 +79,8 @@ class PaneDrag {
         return hit && { kind: "pane", ...hit };
       }
       // Tab strip (horizontal or vertical), outside any tab.
-      if (el.closest('[role="tablist"]')) return { kind: "new_tab" };
+      const list = el.closest<HTMLElement>('[role="tablist"]');
+      if (list) return { kind: "new_tab", group: list.dataset.groupId };
     }
     return null;
   }
@@ -140,9 +141,15 @@ class PaneDrag {
         const to = app.tabs.find((x) => x.id === t.tabId);
         return !!to && to !== app.tabOf(id) && app.dockPane(id, to, to.active, "auto");
       }
-      case "new_tab":
+      case "new_tab": {
+        // A lone pane onto another group's strip: its whole tab moves there.
+        const from = app.tabOf(id);
+        if (from && from.root.kind === "pane" && t.group && t.group !== from.groupId) return app.moveTabToGroup(app.tabs.indexOf(from), t.group);
         app.focusPane(id);
-        return app.movePane(-1);
+        if (!app.movePane(-1)) return false;
+        if (t.group && t.group !== app.activeGroup) app.moveTabToGroup(app.activeTab, t.group);
+        return true;
+      }
       case "outside": {
         app.focusPane(id);
         const target = await windowAt(e.screenX, e.screenY);

@@ -1,10 +1,11 @@
 # Sidebar
 
-A panel fixed on the right (or left) edge of the window, beside the panes, with two views: **Git** (source control) and **Snippets**. It belongs to the window: it stays open when you switch tabs and always works on the **last focused terminal** (of the active tab, or of the last terminal tab when the active one has none, e.g. a diff or settings tab).
+A panel fixed on the right (or left) edge of the window, beside the panes, with three views: **Explorer** (files), **Git** (source control) and **Snippets**. It belongs to the window: it stays open when you switch tabs and always works on the **last focused terminal** (of the active tab, or of the last terminal tab when the active one has none, e.g. a diff or settings tab).
 
 ## Contents
 
 - [Opening, switching and placing it](#opening-switching-and-placing-it)
+- [Explorer](#explorer)
 - [Git](#git)
 - [Snippets](#snippets)
 - [See also](#see-also)
@@ -13,6 +14,7 @@ A panel fixed on the right (or left) edge of the window, beside the panes, with 
 
 | Command | Default keys | Effect |
 | --- | --- | --- |
+| [`toggle_explorer_sidebar`](../reference/actions.md#toggle_explorer_sidebar) | `Ctrl+Shift+E` | Show the Explorer view, or close the sidebar when it already shows it |
 | [`toggle_git_sidebar`](../reference/actions.md#toggle_git_sidebar) | `Ctrl+Shift+G` | Show the Git view, or close the sidebar when it already shows it |
 | [`toggle_snippets_sidebar`](../reference/actions.md#toggle_snippets_sidebar) | none | Same for the Snippets view |
 | [`toggle_sidebar`](../reference/actions.md#toggle_sidebar) | none | Open the last used view, or close the sidebar |
@@ -22,6 +24,25 @@ A panel fixed on the right (or left) edge of the window, beside the panes, with 
 - With vertical tabs on the same side, the sidebar sits between the tabs and the panes.
 - `Escape` in the sidebar returns the focus to the terminal. The open view is saved with the [session](05-windows.md).
 - Configs written for older versions keep working: `split_pane` with `type = "snippets"` / `"git"` and the `toggle_snippets_pane` / `open_snippets_pane` key names toggle the sidebar views; snippets / git panes in a saved session are dropped on restore.
+
+## Explorer
+
+A file tree of the terminal you are working in, similar to VS Code's Explorer.
+
+- Open it with [`toggle_explorer_sidebar`](../reference/actions.md#toggle_explorer_sidebar) (`Ctrl+Shift+E`, palette "Toggle explorer sidebar", pane menu "Explorer").
+- Its root is the **Git repository** of the last focused terminal, or the terminal's directory when it is not in one. The terminal's directory is expanded and highlighted, and followed when it changes ("Pin to this terminal" in the `⋯` menu keeps the view on the current terminal).
+- Works in local, **SSH** (`ls` on the remote host over a non-interactive `ssh` using the pane's own connection options) and **WSL** panes. Read-only: it never creates, renames or deletes files.
+- Refreshes when the terminal changes directory, when a shell-integrated command ends and when the window gets focus. Expanded folders are remembered per root.
+- `.git` is never listed; dotfiles are listed unless [`explorer_show_hidden`](../reference/configuration.md#explorer_show_hidden) is `false` (or "Show hidden files" is unchecked in the `⋯` menu).
+
+| Input | Effect |
+| --- | --- |
+| Click a folder / a file | Expand or collapse / open the file in the built-in editor (SSH files are copied with `scp`; saving uploads them back) |
+| Right-click | Open, Open to the side, `cd` here in terminal, Insert path in terminal, Reveal in file manager, Copy path, Copy relative path |
+| `↑` `↓` `Home` `End` | Move the selection |
+| `→` / `←` | Expand a folder (or go to its first entry) / collapse it (or go to the parent folder) |
+| `Enter`, `Space` | Same as a click |
+| Header buttons | Collapse all, refresh, `⋯` menu (reveal terminal directory, show hidden files, pin, reveal root in file manager) |
 
 ## Git
 

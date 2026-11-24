@@ -58,6 +58,7 @@ export function paneMenu(app: App, paneId: string, x: number, y: number): MenuRe
   groups.push([
     act(app, "Find…", "find"),
     act(app, "Add scroll mark", "add_mark"),
+    act(app, "Explorer", "toggle_explorer_sidebar"),
     act(app, "Source control (Git)", "toggle_git_sidebar"),
     act(app, "Clear buffer", "clear_buffer"),
     act(app, "Export text…", "export_buffer"),
@@ -156,13 +157,45 @@ export function tabMenu(app: App, index: number, x: number, y: number): MenuRequ
       item("Move tab to new window", "move_tab_to_new_window"),
     ]);
   }
+  if (t) groups.push(tabGroupItems(app, index));
+  // Scoped to the tab's group.
+  const own = t ? app.tabs.filter((x) => x.groupId === t.groupId) : [];
   groups.push([
-    { label: "Close tabs to the right", disabled: index >= app.tabs.length - 1, run: () => void app.closeTabs((_x, i) => i <= index) },
-    { label: "Close other tabs", disabled: app.tabs.length < 2, run: () => void app.closeTabs((_x, i) => i === index) },
+    {
+      label: "Close tabs to the right",
+      disabled: own.indexOf(t) >= own.length - 1,
+      run: () => void app.closeTabs((x, i) => x.groupId !== t.groupId || i <= app.tabs.indexOf(t)),
+    },
+    { label: "Close other tabs", disabled: own.length < 2, run: () => void app.closeTabs((x) => x === t || x.groupId !== t.groupId) },
     { label: "Close tab", run: () => void app.closeTab(app.tabs.indexOf(t)) },
   ]);
   groups.push(tabLayoutGroup(app));
   return { x, y, groups };
+}
+
+/** Tab groups: split with this tab, move it to another group, join / close groups. */
+function tabGroupItems(app: App, index: number): MenuItem[] {
+  const t = app.tabs[index];
+  const dirs = ["right", "down", "left", "up"] as const;
+  const cap = (d: string) => d[0].toUpperCase() + d.slice(1);
+  const alone = app.tabs.filter((x) => x.groupId === t.groupId).length < 2;
+  const others = app.groupIds.map((g, i) => [g, i] as const).filter(([g]) => g !== t.groupId);
+  const multi = app.groupIds.length > 1;
+  return [
+    {
+      label: "Move to new group",
+      icon: "split-right",
+      disabled: alone,
+      children: [dirs.map((d) => ({ label: cap(d), run: () => void app.splitTabGroup(d, { tab: app.tabs.indexOf(t) }) }))],
+    },
+    {
+      label: "Move to group",
+      disabled: !others.length,
+      children: [others.map(([g, i]) => ({ label: `Group ${i + 1}`, run: () => void app.moveTabToGroup(app.tabs.indexOf(t), g) }))],
+    },
+    { label: "Join all groups", disabled: !multi, run: () => app.joinGroups() },
+    { label: "Close group", disabled: !multi, run: () => void app.closeGroup(t.groupId) },
+  ];
 }
 
 const POSITIONS: [TabPosition, string][] = [["top", "Top"], ["left", "Left"], ["right", "Right"]];

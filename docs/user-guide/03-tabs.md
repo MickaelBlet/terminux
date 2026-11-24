@@ -12,6 +12,7 @@ Tabs hold layouts of panes. This guide covers creating, naming, coloring, reorde
 - [Reordering and moving between windows](#reordering-and-moving-between-windows)
 - [Width modes](#width-modes)
 - [Vertical tabs](#vertical-tabs)
+- [Tab groups](#tab-groups)
 - [Activity, bell and progress indicators](#activity-bell-and-progress-indicators)
 - [The tab context menu](#the-tab-context-menu)
 - [Tab-related settings](#tab-related-settings)
@@ -157,6 +158,8 @@ Drag a tab to reorder it: neighbors slide aside while you drag, and the drag sta
 | Gesture | Result |
 | --- | --- |
 | Drag along the tab strip | Reorder in the same window. |
+| Drag onto another group's tab strip, or onto the content area | Move to / split [tab groups](#tab-groups). |
+| **Shift**+drag onto a pane | Dock the tab's panes there (see [Panes](04-panes.md)). |
 | Drag out of the window (above, below, or beyond its sides) and drop on empty desktop | The tab becomes a new window at the drop position. |
 | Drag out and drop on another Terminux window | The tab moves into that window. |
 
@@ -220,6 +223,39 @@ Things to know:
 - In the collapsed strip only icons are shown. Starting a rename expands the panel.
 - Collapse and the vertical commands do nothing while tabs are on top.
 
+## Tab groups
+
+Like editor groups in VS Code, the window area can be split into **tab groups**: each group has its own tabs (each tab keeps its own [panes](04-panes.md)), and several groups are visible side by side.
+
+| Gesture | Result |
+| --- | --- |
+| Drag a tab onto an edge of the content area (highlighted half) | A new group on that side, holding the tab. |
+| Drag a tab onto the middle of another group, or onto its tab strip | The tab moves into that group (at the drop position on a strip). |
+| Drag a pane's title bar onto a group's tab strip | The pane becomes a new tab of that group. |
+| Drag the divider between groups | Resize; double-click equalizes (`equalize_groups`). |
+| Right-click a tab > **Move to new group** / **Move to group** | Same, from the menu. |
+
+With a single group nothing changes: the tab bar is the title bar. With several groups the title bar keeps only the window title and the toolbar, and each group shows its own tab strip with a **+** (new tab in that group), a split button (new tab in a new group on the right) and a close button (closes the group's tabs). The focused group (the one holding the focused pane) has the accent baseline. With [vertical tabs](#vertical-tabs) the side panel lists the tabs under one "Group N" heading per group.
+
+Closing the last tab of a group removes the group; the window closes with its last tab overall. Tab commands act within the focused group: `next_tab` / `prev_tab` (in tab-bar order; the MRU switcher stays window-wide), `switch_to_tab` and `switch_to_tab_1`..`8` (index in the group), `move_tab_forward` / `backward`, "Close other tabs" / "Close tabs to the right". New tabs open in the focused group. Groups, their sizes and the tab shown in each are saved with the session.
+
+Group actions (palette, no default keys; see [Actions](../reference/actions.md#split_tab_group)):
+
+| Action | Effect |
+| --- | --- |
+| `split_tab_group_{right,down,left,up}` | New tab in a new group beside the focused one (`split_tab_group` takes the `new_tab` arguments). |
+| `duplicate_tab_to_group_{right,down,left,up}` | Same with a duplicate of the active tab. |
+| `move_tab_to_group_{right,down,left,up}` | Move the active tab to the neighbor group (created when there is none). |
+| `focus_group_{right,down,left,up}`, `focus_group_1`..`8` | Focus a group. |
+| `close_group`, `join_groups`, `equalize_groups` | Close the focused group's tabs, merge all groups, equal sizes. |
+
+```toml
+[keys]
+focus_group_left = "Ctrl+Shift+F5"
+focus_group_right = "Ctrl+Shift+F6"
+move_tab_to_group_right = "Ctrl+Shift+F8"
+```
+
 ## Activity, bell and progress indicators
 
 A tab shows what its panes are doing, even when it is in the background.
@@ -253,10 +289,11 @@ Right-click a tab:
 | --- | --- |
 | Tab | Show in a pane, Color..., Rename tab, Duplicate tab, Split tab (duplicate pane, direction auto), Move tab to new window |
 | Buffer | Export text..., Find... |
-| Close | Close tabs to the right, Close other tabs, Close tab |
+| Groups | Move to new group (Right / Down / Left / Up), Move to group (Group N), Join all groups, Close group |
+| Close | Close tabs to the right, Close other tabs, Close tab (within the tab's group) |
 | Layout | Reopen closed tab, Tab position (Top / Left / Right), Collapse vertical tabs |
 
-"Show in a pane" moves the tab's panes (terminal or built-in file editor) beside the active pane of the most recent other terminal tab; dragging the tab onto a pane does the same at the highlighted spot. Settings tabs get "Show in a pane" (`open_settings_pane` for that tab; disabled without a terminal tab), "Move tab to new window", and the Close and Layout groups. Right-clicking empty tab-bar space shows a smaller menu: New tab, New tab with profile, the layout group, Focus mode, Always on top, Fullscreen, Customize toolbar..., Settings and Command palette.
+"Show in a pane" moves the tab's panes (terminal or built-in file editor) beside the active pane of the most recent other terminal tab; **Shift**+dragging the tab onto a pane does the same at the highlighted spot. Settings tabs get "Show in a pane" (`open_settings_pane` for that tab; disabled without a terminal tab), "Move tab to new window", and the Close and Layout groups. Right-clicking empty tab-bar space shows a smaller menu: New tab, New tab with profile, the layout group, Focus mode, Always on top, Fullscreen, Customize toolbar..., Settings and Command palette.
 
 ## Tab-related settings
 

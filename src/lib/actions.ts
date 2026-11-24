@@ -1,8 +1,9 @@
 // Action handlers: `spec.command` → behavior. Return `false` when not handled so the key reaches the terminal.
 import { invoke } from "@tauri-apps/api/core";
 import type { ActionSpec } from "./commands";
-import type { App, NewPaneArgs, SplitArgs } from "./state.svelte";
+import { SIDEBAR_VIEWS, type App, type NewPaneArgs, type SidebarView, type SplitArgs } from "./state.svelte";
 import type { Direction } from "./layout/tree";
+import { cycleIn, nthIn } from "./layout/groups";
 import type { MarkDirection } from "./term/marks";
 import { commandPalette, colorSchemePalette, suggestionsPalette, tabSearchPalette } from "./ui/palettes";
 import { newTabMenu } from "./ui/menus";
@@ -26,6 +27,7 @@ export const GLOBAL_COMMANDS = new Set([
   "command_palette", "open_settings", "toggle_fullscreen", "toggle_focus_mode", "toggle_vertical_tabs", "toggle_sidebar", "toggle_always_on_top",
   "adjust_font_size", "reset_font_size", "quit", "open_new_tab_dropdown", "tab_search", "restore_last_closed",
   "quake_mode", "global_summon", "minimize_to_tray", "identify_window", "identify_windows", "customize_toolbar",
+  "split_tab_group", "move_tab_to_group", "focus_group", "close_group", "join_groups", "equalize_groups",
 ]);
 
 /** Pane layout commands, also run while a text field inside a pane has the focus. */
@@ -45,6 +47,11 @@ const withTerm = (f: (s: NonNullable<ReturnType<typeof term>>, app: App, spec: A
 };
 
 const paneArgs = (spec: ActionSpec): NewPaneArgs => spec as unknown as NewPaneArgs;
+
+const DIRECTIONS = ["left", "right", "up", "down"];
+const direction = (v: unknown) => (DIRECTIONS.includes(norm(v)) ? (norm(v) as Direction) : undefined);
+/** Group target: `direction` or 0-based `index`. */
+const groupTarget = (spec: ActionSpec): Direction | number | undefined => direction(spec.direction) ?? num(spec.index);
 
 export async function runAll(app: App, specs: ActionSpec[]) {
   for (const s of specs) await app.run(s);
@@ -71,7 +78,7 @@ export const ACTIONS: Record<string, Handler> = {
   toggle_vertical_tabs: (app) => app.toggleVerticalTabs(),
   toggle_sidebar: (app, spec) => {
     const v = norm(spec.view);
-    app.toggleSidebar(v === "git" || v === "snippets" ? v : undefined);
+    app.toggleSidebar(SIDEBAR_VIEWS.includes(v as SidebarView) ? (v as SidebarView) : undefined);
   },
   toggle_vertical_tabs_collapsed: (app) => {
     if (app.tabPosition === "top") return false;
@@ -177,23 +184,51 @@ export const ACTIONS: Record<string, Handler> = {
     app.duplicateTab();
   },
   close_tab: (app, spec) => app.closeTab(num(spec.index) ?? app.activeTab),
+  // Scoped to the tab's group.
   close_other_tabs: (app, spec) => {
     const keep = num(spec.index) ?? app.activeTab;
-    return app.closeTabs((_t, i) => i === keep);
+    const gid = app.tabs[keep]?.groupId;
+    return app.closeTabs((t, i) => i === keep || t.groupId !== gid);
   },
   close_tabs_after: (app, spec) => {
     const keep = num(spec.index) ?? app.activeTab;
-    return app.closeTabs((_t, i) => i <= keep);
+    const gid = app.tabs[keep]?.groupId;
+    return app.closeTabs((t, i) => i <= keep || t.groupId !== gid);
   },
   next_tab: (app, spec) => app.cycleTab(1, spec.tab_switcher_mode),
   prev_tab: (app, spec) => app.cycleTab(-1, spec.tab_switcher_mode),
-  switch_to_tab: (app, spec) => app.gotoTab(num(spec.index) ?? 0),
+  // Index within the focused tab group (the whole tab row with a single group).
+  switch_to_tab: (app, spec) => {
+    const t = nthIn(app.tabs, app.activeGroup, num(spec.index) ?? 0);
+    return !!t && app.gotoTab(app.tabs.indexOf(t));
+  },
   move_tab: (app, spec) => {
     const target = spec.window;
     if (target !== undefined && target !== null) return windows.moveTabToWindow(app, app.activeTab, String(target));
+    const t = app.tab;
+    if (!t) return false;
     const d = norm(spec.direction) === "backward" ? -1 : 1;
-    return app.moveTab(app.activeTab, app.activeTab + d);
+    // Stay within the tab's group, no wrapping.
+    const next = cycleIn(app.tabs, t.id, d);
+    const to = next ? app.tabs.indexOf(next) : -1;
+    if (to < 0 || (d > 0 ? to < app.activeTab : to > app.activeTab)) return false;
+    return app.moveTab(app.activeTab, to);
   },
+
+  // ---------- tab groups ----------
+  split_tab_group: (app, spec) =>
+    app.splitTabGroup(direction(spec.direction) ?? "right", { duplicate: spec.duplicate === true, args: paneArgs(spec) }),
+  move_tab_to_group: (app, spec) => app.moveTabToGroupAt(app.activeTab, groupTarget(spec) ?? "right"),
+  focus_group: (app, spec) => {
+    const target = groupTarget(spec);
+    return target !== undefined && app.focusGroupAt(target);
+  },
+  close_group: (app) => app.closeGroup(),
+  join_groups: (app) => {
+    if (app.groupIds.length < 2) return false;
+    app.joinGroups();
+  },
+  equalize_groups: (app) => app.equalizeGroups(),
   tab_search: (app) => {
     app.palette = app.palette ? null : tabSearchPalette(app);
   },

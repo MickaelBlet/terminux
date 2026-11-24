@@ -176,7 +176,7 @@ With the [pane title bar](#pane-title-bar) shown, drag a pane by its title bar:
 
 ![Dragging a pane by its title bar; the bottom half of another pane is highlighted as the drop zone](../images/pane-drag.svg)
 
-A whole tab (terminal, built-in file editor, or settings) can be dragged the same way from the tab bar onto a pane: the last other terminal tab is shown while dragging over the content area, and the tab's panes dock there (its split layout is kept). Right-click the tab > **Show in a pane** does the same beside the active pane.
+A whole tab (terminal, built-in file editor, or settings) can be dragged the same way from the tab bar onto a pane while holding **Shift** (without Shift, dropping on the content area splits [tab groups](03-tabs.md#tab-groups)): the last other terminal tab is shown while dragging over the content area, and the tab's panes dock there (its split layout is kept). Right-click the tab > **Show in a pane** does the same beside the active pane.
 
 ### With the keyboard
 
@@ -239,7 +239,7 @@ Right-click opens it when `right_click_context_menu = true`; `Ctrl+right-click` 
 | Selection (only with a selection) | Search the web, Highlight selection, Save as snippet |
 | Shell integration (when commands were detected) | Select previous command, Select previous output |
 | Layout | Split pane (Duplicate right, Duplicate down, Split left, Split up, then each profile), Zoom pane / Unzoom pane, Rename pane..., Swap with previous pane, Toggle split orientation, Equalize panes |
-| Buffer | Find..., Add scroll mark, Source control (Git) (opens the [Git sidebar](18-sidebar.md#git)), Clear buffer, Export text... |
+| Buffer | Find..., Add scroll mark, Explorer (opens the [Explorer sidebar](18-sidebar.md#explorer)), Source control (Git) (opens the [Git sidebar](18-sidebar.md#git)), Clear buffer, Export text... |
 | State | Focus mode, Read-only, Broadcast input to all panes, Restart connection |
 | Close | Close other panes, Close pane |
 

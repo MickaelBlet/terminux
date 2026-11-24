@@ -47,8 +47,9 @@ export const ROOT_FIELDS: Record<string, Field> = {
   show_tabs_fullscreen: bool("Keep the tab bar visible in fullscreen."),
   show_zoom_badge: bool("Show the ZOOM badge in the top-right corner of a zoomed pane."),
   show_pane_title_bar: str("Title bar above each pane (icon, title, zoom and close buttons; double-click to rename): never, only when the tab shows several panes, or always.", ["never", "multiple", "always"]),
-  sidebar_position: str("Side of the window sidebar (Git, snippets views; toggle_sidebar). Default right.", ["left", "right"]),
+  sidebar_position: str("Side of the window sidebar (Explorer, Git, snippets views; toggle_sidebar). Default right.", ["left", "right"]),
   sidebar_width: num("Initial width in px of the sidebar (it can be resized by dragging its edge). Default 300."),
+  explorer_show_hidden: bool("Explorer sidebar: list dotfiles (.git is never listed). Default true."),
   git_pane_refresh_interval: num("Git sidebar: refresh the status every N seconds while the window is focused (also after commands, on focus and directory changes). 0: off. Default 5."),
   git_pane_show_untracked: bool("Git sidebar: list untracked files. Default true."),
   show_terminal_title_in_titlebar: bool("Use the active tab title as the window title."),
@@ -239,6 +240,7 @@ const ACTION_ARGS = [
   "rows_to_scroll", "clear", "path", "delta", "opacity", "relative", "source", "use_commandline", "query_url", "name",
   "monitor", "desktop", "dropdown_duration", "toggle_visibility", "single_line", "with_control_sequences",
   "copy_formatting", "dismiss_selection", "view", "tab_switcher_mode", "background", "foreground", "match_mode", "mode", "pane",
+  "duplicate",
 ];
 const ACTION_FIELDS: Record<string, Field> = {
   id: str("Id, usable in [keys] and new_tab_menu."),

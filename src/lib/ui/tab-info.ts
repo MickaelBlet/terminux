@@ -13,7 +13,7 @@ export function tabInfo(app: App, t: Tab, i: number) {
   const active = app.panes[t.active];
   return {
     bell: panes.some((p) => p.bell),
-    activity: i !== app.activeTab && panes.some((p) => p.activity),
+    activity: !app.isShown(t) && panes.some((p) => p.activity),
     count: ids.length,
     readOnly: panes.some((p) => p.readOnly),
     progress: active?.progress ?? panes.find((p) => p.progress)?.progress ?? null,

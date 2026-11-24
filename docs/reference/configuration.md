@@ -284,6 +284,16 @@ Initial width of the sidebar (180 to 900). Dragging its edge overrides it on thi
 sidebar_width = 360
 ```
 
+### explorer_show_hidden
+
+**Type:** boolean | **Default:** `true`
+
+List dotfiles (`.env`, `.gitignore`…) in the [Explorer sidebar](../user-guide/18-sidebar.md#explorer). `.git` is never listed. "Show hidden files" in the view's `⋯` menu overrides it on this machine.
+
+```toml
+explorer_show_hidden = false
+```
+
 ### git_pane_refresh_interval
 
 **Type:** number (seconds) | **Default:** `5`

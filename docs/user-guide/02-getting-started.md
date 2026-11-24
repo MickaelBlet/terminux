@@ -122,7 +122,7 @@ The command line follows `wt.exe` syntax; see the [command-line reference](../re
 - **TOML** in the settings UI switches the same tab to the built-in text editor (and **Settings UI** back), with the same unsaved draft; the TOML editor always saves manually. `open_settings_toml` opens it directly.
 
   ![Built-in TOML configuration editor with key completion](../images/config-editor.svg)
-- The TOML editor can also be shown as a pane. To keep it next to a terminal, drag its tab onto a pane (the highlighted zone shows where it docks), right-click the tab > **Show in a pane**, or run `open_settings_pane` (**Open settings in a pane**, no default key); "Move pane to new tab" (or dropping its title bar on the tab bar) brings it back to a tab. `Ctrl+Space` completes keys and values; unknown keys are underlined; click the swatch before a `"#rrggbb"` value to pick a color; saving applies instantly.
+- The TOML editor can also be shown as a pane. To keep it next to a terminal, **Shift**+drag its tab onto a pane (the highlighted zone shows where it docks), right-click the tab > **Show in a pane**, or run `open_settings_pane` (**Open settings in a pane**, no default key); "Move pane to new tab" (or dropping its title bar on the tab bar) brings it back to a tab. `Ctrl+Space` completes keys and values; unknown keys are underlined; click the swatch before a `"#rrggbb"` value to pick a color; saving applies instantly.
 
   ![Terminal on the left and the TOML settings editor docked as a pane on the right](../images/settings-pane.svg)
 

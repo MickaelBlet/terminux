@@ -12,12 +12,12 @@ export function notifyTabMotion(list: HTMLElement) {
  * `--a0` / `--a1` (px, host coordinates along `axis`) and, for a colored tab, its outline
  * `--tab-bg` as `--tab-ind`. Returns a cleanup function.
  */
-export function trackActiveTab(host: HTMLElement, list: HTMLElement, axis: "x" | "y"): () => void {
+export function trackActiveTab(host: HTMLElement, list: HTMLElement, axis: "x" | "y", selector = ".tab.active"): () => void {
   const clear = () => {
     for (const p of ["--a0", "--a1", "--tab-ind"]) host.style.removeProperty(p);
   };
   const sync = () => {
-    const act = list.querySelector<HTMLElement>(".tab.active");
+    const act = list.querySelector<HTMLElement>(selector);
     if (!act) return clear();
     const h = host.getBoundingClientRect();
     const r = act.getBoundingClientRect();

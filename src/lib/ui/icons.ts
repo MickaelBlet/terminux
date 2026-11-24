@@ -17,6 +17,8 @@ export const ICONS: Record<string, string> = {
   "win-close": "M3.5 3.5l9 9M12.5 3.5l-9 9",
   terminal: "M2.5 3.5h11v9h-11zM5 6.5l2 1.5-2 1.5M8.5 10h2.5",
   folder: "M2.5 4.5h4l1.5 1.5h5.5v6.5h-11z",
+  "folder-open": "M2.5 12.5V4.5h4l1.5 1.5h4.5v2M2.5 12.5l1.8-4.5h10l-1.8 4.5z",
+  "collapse-all": "M4.5 2.5h9v9M2.5 4.5h9v9h-9zM5 9h4",
   check: "M3.5 8.5l3 3 6-7",
   lock: "M4.5 7.5h7v5.5h-7zM6 7.5V5.5a2 2 0 0 1 4 0v2",
   broadcast: "M8 8.5v.01M5.6 6.1a3.4 3.4 0 0 0 0 4.8M10.4 6.1a3.4 3.4 0 0 1 0 4.8M3.5 4a6.3 6.3 0 0 0 0 9M12.5 4a6.3 6.3 0 0 1 0 9",
